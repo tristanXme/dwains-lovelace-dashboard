@@ -1,7 +1,8 @@
 import { LitElement, html, css } from "lit";
 const { defineDwainsElement } = require('./custom-element-registration');
 const { LovelaceHeaderOwner } = require('./lovelace-header-owner');
-const VERSION = "3.10.1";
+// Injected by webpack from manifest.json, the single source of the version.
+const VERSION = __DD_VERSION__;
 //Herschreven
 class DwainsDashboardLayout extends LitElement {
   constructor() {

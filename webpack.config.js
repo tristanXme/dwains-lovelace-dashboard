@@ -3,6 +3,8 @@
 // copies the standalone modules, writes .gz siblings and stamps the asset
 // revision into const.py.
 const path = require("path");
+const webpack = require("webpack");
+const { version } = require("./custom_components/dwains_dashboard/manifest.json");
 
 // Every module registers its custom elements as a side effect, so all of
 // them are entry points. The order matches the 3.10.1 bundle: runtime fixes
@@ -46,4 +48,7 @@ module.exports = (_env, argv) => ({
   // Maps are written for local debugging only (git-ignored, never shipped).
   devtool: argv.mode === "development" ? "eval-source-map" : "hidden-source-map",
   performance: { hints: false },
+  plugins: [
+    new webpack.DefinePlugin({ __DD_VERSION__: JSON.stringify(version) }),
+  ],
 });

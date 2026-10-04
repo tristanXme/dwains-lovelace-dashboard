@@ -288,6 +288,10 @@ function getDwainsHass() {
 	        cancelAnimationFrame(this.__masonryRaf);
 	        this.__masonryRaf = 0;
 	      }
+	      if(this.__masonryLayoutRaf){
+	        cancelAnimationFrame(this.__masonryLayoutRaf);
+	        this.__masonryLayoutRaf = 0;
+	      }
 	    }
 
 	    _subscribeReload(){
@@ -306,7 +310,17 @@ function getDwainsHass() {
 
 	    updated(){
 	      this._scheduleIconRepoke();
-	      this._layoutMasonry();
+	      // updated() runs for every hass state change; one masonry pass per
+	      // animation frame is enough.
+	      this._scheduleMasonryLayout();
+	    }
+
+	    _scheduleMasonryLayout(){
+	      if(this.__masonryLayoutRaf) return;
+	      this.__masonryLayoutRaf = requestAnimationFrame(() => {
+	        this.__masonryLayoutRaf = 0;
+	        this._layoutMasonry();
+	      });
 	    }
 
 	    _repokeIcons(){
@@ -401,14 +415,20 @@ function getDwainsHass() {
 	            grid.style.gridAutoRows = "";
 	            grid.style.alignItems = "";
 	            grid.style.rowGap = "";
-	            Array.from(grid.children).forEach((item) => {
-	              const manualRowSpan = this._currentMasonryRowSpan(item);
-	              if(manualRowSpan > 1){
-	                item.style.gridRowEnd = "";
-	                return;
-	              }
+	            // Read every height first and write afterwards: interleaving
+	            // getBoundingClientRect() with style writes forced one full
+	            // layout per tile (the main cost when opening an area).
+	            const items = Array.from(grid.children);
+	            const spans = items.map((item) => {
+	              if(this._currentMasonryRowSpan(item) > 1) return "";
 	              const height = item.getBoundingClientRect().height;
-	              if(height > 0) item.style.gridRowEnd = "span " + (Math.ceil(height) + 16);
+	              return height > 0 ? "span " + (Math.ceil(height) + 16) : undefined;
+	            });
+	            items.forEach((item, index) => {
+	              const span = spans[index];
+	              if(span !== undefined && item.style.gridRowEnd !== span){
+	                item.style.gridRowEnd = span;
+	              }
 	            });
 	          }
 	        });

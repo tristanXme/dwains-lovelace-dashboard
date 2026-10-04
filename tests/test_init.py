@@ -72,3 +72,16 @@ async def test_config_flow_single_instance(hass: HomeAssistant) -> None:
     )
     assert result["type"] == "abort"
     assert result["reason"] == "single_instance_allowed"
+
+
+def test_versions_are_consistent() -> None:
+    """const.VERSION, manifest.json and the built bundle agree."""
+    import json
+    from pathlib import Path
+
+    from custom_components.dwains_dashboard.const import VERSION
+
+    component = Path(__file__).resolve().parents[1] / "custom_components" / "dwains_dashboard"
+    manifest = json.loads((component / "manifest.json").read_text())
+    assert manifest["version"] == VERSION
+    assert f"Version {VERSION}" in (component / "js" / "dwains-dashboard.js").read_text()
