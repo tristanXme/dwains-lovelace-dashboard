@@ -67,6 +67,7 @@ const {
   summaryTranslationKey,
 } = require('./area-binary-sensors');
 const { collectAreaSensorValues } = require('./area-sensors');
+const { formatValueWithUnit } = require('./value-format');
 require('./dwains-area-graph');
 
 function getDwainsHass() {
@@ -363,7 +364,7 @@ function getDwainsHass() {
 	    _layoutMasonry(){
 	      try {
 	        if(!this.shadowRoot) return;
-	        const grids = this.shadowRoot.querySelectorAll(this.areaViewEditMode ? ".dd-masonry, .area-view-entity-sortable" : ".dd-masonry");
+	        const grids = this.shadowRoot.querySelectorAll(this.areaViewEditMode ? ".dd-masonry, .dd-fav-masonry, .area-view-entity-sortable" : ".dd-masonry, .dd-fav-masonry");
 	        if(!grids.length) return;
 	        if(!this.__masonryRO && "ResizeObserver" in window){
 	          this.__masonryRO = new ResizeObserver(() => {
@@ -378,6 +379,11 @@ function getDwainsHass() {
 	          Array.from(grid.children).forEach((item) => {
 	            try {
 	              if(this.__masonryRO) this.__masonryRO.observe(item);
+	              // Favorite cells have a fixed row span; watch the card itself
+	              // so the span follows when the card finishes loading.
+	              if(this.__masonryRO && grid.classList.contains("dd-fav-masonry") && item.firstElementChild){
+	                this.__masonryRO.observe(item.firstElementChild);
+	              }
 	            } catch (error) {
 	              console.error("Failed to observe a homepage masonry item", error);
 	            }
@@ -407,6 +413,24 @@ function getDwainsHass() {
 	    _applyMasonrySpans(){
 	      try {
 	        if(!this.shadowRoot) return;
+	        // Favorites: real masonry on 8px rows, so a short tile no longer
+	        // leaves a gap below it next to a tall one.
+	        this.shadowRoot.querySelectorAll(".dd-fav-masonry").forEach((grid) => {
+	          const items = Array.from(grid.children);
+	          const spans = items.map((item) => {
+	            const content = item.firstElementChild;
+	            const height = content ? content.getBoundingClientRect().height : 0;
+	            return height > 0 ? "span " + Math.ceil((height + 16) / 8) : undefined;
+	          });
+	          items.forEach((item, index) => {
+	            // Set start and end: with the row-span-* classes both sides are
+	            // spans and a span on grid-row-end alone would be ignored.
+	            const row = spans[index] && `${spans[index]} / ${spans[index]}`;
+	            if(row && item.style.gridRow !== row){
+	              item.style.gridRow = row;
+	            }
+	          });
+	        });
 	        const edit = this.areaViewEditMode || this.favoriteEditMode;
 	        this.shadowRoot.querySelectorAll(edit ? ".dd-masonry, .area-view-entity-sortable" : ".dd-masonry").forEach((grid) => {
 	          if(edit){
@@ -1077,6 +1101,29 @@ function getDwainsHass() {
           area_id: areaId,
         }
       );
+    }
+
+    _subscribeWeatherForecast(entityId, stateObj) {
+      // Daily forecast (bit 1) for today's high/low next to the weather pill.
+      if (!(Number(stateObj.attributes.supported_features) & 1)) return;
+      const connection = this._hass?.connection;
+      if (typeof connection?.subscribeMessage !== "function") return;
+      this._subscriptions.subscribe(`weather-forecast:${entityId}`, () =>
+        connection.subscribeMessage((event) => {
+          this._weatherForecast = { entity: entityId, forecast: event?.forecast || [] };
+          this.requestUpdate();
+        }, {
+          type: "weather/subscribe_forecast",
+          forecast_type: "daily",
+          entity_id: entityId,
+        })
+      ).catch(() => {});
+    }
+
+    _handleGraphClick(ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      moreInfo(ev.currentTarget.entity);
     }
 
     _backButtonClick(){
@@ -1783,7 +1830,13 @@ function getDwainsHass() {
             @dblclick="${this._handleAreaDoubleClick}"
           >
             ${graph ? html`
-              <div class="area-graph">
+              <div
+                class="area-graph"
+                title=${translateEngine(this._hass, 'area.graph_open_history')}
+                .entity=${graph.entityId}
+                @click=${this._handleGraphClick}
+                @dblclick=${(ev) => ev.stopPropagation()}
+              >
                 <dwains-area-graph
                   .hass=${this._hass}
                   .entity=${graph.entityId}
@@ -1830,6 +1883,8 @@ function getDwainsHass() {
                     ? html`
                       <span
                         class="info-badge toggle-badge badge-${domain} inline-flex items-center px-1 py-0.5 rounded text-xs font-medium"
+                        title=${translateEngine(this._hass, on ? 'area.toggle_all_off' : 'area.toggle_all_on').replace('{domain}', translateEngine(this._hass, 'device.'+domain))}
+                        role="button"
                         .domain=${domain}
                         .area_id=${data.area.area_id}
                         .state=${on}
@@ -2591,7 +2646,7 @@ function getDwainsHass() {
               `: ""}
             </div>
           </div>
-          <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4 sortable">
+          <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4 sortable ${this.favoriteEditMode ? "" : "dd-fav-masonry"}">
             ${this.favorites.map((i) =>
               html`${this._renderFavoriteViewCard(i)}`
             )}
@@ -2625,7 +2680,7 @@ function getDwainsHass() {
         }
 
         //Weather
-        let weatherEntity, weatherState, weatherIcon, weatherStateTranslated, weatherTemperature;
+        let weatherEntity, weatherState, weatherIcon, weatherStateTranslated, weatherTemperature, weatherRange;
         if(this.configuration['homepage_header']['weather_entity']){
           weatherEntity = this.configuration['homepage_header']['weather_entity'];
           weatherState = this._hass.states[weatherEntity];
@@ -2642,10 +2697,22 @@ function getDwainsHass() {
             // Unavailable/unknown weather entities have no temperature; never
             // render "undefined°C".
             const temperature = weatherState.attributes.temperature;
+            const unit = weatherState.attributes.temperature_unit
+              || this._hass.config.unit_system['temperature'];
+            const locale = this._hass.locale?.language || this._hass.language;
             if (temperature !== undefined && temperature !== null && temperature !== "") {
-              const unit = weatherState.attributes.temperature_unit
-                || this._hass.config.unit_system['temperature'];
-              weatherTemperature = `${temperature}${unit}`;
+              weatherTemperature = formatValueWithUnit(Number(temperature), unit, locale);
+            }
+            this._subscribeWeatherForecast(weatherEntity, weatherState);
+            const today = this._weatherForecast?.entity === weatherEntity
+              ? this._weatherForecast.forecast?.[0]
+              : undefined;
+            if (today && today.temperature !== undefined && today.temperature !== null) {
+              const high = formatValueWithUnit(Number(today.temperature), "°", locale, 0).replace(/\u00a0/, "");
+              const low = today.templow !== undefined && today.templow !== null
+                ? formatValueWithUnit(Number(today.templow), "°", locale, 0).replace(/\u00a0/, "")
+                : undefined;
+              weatherRange = low ? `${high} / ${low}` : high;
             }
           }
         }
@@ -2679,7 +2746,7 @@ function getDwainsHass() {
                   <div id="weather">
                     ${weatherState ? html`
                       <div class="area-button py-1 px-2" .entity=${this.configuration['homepage_header']['weather_entity']} @click=${this._handleMoreInfo}>
-                        <ha-icon icon="${weatherIcon}"></ha-icon> ${weatherStateTranslated}${weatherTemperature ? `, ${weatherTemperature}` : ""}
+                        <ha-icon icon="${weatherIcon}"></ha-icon> ${weatherStateTranslated}${weatherTemperature ? `, ${weatherTemperature}` : ""}${weatherRange ? html`<span class="weather-range">${weatherRange}</span>` : ""}
                       </div>`: ""
                     }
                   </div>
@@ -2920,7 +2987,14 @@ function getDwainsHass() {
           right: 0;
           bottom: 0;
           height: 3rem;
-          pointer-events: none;
+          cursor: pointer;
+          z-index: 4;
+        }
+        .area-button .toggle-badge {
+          transition: background-color 120ms ease;
+        }
+        .area-button .toggle-badge:hover {
+          background-color: color-mix(in srgb, var(--primary-color) 14%, var(--dwains-info-badge-background, var(--secondary-background-color)));
         }
         .area-button .sensors {
           display: -webkit-box;
@@ -3123,6 +3197,11 @@ function getDwainsHass() {
         .grid-flow-row-dense {
             grid-auto-flow: row dense
         }
+        .dd-fav-masonry {
+          grid-auto-rows: 8px;
+          row-gap: 0 !important;
+          align-items: start;
+        }
         .dd-masonry > div > div,
         .dd-masonry > div > div > dd-lazy-card {
             display: block;
@@ -3156,6 +3235,11 @@ function getDwainsHass() {
         .dd-homepage-status > :first-child {
             justify-self: start;
             min-width: 0;
+        }
+        .weather-range {
+          margin-left: 0.5rem;
+          color: var(--secondary-text-color);
+          font-size: 0.9em;
         }
         .dd-homepage-status #weather {
             justify-self: center;
