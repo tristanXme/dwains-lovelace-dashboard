@@ -22,8 +22,8 @@ jobs:
       matrix:
         ha: [stable, beta]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
       - name: Install test dependencies
@@ -46,8 +46,8 @@ jobs:
     name: Frontend build is reproducible
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -63,15 +63,17 @@ jobs:
     name: hassfest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: home-assistant/actions/hassfest@master
 
   hacs:
     name: HACS validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: hacs/action@main
         with:
           category: integration
-          ignore: brands
+          # Repository settings of a fork, not code: enable issues, add
+          # topics and an SPDX license on GitHub to validate them as well.
+          ignore: brands issues topics license

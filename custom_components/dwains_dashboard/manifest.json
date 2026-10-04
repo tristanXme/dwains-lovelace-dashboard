@@ -11,7 +11,6 @@
     "frontend"
   ],
   "documentation": "https://dwainscheeren.github.io/dwains-lovelace-dashboard/",
-  "homeassistant": "2026.5.0",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/dwainscheeren/dwains-lovelace-dashboard/issues",
   "single_config_entry": true,
