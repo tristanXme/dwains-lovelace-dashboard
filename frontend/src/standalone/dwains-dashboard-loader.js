@@ -27,12 +27,15 @@
     reportLoaderError("failed to clear obsolete route restore state", error);
   }
 
+  // Home Assistant loads this file with import(), so there is no <script>
+  // element to inspect; import.meta.url carries the versioned module URL.
+  // Forwarding its `version` gives the bundle a cache-busting URL: the static
+  // files are served with a 31 day cache lifetime.
+  const loaderUrl = import.meta.url;
   const bundleUrl = () => {
-    const url = new URL("/dwains_dashboard/js/dwains-dashboard.js", window.location.origin);
+    const url = new URL("dwains-dashboard.js", loaderUrl);
     try {
-      const scripts = document.querySelectorAll('script[src*="/dwains_dashboard/js/dwains-dashboard-loader.js"]');
-      const script = scripts[scripts.length - 1];
-      const version = script && script.src ? new URL(script.src).searchParams.get("version") : "";
+      const version = new URL(loaderUrl).searchParams.get("version");
       if (version) url.searchParams.set("version", version);
     } catch (error) {
       reportLoaderError("failed to read the loader version", error);

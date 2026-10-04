@@ -12,6 +12,7 @@ const { DashboardBootstrapOwner } = require('./dashboard-bootstrap-owner');
 const { PopupOpenScheduler } = require('./popup-open-scheduler');
 const { ReloadableLoadOwner } = require('./reloadable-load-owner');
 const { websocketReadStore } = require('./websocket-read-store');
+const { READ_MESSAGES } = require('./websocket-read-messages');
 const { resolveHass } = require('./hass-provider');
 const { hassConnectionIdentity } = require('./hass-connection');
 const { loadDashboardCoreSnapshot } = require('./dashboard-registry-snapshot');
@@ -73,6 +74,7 @@ class DwainsDashboard {
                 && this._subscriptionConnection !== connection,
             );
             if (connectionChanged) {
+                websocketReadStore.markEventInvalidation(this._subscriptionHass, false);
                 this._subscriptions.disconnect();
                 this._subscriptions.connect();
                 this.reloadData().catch((error) => {
@@ -80,8 +82,32 @@ class DwainsDashboard {
                 });
             }
             this._subscriptionConnection = connection;
+            this._subscriptionHass = ha;
             this._clearSubscriptionRetry();
+            const invalidateDashboardReads = () => {
+                for (const message of [
+                    READ_MESSAGES.configuration,
+                    READ_MESSAGES.navigation,
+                    READ_MESSAGES.morePages,
+                ]) {
+                    websocketReadStore.invalidate(ha, message);
+                }
+            };
             Promise.all([
+                // Any dashboard mutation fires one of these events. Holding
+                // them here, independent of which view is open, lets the read
+                // store keep the dashboard configuration between navigations.
+                ...[
+                    "dwains_dashboard_homepage_card_reload",
+                    "dwains_dashboard_devicespage_card_reload",
+                    "dwains_dashboard_navigation_card_reload",
+                    "dwains_dashboard_more_pages_reload",
+                ].map((eventType) => this._subscriptions.subscribeEvent(
+                    `dashboard-data-${eventType}`,
+                    ha,
+                    eventType,
+                    invalidateDashboardReads,
+                )),
                 this._subscriptions.subscribeEvent(
                     'dashboard-reload',
                     ha,
@@ -105,9 +131,11 @@ class DwainsDashboard {
                     },
                 ),
             ]).then(() => {
+                websocketReadStore.markEventInvalidation(ha, true);
                 this.__ddSubscribeRetries = 0;
                 this.__ddSubscribeRetryExhausted = false;
             }).catch((error) => {
+                websocketReadStore.markEventInvalidation(ha, false);
                 console.error("Failed to subscribe to Dwains Dashboard reload events", error);
                 this._scheduleSubscriptionRetry();
             });
@@ -152,7 +180,9 @@ class DwainsDashboard {
         this._timers.disconnect();
         this._subscriptions.disconnect();
         this._listeners.disconnect();
+        websocketReadStore.markEventInvalidation(this._subscriptionHass, false);
         this._subscriptionConnection = undefined;
+        this._subscriptionHass = undefined;
         this._popupHost = undefined;
     }
 

@@ -403,7 +403,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                       } else if(this.configuration['devices_card'][domain]){
                         //If domain has a custom card set by user
                         cardConfig = {input_name: friendlyName, input_entity: entity.entity_id,...this.configuration['devices_card'][domain]};
-	                      } else if (domain === 'sensor' && this._hass && this._hass.states[entity.entity_id].attributes.unit_of_measurement) {
+	                      } else if (domain === 'sensor' && this._hass && this._hass.states[entity.entity_id]?.attributes?.unit_of_measurement) {
 	                        cardConfig = {
 	                          graph: "line",
 	                          type: "sensor",

@@ -491,7 +491,7 @@ function getDwainsHass() {
               } else if(this.configuration['devices_card'][domain]){
                 //If domain has a custom card set by user
                 cardConfig = {input_name: friendlyName, input_entity: entity,...this.configuration['devices_card'][domain]};
-	              } else if (domain === 'sensor' && this._hass && this._hass.states[entity].attributes.unit_of_measurement
+	              } else if (domain === 'sensor' && this._hass && this._hass.states[entity]?.attributes?.unit_of_measurement
 	              && !this.configuration['homepage_header']['disable_sensor_graph']) {
 	                cardConfig = {
 	                  graph: "line",
@@ -718,7 +718,7 @@ function getDwainsHass() {
                     } else if(this.configuration['devices_card'][domain]){
                       //If domain has a custom card set by user
                       cardConfig = {input_name: friendlyName,input_entity: entity.entity_id,...this.configuration['devices_card'][domain]};
-	                    } else if (domain === 'sensor' && this._hass && this._hass.states[entity.entity_id].attributes.unit_of_measurement
+	                    } else if (domain === 'sensor' && this._hass && this._hass.states[entity.entity_id]?.attributes?.unit_of_measurement
 	                    && !this.configuration['homepage_header']['disable_sensor_graph']) {
 	                      cardConfig = {
 	                        graph: "line",
@@ -2574,15 +2574,23 @@ function getDwainsHass() {
           weatherEntity = this.configuration['homepage_header']['weather_entity'];
           weatherState = this._hass.states[weatherEntity];
           if(weatherState){
-            weatherIcon = WEATHER_ICONS[weatherState.state];
+            weatherIcon = WEATHER_ICONS[weatherState.state] || "mdi:weather-cloudy-alert";
 
             const lang = this._hass.selectedLanguage || this._hass.language;
             const resources = this._hass.resources && this._hass.resources[lang] ? this._hass.resources[lang] : {};
             weatherStateTranslated = resources["component.weather.entity_component._.state." + weatherState.state]
               || this._hass.localize(`component.weather.entity_component._.state.${weatherState.state}`)
+              || this._hass.localize(`state.default.${weatherState.state}`)
               || weatherState.state;
 
-            weatherTemperature = weatherState.attributes.temperature + this._hass.config.unit_system['temperature'];
+            // Unavailable/unknown weather entities have no temperature; never
+            // render "undefined°C".
+            const temperature = weatherState.attributes.temperature;
+            if (temperature !== undefined && temperature !== null && temperature !== "") {
+              const unit = weatherState.attributes.temperature_unit
+                || this._hass.config.unit_system['temperature'];
+              weatherTemperature = `${temperature}${unit}`;
+            }
           }
         }
 
@@ -2590,7 +2598,8 @@ function getDwainsHass() {
         let alarmEntity, alarmState, alarmStateTranslated, alarmIcon;
         if(this.configuration['homepage_header']['alarm_entity']){
           alarmEntity = this.configuration['homepage_header']['alarm_entity'];
-          alarmState = this._hass.states[alarmEntity].state;
+          // A removed or renamed alarm entity must not break the homepage.
+          alarmState = this._hass.states[alarmEntity]?.state;
           if(alarmState){
             alarmIcon = ALARM_ICONS[alarmState];
             //console.log(alarmIcon);
@@ -2604,7 +2613,7 @@ function getDwainsHass() {
               <div class="w-full ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-w-1-2 xl-w-1-3"} ${window.location.hash ? (this.configuration['homepage_header']['v2_mode'] ? "hidden" : "hidden lg-block") : ""} p-4">
                 <div class="dd-homepage-status mb-2">
                   <div>
-                    ${this.configuration['homepage_header']['alarm_entity'] ? html`
+                    ${alarmState ? html`
                       <div class="area-button py-1 px-2" .entity=${this.configuration['homepage_header']['alarm_entity']} @click=${this._handleMoreInfo}>
                         <ha-icon icon="${alarmIcon}"></ha-icon> ${alarmStateTranslated}
                       </div>`: ""
@@ -2612,9 +2621,9 @@ function getDwainsHass() {
                   </div>
 
                   <div id="weather">
-                    ${this.configuration['homepage_header']['weather_entity'] ? html`
+                    ${weatherState ? html`
                       <div class="area-button py-1 px-2" .entity=${this.configuration['homepage_header']['weather_entity']} @click=${this._handleMoreInfo}>
-                        <ha-icon icon="${weatherIcon}"></ha-icon> ${weatherStateTranslated}, ${weatherTemperature}
+                        <ha-icon icon="${weatherIcon}"></ha-icon> ${weatherStateTranslated}${weatherTemperature ? `, ${weatherTemperature}` : ""}
                       </div>`: ""
                     }
                   </div>
