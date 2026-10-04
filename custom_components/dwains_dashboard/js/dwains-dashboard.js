@@ -4571,16 +4571,16 @@
           </div>
         </ha-card>`:""}
       </div>
-      `}_hideUnavailableEntitiesEnabled(){return!!(this.configuration&&this.configuration.homepage_header&&this.configuration.homepage_header.hide_unavailable_entities)}_filterUnavailableCards(e){return this.areaViewEditMode||this.favoriteEditMode||!this._hideUnavailableEntitiesEnabled()?e:e.filter(e=>{const t=this._hass.states[e.entity];return!(t&&"unavailable"===t.state)})}_renderAreaViewCards(e){const t=this._filterUnavailableCards(e.cards);if(this.areaViewDisplayGrouped){t.sort(function(e,t){let i=e.grouped_sort_order,a=t.grouped_sort_order;return i==a?0:i>a?1:-1});let e=t.reduce((e,t)=>(e[t.domain]=[...e[t.domain]||[],t],e),{}),i=Object.keys(e).sort((e,t)=>{let i=this.configuration.devices[e]&&this.configuration.devices[e].sort_order?this.configuration.devices[e].sort_order:99,a=this.configuration.devices[t]&&this.configuration.devices[t].sort_order?this.configuration.devices[t].sort_order:99;return i==a?0:i>a?1:-1});const a=(e,t,i)=>Math.max(1,Math.min(i,e.reduce((e,i)=>e+(Number(i[t])||1),0)));return u.qy`
-        <div class="dd-area-groups">
-        ${i.map(t=>{const i=e[t];return u.qy`
-            <div class="dd-area-group span-${a(i,"colSpan",2)} lg-span-${a(i,"colSpanLg",3)} xl-span-${a(i,"colSpanXl",4)}">
+      `}_hideUnavailableEntitiesEnabled(){return!!(this.configuration&&this.configuration.homepage_header&&this.configuration.homepage_header.hide_unavailable_entities)}_filterUnavailableCards(e){return this.areaViewEditMode||this.favoriteEditMode||!this._hideUnavailableEntitiesEnabled()?e:e.filter(e=>{const t=this._hass.states[e.entity];return!(t&&"unavailable"===t.state)})}_renderAreaViewCards(e){const t=this._filterUnavailableCards(e.cards);if(this.areaViewDisplayGrouped){t.sort(function(e,t){let i=e.grouped_sort_order,a=t.grouped_sort_order;return i==a?0:i>a?1:-1});let e=t.reduce((e,t)=>(e[t.domain]=[...e[t.domain]||[],t],e),{}),i=Object.keys(e).sort((e,t)=>{let i=this.configuration.devices[e]&&this.configuration.devices[e].sort_order?this.configuration.devices[e].sort_order:99,a=this.configuration.devices[t]&&this.configuration.devices[t].sort_order?this.configuration.devices[t].sort_order:99;return i==a?0:i>a?1:-1});return u.qy`
+        <div>
+        ${i.map(t=>u.qy`
+            <div class="mb-5">
               <h3 class="font-semibold capitalize text-gray">${(0,b.A)(this._hass,"device."+t)}</h3>
-              <div class="dd-area-group-grid grid grid-flow-row-dense gap-4 sortable area-view-entity-sortable">
-                ${i.map(e=>u.qy`${this._renderAreaViewCard(e)}`)}
+              <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable">
+                ${Object.entries(e[t]).map(([e,t])=>u.qy`${this._renderAreaViewCard(t)}`)}
               </div>
             </div>
-          `})}
+          `)}
         </div>
         `}return t.sort(function(e,t){let i=e.sort_order,a=t.sort_order;return i==a?0:i>a?1:-1}),u.qy`
 	        <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable ${this.areaViewEditMode?"":"dd-masonry"}">
@@ -5263,44 +5263,8 @@
         .area-button .info br {
           display: none;
         }
-        .dd-area-groups {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          grid-auto-flow: row dense;
-          gap: 0 1rem;
-          align-items: start;
-        }
-        .dd-area-group {
-          margin-bottom: 1.25rem;
-          min-width: 0;
-        }
-        .dd-area-group h3 {
-          margin: 0 0 .5rem .25rem;
-        }
-        .dd-area-group.span-1 { grid-column: span 1; }
-        .dd-area-group.span-2 { grid-column: span 2; }
-        .dd-area-group.span-1 .dd-area-group-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-        .dd-area-group.span-2 .dd-area-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         @media (min-width: 1024px) {
-          .dd-area-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-          .dd-area-group.lg-span-1 { grid-column: span 1; }
-          .dd-area-group.lg-span-2 { grid-column: span 2; }
-          .dd-area-group.lg-span-3 { grid-column: span 3; }
-          .dd-area-group.lg-span-1 .dd-area-group-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-          .dd-area-group.lg-span-2 .dd-area-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .dd-area-group.lg-span-3 .dd-area-group-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
           .dd-area-view-header.with-back .dd-area-view-back { display: inline-flex; }
-        }
-        @media (min-width: 1280px) {
-          .dd-area-groups { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-          .dd-area-group.xl-span-1 { grid-column: span 1; }
-          .dd-area-group.xl-span-2 { grid-column: span 2; }
-          .dd-area-group.xl-span-3 { grid-column: span 3; }
-          .dd-area-group.xl-span-4 { grid-column: span 4; }
-          .dd-area-group.xl-span-1 .dd-area-group-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-          .dd-area-group.xl-span-2 .dd-area-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .dd-area-group.xl-span-3 .dd-area-group-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-          .dd-area-group.xl-span-4 .dd-area-group-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
         .dd-area-view-back {
           display: none;

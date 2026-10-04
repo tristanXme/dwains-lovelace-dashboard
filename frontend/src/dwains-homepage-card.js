@@ -2031,24 +2031,18 @@ function getDwainsHass() {
 
         //console.log(group);
 
-        // Groups share the row: a group takes as many columns as its cards
-        // need (up to the full width), so a room with one thermostat and one
-        // cover no longer stacks them in a narrow column on a wide screen.
-        const span = (items, key, max) => Math.max(1, Math.min(max,
-          items.reduce((total, item) => total + (Number(item[key]) || 1), 0)));
         return html`
-        <div class="dd-area-groups">
-        ${sortedGroup.map((key) => {
-          const items = group[key];
-          return html`
-            <div class="dd-area-group span-${span(items, 'colSpan', 2)} lg-span-${span(items, 'colSpanLg', 3)} xl-span-${span(items, 'colSpanXl', 4)}">
+        <div>
+        ${sortedGroup.map((key) =>
+          html`
+            <div class="mb-5">
               <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'device.'+key)}</h3>
-              <div class="dd-area-group-grid grid grid-flow-row-dense gap-4 sortable area-view-entity-sortable">
-                ${items.map((v) => html`${this._renderAreaViewCard(v)}`)}
+              <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable">
+                ${Object.entries(group[key]).map(([k,v]) => html`${this._renderAreaViewCard(v)}`)}
               </div>
             </div>
-          `;
-        })}
+          `
+        )}
         </div>
         `;
       }
@@ -2902,44 +2896,8 @@ function getDwainsHass() {
         .area-button .info br {
           display: none;
         }
-        .dd-area-groups {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          grid-auto-flow: row dense;
-          gap: 0 1rem;
-          align-items: start;
-        }
-        .dd-area-group {
-          margin-bottom: 1.25rem;
-          min-width: 0;
-        }
-        .dd-area-group h3 {
-          margin: 0 0 .5rem .25rem;
-        }
-        .dd-area-group.span-1 { grid-column: span 1; }
-        .dd-area-group.span-2 { grid-column: span 2; }
-        .dd-area-group.span-1 .dd-area-group-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-        .dd-area-group.span-2 .dd-area-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         @media (min-width: 1024px) {
-          .dd-area-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-          .dd-area-group.lg-span-1 { grid-column: span 1; }
-          .dd-area-group.lg-span-2 { grid-column: span 2; }
-          .dd-area-group.lg-span-3 { grid-column: span 3; }
-          .dd-area-group.lg-span-1 .dd-area-group-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-          .dd-area-group.lg-span-2 .dd-area-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .dd-area-group.lg-span-3 .dd-area-group-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
           .dd-area-view-header.with-back .dd-area-view-back { display: inline-flex; }
-        }
-        @media (min-width: 1280px) {
-          .dd-area-groups { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-          .dd-area-group.xl-span-1 { grid-column: span 1; }
-          .dd-area-group.xl-span-2 { grid-column: span 2; }
-          .dd-area-group.xl-span-3 { grid-column: span 3; }
-          .dd-area-group.xl-span-4 { grid-column: span 4; }
-          .dd-area-group.xl-span-1 .dd-area-group-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-          .dd-area-group.xl-span-2 .dd-area-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-          .dd-area-group.xl-span-3 .dd-area-group-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-          .dd-area-group.xl-span-4 .dd-area-group-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
         .dd-area-view-back {
           display: none;
