@@ -6,12 +6,14 @@ import logging
 from typing import Any, Mapping
 
 import voluptuous as vol
+import yaml
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
 
 from .blueprint_files import load_blueprint_files
 from .configuration_runtime import serialize_configuration_mutation
+from .input_validation import DashboardInputError, safe_path_segment
 from .mutation_files import remove_file_if_exists
 from .yaml_files import dump_yaml_file, parse_yaml_text
 
@@ -50,9 +52,16 @@ async def ws_handle_install_blueprint(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Install a blueprint while preserving the legacy response contract."""
-    filecontent = await hass.async_add_executor_job(parse_yaml_text, msg["yamlCode"])
+    try:
+        filecontent = await hass.async_add_executor_job(
+            parse_yaml_text, msg["yamlCode"]
+        )
+    except yaml.YAMLError as error:
+        raise DashboardInputError(f"Blueprint is not valid YAML: {error}") from None
+    if not isinstance(filecontent, dict):
+        raise DashboardInputError("Blueprint must be a YAML mapping")
 
-    if not filecontent.get("blueprint"):
+    if not isinstance(filecontent.get("blueprint"), dict):
         _LOGGER.warning("no blueprint data")
         connection.send_result(msg["id"], {"error": "Blueprint has invalid data"})
         return
@@ -61,7 +70,10 @@ async def ws_handle_install_blueprint(
         connection.send_result(msg["id"], {"error": "Blueprint has no card"})
         return
 
-    filename = f'{slugify(filecontent["blueprint"]["name"])}.yaml'
+    name = filecontent["blueprint"].get("name")
+    if not isinstance(name, str) or not slugify(name):
+        raise DashboardInputError("Blueprint has no usable name")
+    filename = f"{slugify(name)}.yaml"
     if filecontent.get("button_card_templates"):
         await hass.async_add_executor_job(
             dump_yaml_file,
@@ -103,9 +115,10 @@ async def ws_handle_delete_blueprint(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Delete a blueprint while preserving the legacy response contract."""
-    filename = hass.config.path(
-        f'dwains-dashboard/blueprints/{msg["blueprint"]}'
-    )
+    blueprint = safe_path_segment(msg["blueprint"], "blueprint file name")
+    if not blueprint.endswith(".yaml"):
+        raise DashboardInputError(f"Invalid blueprint file name: {blueprint!r}")
+    filename = hass.config.path(f"dwains-dashboard/blueprints/{blueprint}")
     await hass.async_add_executor_job(remove_file_if_exists, filename)
     connection.send_result(
         msg["id"], {"succesfull": "Blueprint deleted succesfull"}

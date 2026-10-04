@@ -140,10 +140,12 @@ def load_more_page_navigation(
 
         if strict:
             config: Any = load_yaml_file(config_path)
+            if not isinstance(config, dict):
+                config = {}
             pages[subdirectory] = _navigation_entry(
                 subdirectory,
-                config["name"],
-                config["icon"],
+                config.get("name") or subdirectory,
+                config.get("icon") or "mdi:puzzle",
                 bool(config.get("show_in_navbar", False)),
                 _sort_order(config),
             )

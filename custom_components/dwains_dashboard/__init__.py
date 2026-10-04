@@ -28,19 +28,16 @@ from .legacy_entities import async_remove_legacy_latest_version_sensor
 from homeassistant.core import HomeAssistant
 from homeassistant.config import ConfigType
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import issue_registry as ir
 
 _LOGGER = logging.getLogger(__name__)
 
+# Configured through the UI only; a leftover `dwains_dashboard:` key from the
+# v1/v2 YAML era is reported instead of silently ignored.
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    #_LOGGER.warning("async_setup")
-
-    #_LOGGER.warning(config)
-    #_LOGGER.warning(hass.data[DOMAIN])
-
-    # if not config.get(DOMAIN):
-    #     _LOGGER.warning("no config")
-
     _LOGGER.info(
         "Dwains Dashboard backend build %s loaded from %s",
         BACKEND_BUILD_REVISION,

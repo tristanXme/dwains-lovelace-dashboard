@@ -57,3 +57,8 @@ dwains-dashboard copy/
 src-backup-3.6/
 custom_components/dwains_dashboard/js/dwains-dashboard.js.map
 custom_components/dwains_dashboard/js/dwains-dashboard.js.map
+
+# Python / test artefacts
+__pycache__/
+*.pyc
+.pytest_cache/

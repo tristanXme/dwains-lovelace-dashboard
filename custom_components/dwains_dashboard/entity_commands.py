@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections import OrderedDict
 
 import voluptuous as vol
@@ -10,6 +9,11 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
 
 from .configuration_runtime import serialize_configuration_mutation
+from .input_validation import (
+    parse_json_object,
+    parse_json_string_list,
+    safe_path_segment,
+)
 from .mutation_files import remove_file_if_exists
 from .yaml_files import (
     dump_and_verify_json_normalized_yaml_file,
@@ -19,6 +23,24 @@ from .yaml_files import (
 
 
 ENTITIES_PATH = "dwains-dashboard/configs/entities.yaml"
+
+# WebSocket field -> entities.yaml key for ``edit_entity``. The editor always
+# submits the complete form; the schema defaults mirror its initial values so a
+# request with omitted fields is still a well-defined complete form.
+EDIT_ENTITY_FIELDS = (
+    ("hideEntity", "hidden"),
+    ("excludeEntity", "excluded"),
+    ("disableEntity", "disabled"),
+    ("friendlyName", "friendly_name"),
+    ("colSpan", "col_span"),
+    ("rowSpan", "row_span"),
+    ("colSpanLg", "col_span_lg"),
+    ("rowSpanLg", "row_span_lg"),
+    ("colSpanXl", "col_span_xl"),
+    ("rowSpanXl", "row_span_xl"),
+    ("customCard", "custom_card"),
+    ("customPopup", "custom_popup"),
+)
 
 
 async def _load_entities(hass):
@@ -39,13 +61,15 @@ async def _save_entities(hass, entities):
 
 
 async def _write_entity_override(hass, msg, directory, flag):
+    entity_id = safe_path_segment(msg["entityId"], "entity id")
+    card = parse_json_object(msg["cardData"], "card data")
     filename = hass.config.path(
-        f'dwains-dashboard/configs/cards/{directory}/{msg["entityId"]}.yaml'
+        f"dwains-dashboard/configs/cards/{directory}/{entity_id}.yaml"
     )
     persisted_card = await hass.async_add_executor_job(
         dump_and_verify_json_normalized_yaml_file,
         filename,
-        json.loads(msg["cardData"]),
+        card,
     )
     entities = await _load_entities(hass)
     if not entities.get(msg["entityId"]):
@@ -59,18 +83,18 @@ async def _write_entity_override(hass, msg, directory, flag):
     {
         vol.Required("type"): "dwains_dashboard/edit_entity",
         vol.Required("entity"): str,
-        vol.Optional("friendlyName"): str,
-        vol.Optional("disableEntity"): bool,
-        vol.Optional("hideEntity"): bool,
-        vol.Optional("excludeEntity"): bool,
-        vol.Optional("rowSpan"): str,
-        vol.Optional("colSpan"): str,
-        vol.Optional("rowSpanLg"): str,
-        vol.Optional("colSpanLg"): str,
-        vol.Optional("rowSpanXl"): str,
-        vol.Optional("colSpanXl"): str,
-        vol.Optional("customCard"): bool,
-        vol.Optional("customPopup"): bool,
+        vol.Optional("friendlyName", default=""): str,
+        vol.Optional("disableEntity", default=False): bool,
+        vol.Optional("hideEntity", default=False): bool,
+        vol.Optional("excludeEntity", default=False): bool,
+        vol.Optional("rowSpan", default="1"): str,
+        vol.Optional("colSpan", default="1"): str,
+        vol.Optional("rowSpanLg", default="1"): str,
+        vol.Optional("colSpanLg", default="1"): str,
+        vol.Optional("rowSpanXl", default="1"): str,
+        vol.Optional("colSpanXl", default="1"): str,
+        vol.Optional("customCard", default=False): bool,
+        vol.Optional("customPopup", default=False): bool,
     }
 )
 @websocket_api.require_admin
@@ -85,18 +109,8 @@ async def ws_handle_edit_entity(
         entities[msg["entity"]] = OrderedDict()
     entities[msg["entity"]].update(
         {
-            "hidden": msg["hideEntity"],
-            "excluded": msg["excludeEntity"],
-            "disabled": msg["disableEntity"],
-            "friendly_name": msg["friendlyName"],
-            "col_span": msg["colSpan"],
-            "row_span": msg["rowSpan"],
-            "col_span_lg": msg["colSpanLg"],
-            "row_span_lg": msg["rowSpanLg"],
-            "col_span_xl": msg["colSpanXl"],
-            "row_span_xl": msg["rowSpanXl"],
-            "custom_card": msg["customCard"],
-            "custom_popup": msg["customPopup"],
+            yaml_key: msg[msg_key]
+            for msg_key, yaml_key in EDIT_ENTITY_FIELDS
         }
     )
     await _save_entities(hass, entities)
@@ -163,6 +177,7 @@ async def ws_handle_edit_entity_popup(
 
 
 async def _remove_entity_card_file(hass, entity_id, directory):
+    entity_id = safe_path_segment(entity_id, "entity id")
     filename = hass.config.path(
         f"dwains-dashboard/configs/cards/{directory}/{entity_id}.yaml"
     )
@@ -224,7 +239,7 @@ async def _set_entity_value(hass, entity_id, key, value):
     {
         vol.Required("type"): "dwains_dashboard/edit_entity_favorite",
         vol.Required("entityId"): str,
-        vol.Optional("favorite"): bool,
+        vol.Optional("favorite", default=False): bool,
     }
 )
 @websocket_api.require_admin
@@ -243,8 +258,8 @@ async def ws_handle_edit_entity_favorite(
     {
         vol.Required("type"): "dwains_dashboard/edit_entity_bool_value",
         vol.Required("entityId"): str,
-        vol.Optional("key"): str,
-        vol.Optional("value"): bool,
+        vol.Required("key"): str,
+        vol.Required("value"): bool,
     }
 )
 @websocket_api.require_admin
@@ -266,8 +281,8 @@ async def ws_handle_edit_entity_bool_value(
     {
         vol.Required("type"): "dwains_dashboard/edit_entities_bool_value",
         vol.Required("entities"): str,
-        vol.Optional("key"): str,
-        vol.Optional("value"): bool,
+        vol.Required("key"): str,
+        vol.Required("value"): bool,
     }
 )
 @websocket_api.require_admin
@@ -278,7 +293,7 @@ async def ws_handle_edit_entities_bool_value(
 ) -> None:
     """Set a boolean option for multiple entities in one write."""
     entities = await _load_entities(hass)
-    for entity_id in json.loads(msg["entities"]):
+    for entity_id in parse_json_string_list(msg["entities"], "entity list"):
         if not entities.get(entity_id):
             entities[entity_id] = OrderedDict()
         entities[entity_id][msg["key"]] = msg["value"]
@@ -294,7 +309,7 @@ async def ws_handle_edit_entities_bool_value(
     {
         vol.Required("type"): "dwains_dashboard/sort_entity",
         vol.Required("sortData"): str,
-        vol.Required("sortType"): str,
+        vol.Required("sortType"): vol.All(str, vol.Length(min=1)),
     }
 )
 @websocket_api.require_admin
@@ -306,7 +321,8 @@ async def ws_handle_sort_entity(
     """Save the requested entity order."""
     entities = await _load_entities(hass)
     sort_type = msg["sortType"]
-    for position, entity_id in enumerate(json.loads(msg["sortData"]), start=1):
+    sort_data = parse_json_string_list(msg["sortData"], "sort order")
+    for position, entity_id in enumerate(sort_data, start=1):
         if not entities.get(entity_id):
             entities[entity_id] = OrderedDict()
         entities[entity_id][sort_type] = position

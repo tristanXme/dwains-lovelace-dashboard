@@ -4,7 +4,7 @@ from homeassistant.components.http import StaticPathConfig
 
 _LOGGER = logging.getLogger(__name__)
 
-from .const import DOMAIN, FRONTEND_RESOURCE_REVISION, VERSION
+from .const import FRONTEND_RESOURCE_REVISION, VERSION
 from .runtime_data import get_domain_data
 
 FRONTEND_PLUGIN_URLS = (

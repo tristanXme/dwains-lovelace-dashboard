@@ -7,6 +7,7 @@ import io
 from collections.abc import Iterator
 from collections import OrderedDict
 import jinja2
+from jinja2.sandbox import SandboxedEnvironment
 
 #from homeassistant.util.yaml import Secrets, loader
 from annotatedyaml import loader
@@ -94,7 +95,15 @@ class DashboardYamlProcessor:
     """Own template state and YAML loading for one Home Assistant instance."""
 
     def __init__(self):
-        self.jinja = jinja2.Environment(loader=jinja2.FileSystemLoader("/"))
+        # Sandboxed: templates only format data, they never need Python
+        # attribute access, so block it as defense in depth.
+        self.jinja = SandboxedEnvironment(loader=jinja2.FileSystemLoader("/"))
+        # `tojson` must not emit \uXXXX surrogate pairs (emoji): PyYAML does not
+        # recombine them and the dashboard JSON encoder rejects lone surrogates.
+        self.jinja.policies["json.dumps_kwargs"] = {
+            "ensure_ascii": False,
+            "sort_keys": True,
+        }
         self.jinja.filters["fromjson"] = fromjson
         self.more_pages = {}
         self.global_config = {}
@@ -185,11 +194,11 @@ def load_yamll(processor, fname, secrets=None, args=None):
                 return data
 
     except yaml.YAMLError as exc:
-        _LOGGER.error(f"YAMLError: {str(exc)}")
-        raise HomeAssistantError(exc)
+        _LOGGER.error("YAMLError: %s", exc)
+        raise HomeAssistantError(exc) from exc
     except UnicodeDecodeError as exc:
         _LOGGER.error("Unicode Error :: Unable to read file %s: %s", fname, exc)
-        raise HomeAssistantError(exc)
+        raise HomeAssistantError(exc) from exc
 
 
 def _include_yaml(ldr, node):
@@ -207,7 +216,7 @@ def _include_yaml(ldr, node):
         )
     except FileNotFoundError as exc:
         _LOGGER.error("Unable to include file %s: %s", fname, exc)
-        raise HomeAssistantError(exc)
+        raise HomeAssistantError(exc) from exc
 
 
 def _include_dir_named_yaml(ldr, node):
@@ -281,21 +290,22 @@ async def process_yaml(hass: HomeAssistant, config_entry):
     #_LOGGER.warning('Start of function to process all yaml files!')
 
     processor = get_yaml_processor(hass)
-    processor.more_pages.clear()
 
     hki_configuration = await hass.async_add_executor_job(
         _load_hki_configuration,
         processor,
         hass.config.path("hki-user/config"),
     )
-    processor.global_config.update(hki_configuration)
+    processor.global_config = hki_configuration
 
     configs_exist, pages, warnings, failures = await hass.async_add_executor_job(
         load_more_page_navigation,
         hass.config.path("dwains-dashboard/configs"),
         False,
     )
-    processor.more_pages.update(pages)
+    # Replace instead of clear()+update(): a dashboard render running in the
+    # executor meanwhile must never observe an empty page list.
+    processor.more_pages = pages
     for subdirectory in warnings:
         _LOGGER.warning(
             "Invalid config.yaml in %s: Missing 'name' or 'icon'",
@@ -304,6 +314,8 @@ async def process_yaml(hass: HomeAssistant, config_entry):
     for subdirectory, error in failures:
         _LOGGER.error("Failed to read config.yaml in %s: %s", subdirectory, error)
 
+    from .load_dashboard import invalidate_dashboard_cache
+    invalidate_dashboard_cache(hass)
     if configs_exist:
         hass.bus.async_fire("dwains_dashboard_reload")
 
@@ -311,14 +323,13 @@ async def reload_configuration(hass):
     _LOGGER.info("Reloading Dwains Dashboard YAML configuration")
 
     processor = get_yaml_processor(hass)
-    processor.more_pages.clear()
 
     _, pages, _, _ = await hass.async_add_executor_job(
         load_more_page_navigation,
         hass.config.path("dwains-dashboard/configs"),
         True,
     )
-    processor.more_pages.update(pages)
+    processor.more_pages = pages
 
     # The root ui-lovelace.yaml does not change when one of its !include files
     # changes. Explicitly invalidate the owned Lovelace cache before notifying

@@ -1,0 +1,4 @@
+# Pinned to the Home Assistant release the integration is tested against.
+# CI additionally runs the suite against the next beta (see .github/workflows).
+pytest-homeassistant-custom-component==0.13.367
+home-assistant-frontend==20260826.7

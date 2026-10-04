@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections import OrderedDict
 
 import voluptuous as vol
@@ -10,6 +9,11 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
 
 from .configuration_runtime import serialize_configuration_mutation
+from .input_validation import (
+    parse_json_object,
+    parse_json_string_list,
+    safe_path_segment,
+)
 from .mutation_files import remove_file_if_exists
 from .yaml_files import (
     dump_and_verify_json_normalized_yaml_file,
@@ -24,9 +28,9 @@ DEVICES_PATH = "dwains-dashboard/configs/devices.yaml"
 @websocket_api.websocket_command(
     {
         vol.Required("type"): "dwains_dashboard/edit_device_button",
-        vol.Optional("icon"): str,
+        vol.Optional("icon", default=""): vol.Any(str, None),
         vol.Optional("device"): str,
-        vol.Optional("showInNavbar"): bool,
+        vol.Optional("showInNavbar", default=False): bool,
     }
 )
 @websocket_api.require_admin
@@ -36,7 +40,7 @@ async def ws_handle_edit_device_button(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Handle saving a device button."""
-    if msg["device"]:
+    if msg.get("device"):
         devices = await hass.async_add_executor_job(
             load_yaml_file_or_default,
             hass.config.path(DEVICES_PATH),
@@ -59,9 +63,10 @@ async def ws_handle_edit_device_button(
 
 
 async def _write_domain_card(hass, msg, directory):
-    filecontent = json.loads(msg["cardData"])
+    filecontent = parse_json_object(msg["cardData"], "card data")
+    domain = safe_path_segment(msg["domain"], "domain")
     filename = hass.config.path(
-        f'dwains-dashboard/configs/cards/{directory}/{msg["domain"]}.yaml'
+        f"dwains-dashboard/configs/cards/{directory}/{domain}.yaml"
     )
     return await hass.async_add_executor_job(
         dump_and_verify_json_normalized_yaml_file,
@@ -71,8 +76,9 @@ async def _write_domain_card(hass, msg, directory):
 
 
 async def _remove_domain_card(hass, msg, directory):
+    domain = safe_path_segment(msg["domain"], "domain")
     filename = hass.config.path(
-        f'dwains-dashboard/configs/cards/{directory}/{msg["domain"]}.yaml'
+        f"dwains-dashboard/configs/cards/{directory}/{domain}.yaml"
     )
     await hass.async_add_executor_job(remove_file_if_exists, filename)
 
@@ -173,8 +179,8 @@ async def ws_handle_remove_device_popup(
     {
         vol.Required("type"): "dwains_dashboard/edit_device_bool_value",
         vol.Required("device"): str,
-        vol.Optional("key"): str,
-        vol.Optional("value"): bool,
+        vol.Required("key"): str,
+        vol.Required("value"): bool,
     }
 )
 @websocket_api.require_admin
@@ -217,7 +223,7 @@ async def ws_handle_sort_device_button(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Handle sorting device buttons."""
-    sort_data = json.loads(msg["sortData"])
+    sort_data = parse_json_string_list(msg["sortData"], "sort order")
     devices = await hass.async_add_executor_job(
         load_yaml_file_or_default,
         hass.config.path(DEVICES_PATH),

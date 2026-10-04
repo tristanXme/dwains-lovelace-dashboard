@@ -109,13 +109,22 @@ async def ws_handle_edit_more_page_button(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Save the legacy more-page button settings."""
-    if msg["more_page"]:
+    if msg.get("more_page"):
+        try:
+            validate_more_page_foldername(msg["more_page"])
+        except ValueError as error:
+            connection.send_error(msg["id"], "invalid_foldername", str(error))
+            return
         config = await _load_more_page_config(hass, msg["more_page"])
         config.update(
             {
-                "name": msg["name"],
-                "icon": msg["icon"],
-                "show_in_navbar": msg["showInNavbar"],
+                key: msg[msg_key]
+                for msg_key, key in (
+                    ("name", "name"),
+                    ("icon", "icon"),
+                    ("showInNavbar", "show_in_navbar"),
+                )
+                if msg_key in msg
             }
         )
         await _save_more_page_config(hass, msg["more_page"], config)
@@ -192,11 +201,18 @@ async def ws_handle_edit_more_page(
         page_path,
         card_data,
     )
-    config = OrderedDict(
+    # Keep settings which this form does not edit (sort_order), otherwise
+    # saving a page silently moved it to the end of the navigation.
+    config = OrderedDict()
+    if existing_foldername:
+        existing_config = await _load_more_page_config(hass, foldername)
+        if isinstance(existing_config, dict):
+            config.update(existing_config)
+    config.update(
         (
             ("name", name),
-            ("icon", msg["icon"]),
-            ("show_in_navbar", msg["showInNavbar"]),
+            ("icon", msg.get("icon") or config.get("icon") or "mdi:puzzle"),
+            ("show_in_navbar", msg.get("showInNavbar", config.get("show_in_navbar", False))),
         )
     )
     await _save_more_page_config(hass, foldername, config)
