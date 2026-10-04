@@ -56,6 +56,7 @@ const {
   areaBinarySensorDeviceClasses,
   areaBinarySensorEntities,
   areaSensorDeviceClasses,
+  areaSensorEntities,
   groupingMode,
   readBooleanCookie,
   resolveGroupingPreference,
@@ -65,6 +66,7 @@ const {
   entityBelongsToArea,
   summaryTranslationKey,
 } = require('./area-binary-sensors');
+const { collectAreaSensorValues } = require('./area-sensors');
 
 function getDwainsHass() {
   return resolveHass();
@@ -1641,6 +1643,10 @@ function getDwainsHass() {
       return areaBinarySensorEntities(this.configuration);
     }
 
+    _areaSensorEntities() {
+      return areaSensorEntities(this.configuration);
+    }
+
     _areaBinarySensorLabel(deviceClass) {
       return translateEngine(this._hass, `device.${deviceClass}`, undefined, deviceClass.replace(/_/g, " "));
     }
@@ -1724,23 +1730,17 @@ function getDwainsHass() {
 
       //console.log(entitiesByDomain);
 
-      const sensors = [];
-      SENSOR_DOMAINS.forEach((domain) => {
-        if (!(domain in entitiesByDomain)) {
-          return;
-        }
-        this._areaSensorDeviceClasses().forEach((deviceClass) => {
-          if (
-            entitiesByDomain[domain].some(
-              (entity) => entity.attributes.device_class === deviceClass
-            )
-          ) {
-            const average = this._average(entitiesByDomain, domain, deviceClass);
-            if(average){
-              sensors.push(average);
-            }
-          }
-        });
+      const sensors = collectAreaSensorValues({
+        areaId: data.area.area_id,
+        deviceClasses: this._areaSensorDeviceClasses(),
+        average: (deviceClass) => SENSOR_DOMAINS
+          .map((domain) => this._average(entitiesByDomain, domain, deviceClass))
+          .find(Boolean),
+        explicitEntityIds: this._areaSensorEntities(),
+        states: this._hass.states,
+        unavailableStates: UNAVAILABLE_STATES,
+        belongsToArea: (entityId, areaId) => this._entityBelongsToArea(entityId, areaId),
+        displayName: (entityId) => this._entityDisplayName(entityId),
       });
       sensors.push(...this._areaBinarySensorValues(data.area));
 

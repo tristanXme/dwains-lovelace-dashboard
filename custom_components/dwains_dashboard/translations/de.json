@@ -33,6 +33,7 @@
           "alarm_entity": "Alarm-Entität",
           "hide_unavailable_entities": "Nicht verfügbare Entitäten ausblenden",
           "area_sensor_device_classes": "Sensorwerte unter dem Raumnamen",
+          "area_sensor_entities": "Explizite Sensoren unter dem Raumnamen",
           "area_binary_sensor_device_classes": "Binäre Sensorwerte unter dem Raumnamen",
           "area_binary_sensor_entities": "Explizite binäre Sensoren unter dem Raumnamen",
           "area_view_grouping_mode": "Gruppierung nach Entitäten",
@@ -40,6 +41,7 @@
         },
         "data_description": {
           "area_sensor_device_classes": "Wähle die Sensor Device Classes aus, die auf Raumkacheln unter dem Raumnamen angezeigt werden sollen. Keine Auswahl bedeutet: nichts anzeigen.",
+          "area_sensor_entities": "Wähle einzelne Sensoren aus. Jeder wird nur auf der Kachel seines eigenen Raums angezeigt, solange er verfügbar ist, und ersetzt dort den Durchschnitt seiner Geräteklasse (z. B. ein bestimmter Temperatursensor statt des Durchschnitts aller Temperatursensoren im Raum).",
           "area_binary_sensor_device_classes": "Wähle Binary-Sensor Device Classes aus, die als Status nach den normalen Sensorwerten angezeigt werden sollen. Keine Auswahl bedeutet: nichts anzeigen.",
           "area_binary_sensor_entities": "Wähle einzelne Binary-Sensor-Entitäten aus. Sie werden nur auf der Raumkachel angezeigt, wenn sie diesem Raum zugeordnet sind und aktiv sind.",
           "area_view_grouping_mode": "Per Client nutzt die bisherige Browser-/Geräte-Einstellung. Aktiv oder Inaktiv erzwingt die Gruppierung global serverseitig.",

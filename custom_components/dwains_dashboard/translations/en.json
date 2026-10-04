@@ -33,6 +33,7 @@
           "alarm_entity": "Alarm entity",
           "hide_unavailable_entities": "Hide unavailable entities",
           "area_sensor_device_classes": "Sensor values below area name",
+          "area_sensor_entities": "Explicit sensors below area name",
           "area_binary_sensor_device_classes": "Binary sensor values below area name",
           "area_binary_sensor_entities": "Explicit binary sensors below area name",
           "area_view_grouping_mode": "Group entities",
@@ -40,6 +41,7 @@
         },
         "data_description": {
           "area_sensor_device_classes": "Select the sensor device classes that should be shown on area tiles below the area name. Select nothing to show nothing.",
+          "area_sensor_entities": "Select individual sensors. Each one is only shown on the tile of its own area while available, and replaces that area's average for its device class (for example one specific temperature sensor instead of the average of all temperature sensors in the room).",
           "area_binary_sensor_device_classes": "Select binary sensor device classes that should be shown as status summaries after the normal sensor values. Select nothing to show nothing.",
           "area_binary_sensor_entities": "Select individual binary sensor entities. They are only shown on an area tile when they belong to that area and are active.",
           "area_view_grouping_mode": "Per client keeps the current browser/device setting. Enabled or disabled enforces the grouping globally from the server.",

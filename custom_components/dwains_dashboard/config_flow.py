@@ -349,6 +349,9 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             header["area_binary_sensor_device_classes"] = _binary_sensor_device_classes_from_input(
                 user_input.get("area_binary_sensor_device_classes", DEFAULT_AREA_BINARY_SENSOR_DEVICE_CLASSES)
             )
+            header["area_sensor_entities"] = _entity_list_from_input(
+                user_input.get("area_sensor_entities", [])
+            )
             header["area_binary_sensor_entities"] = _entity_list_from_input(
                 user_input.get("area_binary_sensor_entities", [])
             )
@@ -409,6 +412,9 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
                     multiple=True,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
+            ),
+            vol.Optional("area_sensor_entities", default=cur.get("area_sensor_entities") or []): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor", multiple=True)
             ),
             vol.Optional("area_binary_sensor_device_classes", default=_binary_sensor_device_classes_to_input(cur)): selector.SelectSelector(
                 selector.SelectSelectorConfig(

@@ -52,10 +52,17 @@ function areaBinarySensorEntities(configuration) {
   );
 }
 
+function areaSensorEntities(configuration) {
+  return normalizeStringList(
+    homepageHeader(configuration).area_sensor_entities,
+  );
+}
+
 module.exports = {
   areaBinarySensorDeviceClasses,
   areaBinarySensorEntities,
   areaSensorDeviceClasses,
+  areaSensorEntities,
   groupingMode,
   normalizeStringList,
   readBooleanCookie,
