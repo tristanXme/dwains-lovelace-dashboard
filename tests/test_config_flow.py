@@ -13,6 +13,11 @@ async def test_options_flow_saves_area_sensor_entities(
     settings.write_text("custom_key: keep me\ndisable_clock: true\n")
 
     result = await hass.config_entries.options.async_init(setup_dashboard.entry_id)
+    assert result["type"] == "menu"
+    assert result["menu_options"] == ["settings", "cleanup"]
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "settings"}
+    )
     assert result["type"] == "form"
     assert "area_sensor_entities" in result["data_schema"].schema
 

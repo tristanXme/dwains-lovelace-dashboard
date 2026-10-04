@@ -7,26 +7,26 @@ import os
 from collections.abc import Callable
 from datetime import datetime
 
-from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers import issue_registry as ir
-from homeassistant.helpers.event import async_call_later
 
 from .configuration_runtime import get_configuration_runtime
-from .const import DOMAIN
 from .maintenance_files import OrphanReport, find_orphans, remove_orphans, rename_entity
 
 _LOGGER = logging.getLogger(__name__)
 
-ORPHAN_ISSUE_ID = "orphaned_configuration"
 CONFIGS_PATH = "dwains-dashboard/configs"
 BACKUPS_PATH = "dwains-dashboard/backups"
-# Integrations may still add entities shortly after startup; never judge
-# entries as orphaned before that settled.
-STARTUP_CHECK_DELAY = 120
-RECHECK_DELAY = 30
+MAX_LISTED_ENTRIES = 25
+ORPHAN_LOCATIONS = {
+    "entities": "entities.yaml",
+    "entity_cards": "cards/entities/",
+    "entity_popups": "cards/entities_popup/",
+    "settings_entities": "settings.yaml",
+    "areas": "areas.yaml",
+    "area_card_folders": "cards/areas/",
+}
 RELOAD_EVENTS = (
     "dwains_dashboard_config_reload",
     "dwains_dashboard_homepage_card_reload",
@@ -57,25 +57,27 @@ async def async_find_orphans(hass: HomeAssistant) -> OrphanReport:
     )
 
 
-async def async_update_orphan_issue(hass: HomeAssistant) -> OrphanReport | None:
-    """Create or delete the repair issue to match the current configuration."""
-    if not hass.is_running:
-        return None
-    report = await async_find_orphans(hass)
-    if report.total:
-        ir.async_create_issue(
-            hass,
-            DOMAIN,
-            ORPHAN_ISSUE_ID,
-            is_fixable=True,
-            is_persistent=False,
-            severity=ir.IssueSeverity.WARNING,
-            translation_key=ORPHAN_ISSUE_ID,
-            translation_placeholders={"count": str(report.total)},
-        )
-    else:
-        ir.async_delete_issue(hass, DOMAIN, ORPHAN_ISSUE_ID)
-    return report
+def orphan_description_placeholders(report: OrphanReport) -> dict[str, str]:
+    """Counts plus one markdown line per id with its affected files.
+
+    Example line: "- `light.lamp` – entities.yaml, cards/entities/".
+    """
+    locations: dict[str, list[str]] = {}
+    for kind, names in report.as_dict().items():
+        for name in names:
+            locations.setdefault(name, []).append(ORPHAN_LOCATIONS[kind])
+    lines = [f"- `{name}` – {', '.join(files)}" for name, files in locations.items()]
+    listed = "\n".join(lines[:MAX_LISTED_ENTRIES])
+    if len(lines) > MAX_LISTED_ENTRIES:
+        listed += f"\n- … +{len(lines) - MAX_LISTED_ENTRIES}"
+    return {
+        "count": str(report.total),
+        "entities": str(len(report.entities)),
+        "cards": str(len(report.entity_cards) + len(report.entity_popups)),
+        "areas": str(len(report.areas) + len(report.area_card_folders)),
+        "settings": str(len(report.settings_entities)),
+        "items": listed,
+    }
 
 
 def _notify_dashboard(hass: HomeAssistant) -> None:
@@ -91,8 +93,8 @@ async def async_remove_orphans(hass: HomeAssistant) -> tuple[int, str]:
     """Remove orphaned entries after backing them up.
 
     The report is computed again here, so nothing is removed that came back
-    after the repair issue was raised. Returns the number of removed entries
-    and the backup folder relative to the config directory.
+    since it was shown. Returns the number of removed entries and the backup
+    folder relative to the config directory.
     """
     runtime = get_configuration_runtime(hass)
     async with runtime.mutation_lock:
@@ -109,7 +111,6 @@ async def async_remove_orphans(hass: HomeAssistant) -> tuple[int, str]:
     if removed:
         _LOGGER.info("Removed %d orphaned dashboard entries, backup in %s", removed, backup)
         _notify_dashboard(hass)
-    ir.async_delete_issue(hass, DOMAIN, ORPHAN_ISSUE_ID)
     return removed, backup
 
 
@@ -128,25 +129,7 @@ async def _async_rename(hass: HomeAssistant, old_entity_id: str, new_entity_id: 
 
 @callback
 def async_setup_maintenance(hass: HomeAssistant) -> CALLBACK_TYPE:
-    """Start registry tracking; returns a callback that stops it."""
-    unsubscribers: list[CALLBACK_TYPE] = []
-    pending_check: CALLBACK_TYPE | None = None
-
-    @callback
-    def schedule_check(delay: float) -> None:
-        nonlocal pending_check
-        if pending_check is not None:
-            pending_check()
-
-        @callback
-        def run(_now) -> None:
-            nonlocal pending_check
-            pending_check = None
-            hass.async_create_task(
-                async_update_orphan_issue(hass), "dwains_dashboard orphan check"
-            )
-
-        pending_check = async_call_later(hass, delay, run)
+    """Follow entity id changes; returns a callback that stops it."""
 
     @callback
     def entity_registry_updated(event: Event[er.EventEntityRegistryUpdatedData]) -> None:
@@ -161,42 +144,7 @@ def async_setup_maintenance(hass: HomeAssistant) -> CALLBACK_TYPE:
                 _async_rename(hass, old_entity_id, data["entity_id"]),
                 "dwains_dashboard entity rename",
             )
-        if data["action"] in ("create", "remove") or old_entity_id:
-            schedule_check(RECHECK_DELAY)
 
-    @callback
-    def area_registry_updated(_event: Event) -> None:
-        schedule_check(RECHECK_DELAY)
-
-    unsubscribers.append(
-        hass.bus.async_listen(er.EVENT_ENTITY_REGISTRY_UPDATED, entity_registry_updated)
+    return hass.bus.async_listen(
+        er.EVENT_ENTITY_REGISTRY_UPDATED, entity_registry_updated
     )
-    unsubscribers.append(
-        hass.bus.async_listen(ar.EVENT_AREA_REGISTRY_UPDATED, area_registry_updated)
-    )
-
-    remove_started_listener: CALLBACK_TYPE | None = None
-    if hass.is_running:
-        schedule_check(STARTUP_CHECK_DELAY)
-    else:
-
-        @callback
-        def started(_event: Event) -> None:
-            nonlocal remove_started_listener
-            remove_started_listener = None
-            schedule_check(STARTUP_CHECK_DELAY)
-
-        remove_started_listener = hass.bus.async_listen_once(
-            EVENT_HOMEASSISTANT_STARTED, started
-        )
-
-    @callback
-    def stop() -> None:
-        if pending_check is not None:
-            pending_check()
-        if remove_started_listener is not None:
-            remove_started_listener()
-        for unsubscribe in unsubscribers:
-            unsubscribe()
-
-    return stop

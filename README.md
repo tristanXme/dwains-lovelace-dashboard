@@ -38,9 +38,10 @@ Security, stability and performance release of DD3.
   average of its device class on its own area tile.
 - **New:** renaming an entity in Home Assistant now takes its dashboard
   settings, custom card and popup along automatically.
-- **New:** a repair (Settings → Repairs) lists dashboard settings for entities
-  or areas that no longer exist and removes them on confirmation, after
-  copying them to `dwains-dashboard/backups/`. Disabled or unavailable
+- **New:** *Clean up orphaned settings* in the dashboard settings (Settings →
+  Devices & services → Dwains Dashboard → Configure) lists dashboard settings
+  for entities or areas that no longer exist and removes them on confirmation,
+  after copying them to `dwains-dashboard/backups/`. Disabled or unavailable
   entities and entities of integrations that are not loaded are never affected.
 - **New:** diagnostics download (Settings → Devices & services → Dwains
   Dashboard → ⋮ → Download diagnostics), including the orphaned entries.

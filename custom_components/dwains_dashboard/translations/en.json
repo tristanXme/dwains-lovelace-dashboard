@@ -18,6 +18,14 @@
   "options": {
     "step": {
       "init": {
+        "title": "Dwains Dashboard",
+        "description": "Choose what you want to do. Orphaned dashboard settings found: {orphans}.",
+        "menu_options": {
+          "settings": "Settings",
+          "cleanup": "Clean up orphaned settings"
+        }
+      },
+      "settings": {
         "title": "Dwains Dashboard Settings",
         "description": "These settings are stored in dwains-dashboard/configs/settings.yaml.",
         "data": {
@@ -47,7 +55,21 @@
           "area_view_grouping_mode": "Per client keeps the current browser/device setting. Enabled or disabled enforces the grouping globally from the server.",
           "area_floor_grouping_mode": "Per client keeps the current browser/device setting. Enabled or disabled enforces area grouping by floor globally from the server."
         }
+      },
+      "cleanup": {
+        "title": "Clean up orphaned settings",
+        "description": "These {count} entries point to entities or areas that no longer exist in Home Assistant, usually after a device or integration was removed:\n\n- Entity settings: {entities}\n- Custom cards and popups: {cards}\n- Area settings and area cards: {areas}\n- Explicit sensors in the settings: {settings}\n\n{items}\n\nEntities that are only disabled, unavailable or belong to an integration that is not loaded are **not** affected. Renamed entities take their settings along automatically and never show up here.\n\nAll touched files are copied to `dwains-dashboard/backups/` before anything is removed.",
+        "data": {
+          "confirm": "Back up and remove these entries"
+        }
       }
+    },
+    "error": {
+      "confirm_required": "Turn on the switch to confirm the cleanup."
+    },
+    "abort": {
+      "nothing_to_clean": "No orphaned dashboard settings found. Everything is clean.",
+      "cleanup_done": "Removed {removed} entries. A backup of all touched files is in `{backup}`."
     }
   },
   "selector": {
@@ -154,21 +176,6 @@
             "title": "Restart Home Assistant",
             "description": "Dwains Dashboard registers a sidebar dashboard and frontend resources that can only be fully removed by restarting Home Assistant.\n\nSelect **Submit** to restart now."
           }
-        }
-      }
-    },
-    "orphaned_configuration": {
-      "title": "Dwains Dashboard has {count} settings for entities or areas that no longer exist",
-      "description": "Dwains Dashboard keeps its own settings per entity and area (hidden, favorite, custom cards, …). Some of them point to entities or areas that no longer exist in Home Assistant, usually after a device or integration was removed.\n\nSelect **Fix** to review and remove them. Everything removed is backed up first.",
-      "fix_flow": {
-        "step": {
-          "confirm": {
-            "title": "Remove orphaned dashboard settings",
-            "description": "These {count} entries point to entities or areas that no longer exist:\n\n- Entity settings: {entities}\n- Custom cards and popups: {cards}\n- Area settings and area cards: {areas}\n- Explicit sensors in the settings: {settings}\n\n{items}\n\nEntities that are only disabled, unavailable or belong to an integration that is not loaded are **not** affected. Renamed entities are moved automatically and never show up here.\n\nAll touched files are copied to `dwains-dashboard/backups/cleanup-YYYYMMDD-HHMMSS/` before anything is removed."
-          }
-        },
-        "abort": {
-          "nothing_to_clean": "Nothing to clean up anymore."
         }
       }
     }

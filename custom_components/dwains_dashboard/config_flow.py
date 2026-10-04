@@ -6,6 +6,11 @@ import voluptuous as vol
 
 from .const import DOMAIN
 from .configuration_runtime import get_configuration_runtime
+from .maintenance import (
+    async_find_orphans,
+    async_remove_orphans,
+    orphan_description_placeholders,
+)
 from .runtime_data import get_domain_data
 from .yaml_files import dump_yaml_file, load_yaml_file
 
@@ -335,6 +340,41 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
     # OptionsFlow.config_entry is a read-only property that HA populates
     # automatically; assigning it raises AttributeError.
     async def async_step_init(self, user_input=None):
+        report = await async_find_orphans(self.hass)
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["settings", "cleanup"],
+            description_placeholders={"orphans": str(report.total)},
+        )
+
+    async def async_step_cleanup(self, user_input=None):
+        """List dashboard settings of entities/areas that no longer exist."""
+        errors = {}
+        if user_input is not None:
+            if user_input.get("confirm"):
+                removed, backup = await async_remove_orphans(self.hass)
+                return self.async_abort(
+                    reason="cleanup_done",
+                    description_placeholders={
+                        "removed": str(removed),
+                        "backup": backup,
+                    },
+                )
+            errors["base"] = "confirm_required"
+
+        report = await async_find_orphans(self.hass)
+        if not report.total:
+            return self.async_abort(reason="nothing_to_clean")
+        return self.async_show_form(
+            step_id="cleanup",
+            data_schema=vol.Schema(
+                {vol.Required("confirm", default=False): selector.BooleanSelector()}
+            ),
+            errors=errors,
+            description_placeholders=orphan_description_placeholders(report),
+        )
+
+    async def async_step_settings(self, user_input=None):
         path = self.hass.config.path(SETTINGS_FILE)
 
         if user_input is not None:
@@ -446,4 +486,4 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             ),
         }
 
-        return self.async_show_form(step_id="init", data_schema=vol.Schema(schema))
+        return self.async_show_form(step_id="settings", data_schema=vol.Schema(schema))

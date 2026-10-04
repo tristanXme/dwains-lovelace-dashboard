@@ -1,25 +1,17 @@
-"""Renamed entities follow automatically; orphaned settings become a repair."""
+"""Renamed entities follow automatically; orphaned settings can be cleaned up."""
 
 from __future__ import annotations
 
-from datetime import timedelta
 from pathlib import Path
 
 import yaml
-from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
-from homeassistant.setup import async_setup_component
-from homeassistant.util import dt as dt_util
 
-from custom_components.dwains_dashboard.maintenance import (
-    ORPHAN_ISSUE_ID,
-    STARTUP_CHECK_DELAY,
-    async_update_orphan_issue,
-)
+from custom_components.dwains_dashboard.maintenance import async_find_orphans
 
 DOMAIN = "dwains_dashboard"
 
@@ -106,25 +98,9 @@ def _orphan_fixture(hass: HomeAssistant, configs: Path) -> None:
     )
 
 
-async def test_orphan_rules_and_repair_issue(
-    hass: HomeAssistant, setup_dashboard, config_path
-) -> None:
-    configs = config_path("dwains-dashboard/configs")
-    _orphan_fixture(hass, configs)
-    issues = ir.async_get(hass)
-    assert issues.async_get_issue(DOMAIN, ORPHAN_ISSUE_ID) is None
-
-    # The check only runs once startup has settled.
-    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=STARTUP_CHECK_DELAY + 1))
-    await hass.async_block_till_done()
-
-    issue = issues.async_get_issue(DOMAIN, ORPHAN_ISSUE_ID)
-    assert issue is not None
-    assert issue.is_fixable
-    # light.gone (setting + card), whirlpool (setting + card folder), sensor.gone
-    assert issue.translation_placeholders == {"count": "5"}
-
-    report = await async_update_orphan_issue(hass)
+async def test_orphan_rules(hass: HomeAssistant, setup_dashboard, config_path) -> None:
+    _orphan_fixture(hass, config_path("dwains-dashboard/configs"))
+    report = await async_find_orphans(hass)
     assert report.as_dict() == {
         "entities": ["light.gone"],
         "entity_cards": ["light.gone"],
@@ -133,31 +109,50 @@ async def test_orphan_rules_and_repair_issue(
         "areas": ["whirlpool"],
         "area_card_folders": ["whirlpool"],
     }
+    # No repair issue: the cleanup lives in the dashboard settings.
+    assert not [
+        issue for (domain, _), issue in ir.async_get(hass).issues.items() if domain == DOMAIN
+    ]
 
 
-async def test_fix_flow_backs_up_and_removes(
-    hass: HomeAssistant, setup_dashboard, config_path, hass_client
+async def _open_cleanup(hass: HomeAssistant, entry_id: str) -> dict:
+    result = await hass.config_entries.options.async_init(entry_id)
+    assert result["type"] == "menu"
+    return await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "cleanup"}
+    )
+
+
+async def test_cleanup_in_dashboard_settings(
+    hass: HomeAssistant, setup_dashboard, config_path
 ) -> None:
-    assert await async_setup_component(hass, "repairs", {})
     configs = config_path("dwains-dashboard/configs")
     _orphan_fixture(hass, configs)
-    await async_update_orphan_issue(hass)
 
-    client = await hass_client()
-    response = await client.post(
-        "/api/repairs/issues/fix", json={"handler": DOMAIN, "issue_id": ORPHAN_ISSUE_ID}
+    result = await hass.config_entries.options.async_init(setup_dashboard.entry_id)
+    assert result["description_placeholders"] == {"orphans": "5"}
+
+    result = await _open_cleanup(hass, setup_dashboard.entry_id)
+    assert result["type"] == "form"
+    assert result["step_id"] == "cleanup"
+    placeholders = result["description_placeholders"]
+    assert placeholders["count"] == "5"
+    assert "`light.gone` – entities.yaml, cards/entities/" in placeholders["items"]
+    assert "`whirlpool` – areas.yaml, cards/areas/" in placeholders["items"]
+
+    # Without the confirmation nothing happens.
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"confirm": False}
     )
-    assert response.status == 200, await response.text()
-    flow = await response.json()
-    assert flow["step_id"] == "confirm"
-    assert flow["description_placeholders"]["count"] == "5"
-    assert "`light.gone` – entities.yaml, cards/entities/" in flow["description_placeholders"]["items"]
-    assert "`whirlpool` – areas.yaml, cards/areas/" in flow["description_placeholders"]["items"]
+    assert result["errors"] == {"base": "confirm_required"}
+    assert "light.gone" in _read(configs / "entities.yaml")
 
-    response = await client.post(f"/api/repairs/issues/fix/{flow['flow_id']}", json={})
-    assert response.status == 200, await response.text()
-    result = await response.json()
-    assert result["type"] == "create_entry"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"confirm": True}
+    )
+    assert result["type"] == "abort"
+    assert result["reason"] == "cleanup_done"
+    assert result["description_placeholders"]["removed"] == "5"
     await hass.async_block_till_done()
 
     entities = _read(configs / "entities.yaml")
@@ -174,17 +169,18 @@ async def test_fix_flow_backs_up_and_removes(
     backups = list(config_path("dwains-dashboard/backups").iterdir())
     assert len(backups) == 1
     backup = backups[0]
+    assert result["description_placeholders"]["backup"].endswith(backup.name)
     assert "light.gone" in _read(backup / "entities.yaml")
     assert (backup / "cards/entities/light.gone.yaml").exists()
     assert (backup / "cards/areas/whirlpool/markdown.yaml").exists()
     assert "whirlpool" in _read(backup / "areas.yaml")
+    # The options themselves are untouched by a cleanup.
+    assert setup_dashboard.options == {}
 
-    assert ir.async_get(hass).async_get_issue(DOMAIN, ORPHAN_ISSUE_ID) is None
 
-
-async def test_no_issue_without_orphans(
-    hass: HomeAssistant, setup_dashboard, config_path
+async def test_cleanup_without_orphans(
+    hass: HomeAssistant, setup_dashboard
 ) -> None:
-    ir.async_get(hass)
-    await async_update_orphan_issue(hass)
-    assert ir.async_get(hass).async_get_issue(DOMAIN, ORPHAN_ISSUE_ID) is None
+    result = await _open_cleanup(hass, setup_dashboard.entry_id)
+    assert result["type"] == "abort"
+    assert result["reason"] == "nothing_to_clean"
