@@ -328,7 +328,7 @@ class MorePageCard extends LitElement {
             </div>
 
             ${this._cardLoading ? html`
-              <div class="page-state"><ha-circular-progress active></ha-circular-progress></div>
+              <div class="page-state"><ha-spinner></ha-spinner></div>
             ` : this._cardError ? html`
               <div class="page-state page-error">${this._cardError.message || this._cardError}</div>
             ` : this.card || html`

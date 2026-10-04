@@ -18,6 +18,7 @@
     "sortablejs": "1.15.7"
   },
   "devDependencies": {
+    "terser-webpack-plugin": "5.6.1",
     "webpack": "5.111.1",
     "webpack-cli": "7.2.3"
   }

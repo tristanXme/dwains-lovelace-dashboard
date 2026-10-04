@@ -2,7 +2,7 @@ import { moreInfo } from "./card-tools-compat";
 import { popUp } from "./dwains-popup";
 import { mdiDotsVertical, mdiCog } from "@mdi/js";
 import { css, html, LitElement } from 'lit';
-import Cookies from 'js-cookie'
+import { clientPreferences } from './client-preferences';
 import {
   WEATHER_ICONS,
   STATES_OFF,
@@ -203,7 +203,7 @@ function getDwainsHass() {
     }
 
     _areaViewDisplayGroupedFromClient(){
-      return readBooleanCookie(Cookies, 'dwains_dashboard_areaViewDisplayGrouped');
+      return readBooleanCookie(clientPreferences, 'dwains_dashboard_areaViewDisplayGrouped');
     }
 
     _areaViewGroupingMode(){
@@ -223,7 +223,7 @@ function getDwainsHass() {
     }
 
     _areaDisplayGroupedFromClient(){
-      return readBooleanCookie(Cookies, 'dwains_dashboard_areaDisplayGrouped');
+      return readBooleanCookie(clientPreferences, 'dwains_dashboard_areaDisplayGrouped');
     }
 
     _areaFloorGroupingMode(){
@@ -1351,7 +1351,7 @@ function getDwainsHass() {
         return;
       }
       this.areaViewDisplayGrouped = value;
-      Cookies.set('dwains_dashboard_areaViewDisplayGrouped', value, { expires: 365 });
+      clientPreferences.set('dwains_dashboard_areaViewDisplayGrouped', value);
       if(this.areaViewEditMode){
         this._requestAreaViewSortableRebuild();
       }
@@ -1368,7 +1368,7 @@ function getDwainsHass() {
         return;
       }
       this.areaDisplayGrouped = value;
-      Cookies.set('dwains_dashboard_areaDisplayGrouped', value, { expires: 365 });
+      clientPreferences.set('dwains_dashboard_areaDisplayGrouped', value);
     }
 
     _handleFavoriteEditModeClicked(ev){

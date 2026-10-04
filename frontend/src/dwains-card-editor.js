@@ -514,7 +514,7 @@ class DwainsCardPicker extends LitElement {
               data-card-preview=${type}
               @config-changed=${this._stopPreviewEvent}
             >
-              <ha-circular-progress active></ha-circular-progress>
+              <ha-spinner></ha-spinner>
             </div>
             <small>${type}</small>
           </div>
@@ -569,7 +569,7 @@ class DwainsCardPicker extends LitElement {
       align-items: center; justify-content: center; pointer-events: none;
     }
     .preview > * { width: 100%; max-height: 130px; overflow: hidden; }
-    .preview ha-circular-progress { width: auto; }
+    .preview ha-spinner { width: auto; }
     .preview-description {
       color: var(--secondary-text-color); line-height: 1.4;
     }

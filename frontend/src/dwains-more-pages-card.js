@@ -530,7 +530,7 @@ class MorePagesCard extends LitElement {
 
         render() {
           if(this._loading){
-            return html`<div class="overview-state"><ha-circular-progress active></ha-circular-progress></div>`;
+            return html`<div class="overview-state"><ha-spinner></ha-spinner></div>`;
           }
           if(this._loadError){
             return html`<div class="overview-state overview-error">${this._loadError.message || this._loadError}</div>`;

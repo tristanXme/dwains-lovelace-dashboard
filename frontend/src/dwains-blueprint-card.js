@@ -44,6 +44,9 @@ class DwainsBlueprintCard extends LitElement {
             );
           }
 
+          if (!config || typeof config.card !== "object" || config.card === null) {
+            throw new Error("dwains-blueprint-card requires a `card` configuration");
+          }
           this.cardConfig = config.card;
 
           const cardJson = JSON.stringify(config.card);
@@ -95,7 +98,7 @@ class DwainsBlueprintCard extends LitElement {
         static get styles() {
           return [
             css`
-            ha-formfield, ha-textfield,.formfield {
+            ha-formfield, ha-input,.formfield {
               width: 100%;
             }
             .formfield {
@@ -235,12 +238,12 @@ class DwainsBlueprintCard extends LitElement {
             `;
           } else {
             card = html`
-            <ha-textfield
+            <ha-input
                 label=${v["name"]}
                 .value=${value}
                 .key=${k}
                 @input=${this._inputChanged}
-            ></ha-textfield>
+            ></ha-input>
             `;
           }
           return html`

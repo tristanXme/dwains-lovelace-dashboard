@@ -4,6 +4,7 @@
 // revision into const.py.
 const path = require("path");
 const webpack = require("webpack");
+const TerserPlugin = require("terser-webpack-plugin");
 const { version } = require("./custom_components/dwains_dashboard/manifest.json");
 
 // Every module registers its custom elements as a side effect, so all of
@@ -48,6 +49,19 @@ module.exports = (_env, argv) => ({
   // Maps are written for local debugging only (git-ignored, never shipped).
   devtool: argv.mode === "development" ? "eval-source-map" : "hidden-source-map",
   performance: { hints: false },
+  optimization: {
+    minimizer: [
+      new TerserPlugin({
+        // Same license extraction as webpack's default minimizer.
+        extractComments: true,
+        terserOptions: {
+          // Drop debug output (raw WebSocket responses incl. card configs);
+          // console.info/warn/error stay for diagnostics.
+          compress: { pure_funcs: ["console.log"] },
+        },
+      }),
+    ],
+  },
   plugins: [
     new webpack.DefinePlugin({ __DD_VERSION__: JSON.stringify(version) }),
   ],

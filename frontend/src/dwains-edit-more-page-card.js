@@ -37,7 +37,7 @@ class DwainsEditMorePageCard extends LitElement {
           overflow: visible;
         }
         .edit-element ha-icon-picker,
-        .edit-element ha-textfield,
+        .edit-element ha-input,
         .edit-element ha-select,
         .edit-element ha-entity-picker {
           display: block;
@@ -141,7 +141,7 @@ class DwainsEditMorePageCard extends LitElement {
           border-bottom-color: var(--primary-color);
           box-shadow: inset 0 -1px 0 var(--primary-color);
         }
-        .more-page-settings ha-textfield,
+        .more-page-settings ha-input,
         .more-page-settings ha-icon-picker {
           box-sizing: border-box;
           width: 100%;
@@ -610,7 +610,7 @@ class DwainsEditMorePageCard extends LitElement {
     }
     if(this.mode == 'dwains-dashboard-blueprint-select'){
         if(this._blueprintsLoading){
-        return html`<div class="edit-element"><ha-circular-progress active></ha-circular-progress></div>`;
+        return html`<div class="edit-element"><ha-spinner></ha-spinner></div>`;
         }
         const blueprintsSorted = Object.entries(this.blueprints['blueprints']).sort(function (x, y) {
         let a = x[1].blueprint.type,
@@ -756,7 +756,7 @@ class DwainsEditMorePageCard extends LitElement {
             <div class="card-footer">
             ${this.foldername ? html `<ha-button @click=${this._removeMorePage}>${this._hass.localize("ui.common.remove")}</ha-button>` : ""}
             <ha-button .disabled=${this._saving} @click=${this._sendCard}>
-              ${this._saving ? html`<ha-circular-progress size="small" active></ha-circular-progress>` : this._hass.localize("ui.common.submit")}
+              ${this._saving ? html`<ha-spinner size="small"></ha-spinner>` : this._hass.localize("ui.common.submit")}
             </ha-button>
             </div>
         </div>

@@ -15,7 +15,7 @@ class DwainsEditDeviceButtonCard extends LitElement {
           margin-right: auto;
           margin-left: auto;
         }
-        .edit-element ha-icon-picker, .edit-element ha-textfield, .edit-element ha-select, .edit-element ha-entity-picker {
+        .edit-element ha-icon-picker, .edit-element ha-input, .edit-element ha-select, .edit-element ha-entity-picker {
           display: block;
           margin: .8rem 0;
         }

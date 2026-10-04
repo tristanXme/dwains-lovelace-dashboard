@@ -233,7 +233,7 @@ def _binary_sensor_device_classes_to_input(settings):
     return settings.get("area_binary_sensor_device_classes") or []
 
 
-def _area_binary_sensor_entities_from_input(value):
+def _entity_list_from_input(value):
     if value is None:
         return []
     if isinstance(value, str):
@@ -349,7 +349,7 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             header["area_binary_sensor_device_classes"] = _binary_sensor_device_classes_from_input(
                 user_input.get("area_binary_sensor_device_classes", DEFAULT_AREA_BINARY_SENSOR_DEVICE_CLASSES)
             )
-            header["area_binary_sensor_entities"] = _area_binary_sensor_entities_from_input(
+            header["area_binary_sensor_entities"] = _entity_list_from_input(
                 user_input.get("area_binary_sensor_entities", [])
             )
             header["area_view_grouping_mode"] = _area_view_grouping_mode(
@@ -362,6 +362,12 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             async with configuration_runtime.mutation_lock:
                 configuration_runtime.clear_cache()
                 try:
+                    # Merge so keys this form does not manage survive a save.
+                    existing = await self.hass.async_add_executor_job(
+                        _read_settings, path
+                    )
+                    if isinstance(existing, dict):
+                        header = {**existing, **header}
                     await self.hass.async_add_executor_job(
                         _write_settings, path, header
                     )

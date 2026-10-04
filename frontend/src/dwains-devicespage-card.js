@@ -1,6 +1,6 @@
 import { popUp } from "./dwains-popup";
 import { fireEvent } from "./card-tools-compat";
-import Cookies from 'js-cookie'
+import { clientPreferences } from './client-preferences';
 import {
   DOMAIN_ICONS,
  } from './variables'
@@ -157,7 +157,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           this.selectedDevice = window.location.hash.substring(1);
           this.deviceEditMode = false;
           this.deviceViewEditMode = false;
-          this.deviceViewDisplayGrouped = Cookies.get('dwains_dashboard_deviceViewDisplayGrouped') ? (Cookies.get('dwains_dashboard_deviceViewDisplayGrouped') == "false" ? false : true) : false;
+          this.deviceViewDisplayGrouped = (() => { const stored = clientPreferences.get('dwains_dashboard_deviceViewDisplayGrouped'); return stored ? stored !== "false" : false; })();
           this._config = config;
 
           this.notificationCard, this.weatherCard;
@@ -1406,7 +1406,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 
           const value = ev.currentTarget.value;
           this.deviceViewDisplayGrouped = value;
-          Cookies.set('dwains_dashboard_deviceViewDisplayGrouped', value, { expires: 365 });
+          clientPreferences.set('dwains_dashboard_deviceViewDisplayGrouped', value);
         }
         _renderAreaViewEntityCard(entity, type) {
           const recoveryActions = entityRecoveryActions(

@@ -186,7 +186,7 @@ class DwainsCreateCustomCardCard extends LitElement {
           grid-template-columns: repeat(2,minmax(0,1fr));
           gap: 1rem;
         }
-        ha-select, ha-textfield, ha-formfield {
+        ha-select, ha-input, ha-formfield {
           width: 100%;
         }
         h2,h3 {
