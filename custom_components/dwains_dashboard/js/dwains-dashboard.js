@@ -5345,14 +5345,12 @@
           cursor: pointer;
           pointer-events: auto;
         }
-        /* Refresh: rounder badges, lit bulb when lights are on */
+        /* Refresh: rounder badges */
         .area-button .info-badge {
           border-radius: 999px;
           padding: 0.125rem 0.5rem 0.125rem 0.375rem;
         }
-        .area-button .toggle-badge.badge-light ha-icon.on {
-          color: var(--state-light-active-color, #ffb300);
-        }
+
         @media (min-width: 1024px) {
           .area-button.current {
             background: transparent;
