@@ -156,6 +156,21 @@
           }
         }
       }
+    },
+    "orphaned_configuration": {
+      "title": "Dwains Dashboard has {count} settings for entities or areas that no longer exist",
+      "description": "Dwains Dashboard keeps its own settings per entity and area (hidden, favorite, custom cards, …). Some of them point to entities or areas that no longer exist in Home Assistant, usually after a device or integration was removed.\n\nSelect **Fix** to review and remove them. Everything removed is backed up first.",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Remove orphaned dashboard settings",
+            "description": "These {count} entries point to entities or areas that no longer exist:\n\n- Entity settings: {entities}\n- Custom cards and popups: {cards}\n- Area settings and area cards: {areas}\n- Explicit sensors in the settings: {settings}\n\n{items}\n\nEntities that are only disabled, unavailable or belong to an integration that is not loaded are **not** affected. Renamed entities are moved automatically and never show up here.\n\nAll touched files are copied to `dwains-dashboard/backups/cleanup-YYYYMMDD-HHMMSS/` before anything is removed."
+          }
+        },
+        "abort": {
+          "nothing_to_clean": "Nothing to clean up anymore."
+        }
+      }
     }
   }
 }

@@ -156,6 +156,21 @@
           }
         }
       }
+    },
+    "orphaned_configuration": {
+      "title": "Dwains Dashboard hat {count} Einstellungen für Entitäten oder Räume, die es nicht mehr gibt",
+      "description": "Dwains Dashboard speichert eigene Einstellungen pro Entität und Raum (ausgeblendet, Favorit, eigene Karten, …). Einige davon verweisen auf Entitäten oder Räume, die es in Home Assistant nicht mehr gibt – meist nachdem ein Gerät oder eine Integration entfernt wurde.\n\nWähle **Beheben**, um sie zu prüfen und zu entfernen. Alles Entfernte wird vorher gesichert.",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Verwaiste Dashboard-Einstellungen entfernen",
+            "description": "Diese {count} Einträge verweisen auf Entitäten oder Räume, die es nicht mehr gibt:\n\n- Entitäts-Einstellungen: {entities}\n- Eigene Karten und Popups: {cards}\n- Raum-Einstellungen und Raum-Karten: {areas}\n- Explizite Sensoren in den Einstellungen: {settings}\n\n{items}\n\nEntitäten, die nur deaktiviert oder nicht verfügbar sind oder zu einer nicht geladenen Integration gehören, sind **nicht** betroffen. Umbenannte Entitäten werden automatisch übernommen und erscheinen hier nie.\n\nAlle betroffenen Dateien werden vor dem Entfernen nach `dwains-dashboard/backups/cleanup-JJJJMMTT-HHMMSS/` kopiert."
+          }
+        },
+        "abort": {
+          "nothing_to_clean": "Es gibt nichts mehr aufzuräumen."
+        }
+      }
     }
   }
 }

@@ -24,6 +24,7 @@ from .configuration_runtime import (
 )
 from .runtime_data import get_domain_data
 from .legacy_entities import async_remove_legacy_latest_version_sensor
+from .maintenance import async_setup_maintenance
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config import ConfigType
@@ -85,6 +86,7 @@ async def async_setup_entry(hass, config_entry):
         await _rollback_entry_setup(hass, config_entry)
         raise
 
+    config_entry.async_on_unload(async_setup_maintenance(hass))
     config_entry.async_on_unload(lambda: remove_yaml_runtime(hass))
     config_entry.async_on_unload(lambda: remove_frontend_plugins(hass))
     config_entry.async_on_unload(lambda: unload_dashboard(hass))

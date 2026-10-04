@@ -24,8 +24,6 @@ async def test_diagnostics_reports_orphaned_configuration(
 
     assert diagnostics["versions"]["integration"]
     assert diagnostics["counts"]["entities"] == 2
-    assert diagnostics["orphaned"] == {
-        "entities": ["light.removed"],
-        "entity_cards": ["light.removed"],
-    }
+    assert diagnostics["orphaned"]["entities"] == ["light.removed"]
+    assert diagnostics["orphaned"]["entity_cards"] == ["light.removed"]
     assert "type" not in str(diagnostics)  # card contents are not exported

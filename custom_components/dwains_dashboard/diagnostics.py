@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
 
 from .configuration_files import load_configuration_files
 from .const import BACKEND_BUILD_REVISION, FRONTEND_RESOURCE_REVISION, VERSION
+from .maintenance import async_find_orphans
 
 
 def _summary(hass: HomeAssistant, configs_path: str) -> dict[str, Any]:
@@ -26,8 +26,6 @@ def _summary(hass: HomeAssistant, configs_path: str) -> dict[str, Any]:
             "area_card_folders": len(snapshot["area_cards"]),
             "more_pages": len(snapshot["more_pages"]),
         },
-        "entity_ids_configured": sorted(entities),
-        "entity_card_ids": sorted(snapshot["entity_cards"]),
     }
 
 
@@ -37,18 +35,13 @@ async def async_get_config_entry_diagnostics(
     """Return versions, settings and configuration statistics.
 
     Card contents are not included; they may contain addresses or URLs.
-    The entity lists only reveal entity ids, which bug reports need to spot
-    stale configuration (entries for entities that no longer exist).
+    The orphan lists only reveal entity and area ids, which bug reports need to
+    spot stale configuration (entries for entities that no longer exist).
     """
     summary = await hass.async_add_executor_job(
         _summary, hass, hass.config.path("dwains-dashboard/configs")
     )
-    registry = er.async_get(hass)
-    known = set(hass.states.async_entity_ids()) | set(registry.entities)
-    summary["orphaned"] = {
-        "entities": [e for e in summary.pop("entity_ids_configured") if e not in known],
-        "entity_cards": [e for e in summary.pop("entity_card_ids") if e not in known],
-    }
+    summary["orphaned"] = (await async_find_orphans(hass)).as_dict()
     return {
         "versions": {
             "integration": VERSION,
