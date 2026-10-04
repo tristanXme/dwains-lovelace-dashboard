@@ -66,3 +66,4 @@ __pycache__/
 # Frontend build
 node_modules/
 custom_components/dwains_dashboard/js/*.map
+/.e2e/

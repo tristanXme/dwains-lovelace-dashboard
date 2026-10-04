@@ -59,6 +59,32 @@ jobs:
           git diff --exit-code -- custom_components/dwains_dashboard/js custom_components/dwains_dashboard/const.py \
             || (echo "::error::Run 'npm run build' and commit the result." && exit 1)
 
+  e2e:
+    name: Browser tests (real Home Assistant)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install Home Assistant and Playwright
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_test.txt
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Start Home Assistant with the dashboard
+        run: python tests/e2e/prepare.py "$RUNNER_TEMP/e2e"
+      - name: Browser tests
+        run: node tests/e2e/dashboard.e2e.mjs "$RUNNER_TEMP/e2e"
+      - name: Home Assistant log
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP/e2e/hass.out"
+
   hassfest:
     name: hassfest
     runs-on: ubuntu-latest
