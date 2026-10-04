@@ -1,6 +1,6 @@
 import { moreInfo } from "./card-tools-compat";
 import { popUp } from "./dwains-popup";
-import { mdiDotsVertical, mdiCog } from "@mdi/js";
+import { mdiArrowLeft, mdiDotsVertical, mdiCog } from "@mdi/js";
 import { css, html, LitElement } from 'lit';
 import { clientPreferences } from './client-preferences';
 import {
@@ -1737,13 +1737,7 @@ function getDwainsHass() {
       });
     }
 
-    _renderAreaButton(data){
-      const entitiesByDomain = this._entitiesByDomain(
-        data.entities
-      );
-
-      //console.log(entitiesByDomain);
-
+    _areaValues(data, entitiesByDomain = this._entitiesByDomain(data.entities)) {
       const sensors = collectAreaSensorValues({
         areaId: data.area.area_id,
         deviceClasses: this._areaSensorDeviceClasses(),
@@ -1758,6 +1752,17 @@ function getDwainsHass() {
         locale: this._hass?.locale?.language || this._hass?.language,
       });
       sensors.push(...this._areaBinarySensorValues(data.area));
+      return sensors;
+    }
+
+    _renderAreaButton(data){
+      const entitiesByDomain = this._entitiesByDomain(
+        data.entities
+      );
+
+      //console.log(entitiesByDomain);
+
+      const sensors = this._areaValues(data, entitiesByDomain);
 
       const configuredArea = this.configuration['areas']
         ? this.configuration['areas'][data.area.area_id]
@@ -2026,18 +2031,24 @@ function getDwainsHass() {
 
         //console.log(group);
 
+        // Groups share the row: a group takes as many columns as its cards
+        // need (up to the full width), so a room with one thermostat and one
+        // cover no longer stacks them in a narrow column on a wide screen.
+        const span = (items, key, max) => Math.max(1, Math.min(max,
+          items.reduce((total, item) => total + (Number(item[key]) || 1), 0)));
         return html`
-        <div>
-        ${sortedGroup.map((key) =>
-          html`
-            <div class="mb-5">
+        <div class="dd-area-groups">
+        ${sortedGroup.map((key) => {
+          const items = group[key];
+          return html`
+            <div class="dd-area-group span-${span(items, 'colSpan', 2)} lg-span-${span(items, 'colSpanLg', 3)} xl-span-${span(items, 'colSpanXl', 4)}">
               <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'device.'+key)}</h3>
-              <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable">
-                ${Object.entries(group[key]).map(([k,v]) => html`${this._renderAreaViewCard(v)}`)}
+              <div class="dd-area-group-grid grid grid-flow-row-dense gap-4 sortable area-view-entity-sortable">
+                ${items.map((v) => html`${this._renderAreaViewCard(v)}`)}
               </div>
             </div>
-          `
-        )}
+          `;
+        })}
         </div>
         `;
       }
@@ -2269,13 +2280,19 @@ function getDwainsHass() {
 
         return html`
           <div class="dd-area-view w-full mb-12 ${visible}" id="${data.area.area_id}">
-            <div class="dd-area-view-header dd-detail-view-header flex justify-between">
+            <div class="dd-area-view-header dd-detail-view-header flex justify-between ${this.configuration['homepage_header']['v2_mode'] ? 'with-back' : ''}">
+              <ha-icon-button
+                class="dd-area-view-back"
+                label=${this._hass.localize("ui.common.back") || "Back"}
+                .path=${mdiArrowLeft}
+                @click=${this._backButtonClick}
+              ></ha-icon-button>
               <div class="dd-area-view-title dd-detail-view-title sticky top-0">
                 <h2 class="font-semibold text-lg">
                   ${data.area.name}
                 </h2>
                 <span class="text-gray">
-                  ${data.cards.length} ${translateEngine(this._hass, 'entity.title_plural')}
+                  ${[...this._areaValues(data), `${data.cards.length} ${translateEngine(this._hass, 'entity.title_plural')}`].join(" · ")}
                 </span>
               </div>
               <div>
@@ -2789,7 +2806,7 @@ function getDwainsHass() {
               </div>
             </div>
             </div>
-            <div class="sticky z-30 bottom-0 ${!window.location.hash ? "hidden" : ""} ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-hidden"} text-right">
+            <div class="sticky z-30 bottom-0 ${!window.location.hash ? "hidden" : ""} lg-hidden text-right">
               <div @click=${this._backButtonClick} class="back-button">
                   <div class="button">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2884,6 +2901,53 @@ function getDwainsHass() {
         }
         .area-button .info br {
           display: none;
+        }
+        .dd-area-groups {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-auto-flow: row dense;
+          gap: 0 1rem;
+          align-items: start;
+        }
+        .dd-area-group {
+          margin-bottom: 1.25rem;
+          min-width: 0;
+        }
+        .dd-area-group h3 {
+          margin: 0 0 .5rem .25rem;
+        }
+        .dd-area-group.span-1 { grid-column: span 1; }
+        .dd-area-group.span-2 { grid-column: span 2; }
+        .dd-area-group.span-1 .dd-area-group-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .dd-area-group.span-2 .dd-area-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        @media (min-width: 1024px) {
+          .dd-area-groups { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+          .dd-area-group.lg-span-1 { grid-column: span 1; }
+          .dd-area-group.lg-span-2 { grid-column: span 2; }
+          .dd-area-group.lg-span-3 { grid-column: span 3; }
+          .dd-area-group.lg-span-1 .dd-area-group-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+          .dd-area-group.lg-span-2 .dd-area-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .dd-area-group.lg-span-3 .dd-area-group-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+          .dd-area-view-header.with-back .dd-area-view-back { display: inline-flex; }
+        }
+        @media (min-width: 1280px) {
+          .dd-area-groups { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+          .dd-area-group.xl-span-1 { grid-column: span 1; }
+          .dd-area-group.xl-span-2 { grid-column: span 2; }
+          .dd-area-group.xl-span-3 { grid-column: span 3; }
+          .dd-area-group.xl-span-4 { grid-column: span 4; }
+          .dd-area-group.xl-span-1 .dd-area-group-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+          .dd-area-group.xl-span-2 .dd-area-group-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .dd-area-group.xl-span-3 .dd-area-group-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+          .dd-area-group.xl-span-4 .dd-area-group-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        }
+        .dd-area-view-back {
+          display: none;
+          margin: -0.5rem 0 -0.5rem -0.5rem;
+        }
+        .dd-area-view-header .dd-area-view-title {
+          flex: 1;
+          min-width: 0;
         }
         .with-graphs .area-button {
           height: 13.5rem;
