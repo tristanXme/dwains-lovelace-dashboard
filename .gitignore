@@ -34,7 +34,7 @@ dwainconfig/
 dwains-dashboard/
 dwains-dashboardd/
 /themes/
-test/
+/test/
 image/
 ._.DS_Store
 ._configuration.yaml
@@ -62,3 +62,7 @@ custom_components/dwains_dashboard/js/dwains-dashboard.js.map
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Frontend build
+node_modules/
+custom_components/dwains_dashboard/js/*.map
