@@ -137,3 +137,56 @@ async def test_notification_with_broken_template(
     response = await _call(client, "dwains_dashboard_notification/get")
     assert response["success"]
     assert response["result"][0]["message"] == "{{ 1 / 0 }}"
+
+
+async def test_area_graph_setting_round_trip(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client, config_path
+) -> None:
+    client = await hass_ws_client(hass)
+    areas_file = config_path("dwains-dashboard/configs/areas.yaml")
+
+    response = await _call(
+        client,
+        "dwains_dashboard/edit_area_button",
+        areaId="living",
+        icon="mdi:sofa",
+        graphEntity="sensor.living_temperature",
+        graphHours=48,
+    )
+    assert response["success"], response
+    area = yaml.safe_load(areas_file.read_text())["living"]
+    assert area["graph_entity"] == "sensor.living_temperature"
+    assert area["graph_hours"] == 48
+    assert area["icon"] == "mdi:sofa"
+
+    # Without a graph entity both keys disappear again.
+    response = await _call(
+        client, "dwains_dashboard/edit_area_button", areaId="living", icon="mdi:sofa"
+    )
+    assert response["success"], response
+    area = yaml.safe_load(areas_file.read_text())["living"]
+    assert "graph_entity" not in area
+    assert "graph_hours" not in area
+
+
+async def test_area_graph_rejects_invalid_input(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client, config_path
+) -> None:
+    client = await hass_ws_client(hass)
+    response = await _call(
+        client,
+        "dwains_dashboard/edit_area_button",
+        areaId="living",
+        graphEntity="light.lamp",
+    )
+    assert not response["success"]
+    assert response["error"]["code"] == "invalid_format"
+
+    response = await _call(
+        client,
+        "dwains_dashboard/edit_area_button",
+        areaId="living",
+        graphEntity="sensor.x",
+        graphHours=5,
+    )
+    assert not response["success"]

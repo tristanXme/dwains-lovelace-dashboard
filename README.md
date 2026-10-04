@@ -45,6 +45,13 @@ Security, stability and performance release of DD3.
   entities and entities of integrations that are not loaded are never affected.
 - **New:** diagnostics download (Settings → Devices & services → Dwains
   Dashboard → ⋮ → Download diagnostics), including the orphaned entries.
+- **New:** optional history graph at the bottom of an area tile. Pick a
+  sensor and a period (6 h to 7 days) under *Edit* of the area tile; leave the
+  sensor empty for no graph. History is loaded from the recorder and cached.
+- **Refresh:** values below the area name follow the Home Assistant language
+  (`24,1 °C · 48 %` in German) and are separated by `·`; area badges are
+  rounder and the bulb turns yellow while lights are on; the house status bar
+  uses the full width with quiet dividers.
 
 ## Development
 

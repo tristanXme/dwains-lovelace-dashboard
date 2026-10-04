@@ -37,7 +37,7 @@ test("an explicit sensor replaces the average of its device class", () => {
     average: (deviceClass) => ({ temperature: "22°C", humidity: "48%" })[deviceClass],
     explicitEntityIds: ["sensor.living_temp"],
   });
-  assert.deepEqual(values, ["21.5°C", "48%"]);
+  assert.deepEqual(values, ["21.5\u00a0°C", "48%"]);
 });
 
 test("explicit sensors of other classes and text sensors are appended", () => {
@@ -47,7 +47,7 @@ test("explicit sensors of other classes and text sensors are appended", () => {
     average: () => "22°C",
     explicitEntityIds: ["sensor.rain", "sensor.living_co2"],
   });
-  assert.deepEqual(values, ["22°C", "Regen: Dry", "617ppm"]);
+  assert.deepEqual(values, ["22°C", "Regen: Dry", "617\u00a0ppm"]);
 });
 
 test("sensors of other areas, unavailable sensors and other domains are skipped", () => {

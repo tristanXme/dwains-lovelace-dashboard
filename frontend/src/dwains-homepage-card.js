@@ -67,6 +67,7 @@ const {
   summaryTranslationKey,
 } = require('./area-binary-sensors');
 const { collectAreaSensorValues } = require('./area-sensors');
+require('./dwains-area-graph');
 
 function getDwainsHass() {
   return resolveHass();
@@ -990,6 +991,7 @@ function getDwainsHass() {
     _average(data, domain, deviceClass) {
       return averageEntityStates(data, domain, deviceClass, {
         isAvailable: (entity) => this._isAvailableEntity(entity),
+        locale: this._hass?.locale?.language || this._hass?.language,
       });
     }
 
@@ -1161,6 +1163,7 @@ function getDwainsHass() {
       const icon = ev.currentTarget.area_icon;
       const disableArea = ev.currentTarget.disable_area;
       const hideIcon = ev.currentTarget.hide_icon;
+      const configuredArea = (this.configuration['areas'] && this.configuration['areas'][areaId]) || {};
       this._popupOpens.schedule(() => {
 
         popUp(translateEngine(this._hass, 'area.edit_area_button'), {
@@ -1169,6 +1172,8 @@ function getDwainsHass() {
           icon: icon,
           disableArea: disableArea,
           hideIcon: hideIcon,
+          graphEntity: configuredArea['graph_entity'] || "",
+          graphHours: configuredArea['graph_hours'],
         }, false, '');
       });
     }
@@ -1562,10 +1567,19 @@ function getDwainsHass() {
       });
     }
 
+    _areaGraph(areaId) {
+      const area = this.configuration['areas'] ? this.configuration['areas'][areaId] : undefined;
+      const entityId = area && area['graph_entity'];
+      return entityId && this._hass.states[entityId]
+        ? { entityId, hours: area['graph_hours'] }
+        : undefined;
+    }
+
     _renderAreaButtons(data){
+      const withGraphs = data.some((item) => this._areaGraph(item.area.area_id)) ? "with-graphs" : "";
       if(!this.areaDisplayGrouped){
         return html`
-          <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable">
+          <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable ${withGraphs}">
             ${data.map((i) => this._renderAreaButton(i))}
           </div>`;
       } else {
@@ -1597,7 +1611,7 @@ function getDwainsHass() {
           html`
             <div class="mb-5">
               <h3 class="font-semibold capitalize text-gray">${key.replace(/_/g, " ")}</h3>
-              <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable">
+              <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable ${withGraphs}">
               ${Object.entries(group[key]).map(([k,v]) => html`${this._renderAreaButton(v)}`)}
               </div>
             </div>
@@ -1741,6 +1755,7 @@ function getDwainsHass() {
         unavailableStates: UNAVAILABLE_STATES,
         belongsToArea: (entityId, areaId) => this._entityBelongsToArea(entityId, areaId),
         displayName: (entityId) => this._entityDisplayName(entityId),
+        locale: this._hass?.locale?.language || this._hass?.language,
       });
       sensors.push(...this._areaBinarySensorValues(data.area));
 
@@ -1751,16 +1766,26 @@ function getDwainsHass() {
       const areaIcon = hideAreaIcon
         ? ""
         : ((configuredArea && configuredArea['icon']) || data.area.icon || "mdi:texture-box");
+      const graph = this._areaGraph(data.area.area_id);
 
       return html`
         <div class="relative" data-area-id='${data.area.area_id}'>
           <div
-            class="flex justify-between h-44 p-3 area-button ${this.selectedArea == data.area.area_id && !this.configuration['homepage_header']['v2_mode'] ? 'current' : ''}"
+            class="flex justify-between h-44 p-3 area-button ${graph ? 'has-graph' : ''} ${this.selectedArea == data.area.area_id && !this.configuration['homepage_header']['v2_mode'] ? 'current' : ''}"
             data-area-id='${data.area.area_id}'
             @click=${this._handleAreaClick}
             .lightState=${this._isOn(entitiesByDomain, 'light')}
             @dblclick="${this._handleAreaDoubleClick}"
           >
+            ${graph ? html`
+              <div class="area-graph">
+                <dwains-area-graph
+                  .hass=${this._hass}
+                  .entity=${graph.entityId}
+                  .hours=${graph.hours}
+                ></dwains-area-graph>
+              </div>
+            ` : ""}
             <div class="h-full flex flex-wrap content-between">
               <div class="w-full ha-icon">
                 ${areaIcon ? html`
@@ -1778,10 +1803,10 @@ function getDwainsHass() {
                   ? html`
                     <div
                       class="sensors text-gray"
-                      title="${sensors.join(" - ")}"
+                      title="${sensors.join(" · ")}"
                     >
                       ${sensors.map((sensor, index) => html`
-                        <span class="sensor-chip">${sensor}</span>${index < sensors.length - 1 ? html`<span class="sensor-separator"> - </span>` : ""}
+                        <span class="sensor-chip">${sensor}</span>${index < sensors.length - 1 ? html`<span class="sensor-separator"> · </span>` : ""}
                       `)}
                     </div>`
                   : ""
@@ -1799,7 +1824,7 @@ function getDwainsHass() {
                   return TOGGLE_DOMAINS.includes(domain)
                     ? html`
                       <span
-                        class="info-badge toggle-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium"
+                        class="info-badge toggle-badge badge-${domain} inline-flex items-center px-1 py-0.5 rounded text-xs font-medium"
                         .domain=${domain}
                         .area_id=${data.area.area_id}
                         .state=${on}
@@ -2860,6 +2885,21 @@ function getDwainsHass() {
         .area-button .info br {
           display: none;
         }
+        .with-graphs .area-button {
+          height: 13.5rem;
+        }
+        .area-button.has-graph {
+          overflow: hidden;
+          padding-bottom: 3.5rem;
+        }
+        .area-graph {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 3rem;
+          pointer-events: none;
+        }
         .area-button .sensors {
           display: -webkit-box;
           box-sizing: border-box;
@@ -2900,6 +2940,14 @@ function getDwainsHass() {
         .area-button .info .toggle-badge {
           cursor: pointer;
           pointer-events: auto;
+        }
+        /* Refresh: rounder badges, lit bulb when lights are on */
+        .area-button .info-badge {
+          border-radius: 999px;
+          padding: 0.125rem 0.5rem 0.125rem 0.375rem;
+        }
+        .area-button .toggle-badge.badge-light ha-icon.on {
+          color: var(--state-light-active-color, #ffb300);
         }
         @media (min-width: 1024px) {
           .area-button.current {

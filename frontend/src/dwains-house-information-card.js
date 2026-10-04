@@ -136,8 +136,22 @@ class DwainsHouseInformationCard extends LitElement {
         align-items: center;
         justify-content: center;
         min-width: 60px;
-        max-width: 88px;
+        max-width: 220px;
         padding: 0 4px;
+        position: relative;
+      }
+      /* Refresh: spread the status over the full width with quiet dividers */
+      .dd-header-tabs {
+        justify-content: space-around;
+      }
+      .dd-header-tab + .dd-header-tab::before {
+        content: "";
+        position: absolute;
+        left: -4px;
+        top: 18px;
+        bottom: 18px;
+        width: 1px;
+        background: var(--divider-color, rgba(127, 127, 127, 0.15));
       }
       .dd-header-tabs h3 {
         max-width: 100%;
@@ -161,6 +175,9 @@ class DwainsHouseInformationCard extends LitElement {
         .dd-header-tab {
           flex: 0 0 auto;
           min-width: 68px;
+        }
+        .dd-header-tab + .dd-header-tab::before {
+          display: none;
         }
       }
 

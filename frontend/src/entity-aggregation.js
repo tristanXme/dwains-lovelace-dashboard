@@ -1,13 +1,15 @@
 "use strict";
 
+const { formatValueWithUnit } = require("./value-format");
+
 /** @typedef {{entity_id: string, state: string, attributes: Record<string, any>}} HassEntity */
 
 function averageEntityStates(
   data,
   domain,
   deviceClass,
-  /** @type {{isAvailable?: (entity: HassEntity) => boolean}} */
-  { isAvailable = () => true } = {},
+  /** @type {{isAvailable?: (entity: HassEntity) => boolean, locale?: string}} */
+  { isAvailable = () => true, locale } = {},
 ) {
   const entities = data?.[domain];
   if (!entities) return undefined;
@@ -33,7 +35,7 @@ function averageEntityStates(
 
   if (!values.length) return undefined;
   const sum = values.reduce((total, entity) => total + Number(entity.state), 0);
-  return `${Math.round((sum / values.length) * 10) / 10}${unit}`;
+  return formatValueWithUnit(sum / values.length, unit, locale);
 }
 
 function countActiveEntities(
@@ -65,10 +67,13 @@ function localizedClimateState(
     const action = climate.attributes.hvac_action;
     const temperature = climate.attributes.temperature;
     const target = temperature
-      ? ` (${temperature}${hass.config.unit_system.temperature})`
+      ? ` (${formatValueWithUnit(Number(temperature), hass.config.unit_system.temperature, hass.locale?.language || hass.language)})`
       : "";
     if (action && action !== "idle") {
-      labels.push(hass.localize(`state_attributes.climate.hvac_action.${action}`) + target);
+      const actionLabel = hass.localize(`component.climate.entity_component._.state_attributes.hvac_action.state.${action}`)
+        || hass.localize(`state_attributes.climate.hvac_action.${action}`)
+        || action;
+      labels.push(actionLabel + target);
     } else if (
       !action
       && !unavailableStates.includes(climate.state)

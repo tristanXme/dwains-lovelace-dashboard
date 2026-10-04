@@ -167,6 +167,17 @@ def rename_entity(configs_path: str, old_entity_id: str, new_entity_id: str) -> 
         dump_yaml_file(settings_path, settings)
         changed = True
 
+    areas_path = os.path.join(configs_path, "areas.yaml")
+    areas = _mapping(areas_path)
+    areas_changed = False
+    for area in areas.values():
+        if isinstance(area, dict) and area.get("graph_entity") == old_entity_id:
+            area["graph_entity"] = new_entity_id
+            areas_changed = True
+    if areas_changed:
+        dump_yaml_file(areas_path, areas)
+        changed = True
+
     return changed
 
 

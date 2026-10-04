@@ -1,5 +1,7 @@
 "use strict";
 
+const { formatValueWithUnit } = require("./value-format");
+
 /**
  * Values shown below an area name: averages per configured sensor device
  * class plus explicitly selected sensor entities.
@@ -18,6 +20,7 @@ function collectAreaSensorValues({
   unavailableStates,
   belongsToArea,
   displayName,
+  locale,
 }) {
   const explicit = [];
   for (const entityId of explicitEntityIds || []) {
@@ -35,7 +38,7 @@ function collectAreaSensorValues({
     );
     if (chosen.length) {
       for (const entity of chosen) {
-        values.push(formatSensor(entity, displayName));
+        values.push(formatSensor(entity, displayName, locale));
         shownExplicit.add(entity.entity_id);
       }
       continue;
@@ -45,7 +48,7 @@ function collectAreaSensorValues({
   }
   for (const entity of explicit) {
     if (!shownExplicit.has(entity.entity_id)) {
-      values.push(formatSensor(entity, displayName));
+      values.push(formatSensor(entity, displayName, locale));
     }
   }
   return values;
@@ -57,12 +60,12 @@ function numericValue(entity) {
   return Number.isFinite(value) ? value : undefined;
 }
 
-function formatSensor(entity, displayName) {
+function formatSensor(entity, displayName, locale) {
   const unit = entity.attributes.unit_of_measurement;
   const value = numericValue(entity);
-  // Same compact form as the averages ("21.5°C"); text states need the name
-  // for context ("Regen: Dry").
-  if (value !== undefined && unit) return `${Math.round(value * 10) / 10}${unit}`;
+  // Same form as the averages ("21,5 °C"); text states need the name for
+  // context ("Regen: Dry").
+  if (value !== undefined && unit) return formatValueWithUnit(value, unit, locale);
   const state = value !== undefined ? String(value) : entity.state;
   return `${displayName(entity.entity_id)}: ${unit ? `${state}${unit}` : state}`;
 }

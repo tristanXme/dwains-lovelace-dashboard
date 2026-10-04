@@ -15,6 +15,7 @@ from .yaml_files import dump_yaml_file, load_yaml_file_or_default
 
 AREAS_PATH = "dwains-dashboard/configs/areas.yaml"
 SETTINGS_PATH = "dwains-dashboard/configs/settings.yaml"
+AREA_GRAPH_HOURS = (6, 12, 24, 48, 168)
 HOMEPAGE_HEADER_FIELDS = (
     ("disableClock", "disable_clock"),
     ("amPmClock", "am_pm_clock"),
@@ -35,6 +36,10 @@ HOMEPAGE_HEADER_FIELDS = (
         vol.Optional("floor"): str,
         vol.Optional("disableArea", default=False): bool,
         vol.Optional("hideIcon", default=False): bool,
+        vol.Optional("graphEntity", default=""): vol.Any(str, None),
+        vol.Optional("graphHours", default=24): vol.All(
+            vol.Coerce(int), vol.In(AREA_GRAPH_HOURS)
+        ),
     }
 )
 @websocket_api.require_admin
@@ -63,6 +68,20 @@ async def ws_handle_edit_area_button(
             area["icon"] = msg["icon"]
         else:
             area.pop("icon", None)
+        graph_entity = (msg["graphEntity"] or "").strip()
+        if graph_entity:
+            if not graph_entity.startswith("sensor."):
+                connection.send_error(
+                    msg["id"],
+                    websocket_api.ERR_INVALID_FORMAT,
+                    "The area graph needs a sensor entity",
+                )
+                return
+            area["graph_entity"] = graph_entity
+            area["graph_hours"] = msg["graphHours"]
+        else:
+            area.pop("graph_entity", None)
+            area.pop("graph_hours", None)
         area.pop("floor", None)
 
         await hass.async_add_executor_job(

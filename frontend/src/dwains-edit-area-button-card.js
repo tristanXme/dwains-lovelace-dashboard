@@ -4,6 +4,7 @@ import translateEngine from './translate-engine';
 import { closePopup } from "./helpers";
 const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
+const { AREA_GRAPH_HOURS, normalizeGraphHours } = require('./area-graph');
 
 class DwainsEditAreaButtonCard extends LitElement {
     static get styles() {
@@ -15,7 +16,7 @@ class DwainsEditAreaButtonCard extends LitElement {
           margin-right: auto;
           margin-left: auto;
         }
-        .edit-element ha-icon-picker, .edit-element ha-select, .edit-element ha-entity-picker {
+        .edit-element ha-icon-picker, .edit-element ha-select, .edit-element ha-entity-picker, .edit-element ha-selector {
           display: block;
           margin: .8rem 0;
         }
@@ -52,6 +53,8 @@ class DwainsEditAreaButtonCard extends LitElement {
       this.icon = config.icon ? config.icon : "";
       this.disableArea = config.disableArea ? config.disableArea : false;
       this.hideIcon = config.hideIcon ? config.hideIcon : false;
+      this.graphEntity = config.graphEntity || "";
+      this.graphHours = normalizeGraphHours(config.graphHours);
     }
     connectedCallback(){
       //console.log('connectedCallBack');
@@ -67,6 +70,21 @@ class DwainsEditAreaButtonCard extends LitElement {
       this.hideIcon = ev.target.checked;
       this.requestUpdate();
     }
+    _graphEntityChanged(ev) {
+      this.graphEntity = ev.detail.value || "";
+      this.requestUpdate();
+    }
+    _graphHoursChanged(ev) {
+      ev.stopPropagation();
+      const value = ev.detail?.value;
+      if (value !== undefined && value !== null && value !== "") {
+        this.graphHours = normalizeGraphHours(value);
+        this.requestUpdate();
+      }
+    }
+    _graphEntityFilter(stateObj) {
+      return Boolean(stateObj.attributes && stateObj.attributes.unit_of_measurement);
+    }
     _saveButton(ev){
       closeParentDropdown(ev);
       ev.stopPropagation();
@@ -76,6 +94,8 @@ class DwainsEditAreaButtonCard extends LitElement {
         areaId: this.areaId,
         disableArea: this.disableArea,
         hideIcon: this.hideIcon,
+        graphEntity: this.graphEntity,
+        graphHours: this.graphHours,
       }).then(
           (resp) => {
               console.log(resp);
@@ -103,6 +123,31 @@ class DwainsEditAreaButtonCard extends LitElement {
             ></ha-checkbox>
             <span slot="label">${translateEngine(this.hass, 'area.hide_icon')}</span>
           </ha-formfield>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .label=${translateEngine(this.hass, 'area.graph_entity')}
+            .helper=${translateEngine(this.hass, 'area.graph_entity_helper')}
+            .value=${this.graphEntity}
+            .includeDomains=${["sensor"]}
+            .entityFilter=${this._graphEntityFilter}
+            allow-custom-entity
+            @value-changed=${this._graphEntityChanged}
+          ></ha-entity-picker>
+          ${this.graphEntity ? html`
+            <ha-selector
+              .hass=${this.hass}
+              .label=${translateEngine(this.hass, 'area.graph_hours')}
+              .value=${String(this.graphHours)}
+              .selector=${{ select: {
+                mode: "dropdown",
+                options: AREA_GRAPH_HOURS.map((hours) => ({
+                  value: String(hours),
+                  label: translateEngine(this.hass, `area.graph_hours_${hours}`),
+                })),
+              } }}
+              @value-changed=${this._graphHoursChanged}
+            ></ha-selector>
+          ` : ""}
           <ha-formfield>
             <ha-checkbox
               @change=${this._disableValueChanged}

@@ -41,6 +41,7 @@ async def test_renamed_entity_takes_its_settings_along(
         configs / "settings.yaml",
         "area_binary_sensor_entities: [light.old_lamp]\nalarm_entity: light.old_lamp\n",
     )
+    _write(configs / "areas.yaml", "living:\n  graph_entity: light.old_lamp\n  graph_hours: 24\n")
 
     registry.async_update_entity("light.old_lamp", new_entity_id="light.new_lamp")
     await hass.async_block_till_done()
@@ -54,6 +55,7 @@ async def test_renamed_entity_takes_its_settings_along(
     settings = _read(configs / "settings.yaml")
     assert settings["area_binary_sensor_entities"] == ["light.new_lamp"]
     assert settings["alarm_entity"] == "light.new_lamp"
+    assert _read(configs / "areas.yaml")["living"]["graph_entity"] == "light.new_lamp"
 
 
 async def test_rename_never_overwrites_settings_of_the_new_id(
