@@ -1,0 +1,5 @@
+# Normalize all text files to LF; Home Assistant runs on Linux.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.gz binary
