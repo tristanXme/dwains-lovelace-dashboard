@@ -4,7 +4,7 @@
 
 Update June 2026
 
-Dwains Dashboard 3.10.1 has been released, and the DD3 source files are now available in this repository.
+Dwains Dashboard 3.10.1 has been released, and the DD3 source files are now available in this repository. See below for 3.11.0.
 
 DD3 is no longer under active feature development and will slowly be phased out. Existing older issues have been closed as part of a tracker cleanup. If you still experience a bug on DD3, please retest with the latest DD3 version first and open a new issue only when it is still reproducible.
 
@@ -18,6 +18,44 @@ I built Dwains Dashboard as a free, open-source project in my spare time alongsi
 
 — Dwain
 
+
+## Dwains Dashboard 3.11.0
+
+Security, stability and performance release of DD3.
+
+- **Security:** file names sent by the dashboard editor are validated (no more
+  `../` paths), more-page names can no longer break the dashboard or reveal
+  `secrets.yaml` values, dashboard templates run in a Jinja sandbox.
+- **Stability:** removed or unavailable entities (favorites, alarm, weather) no
+  longer break the homepage; blueprint input fields work again on Home
+  Assistant 2026.9+; clear error messages instead of `unknown_error`.
+- **Performance:** the bundle is served gzip-compressed (584 KB → 120 KB);
+  registry and dashboard data are reused across navigations instead of being
+  downloaded on every page change; opening an area causes far less layout work;
+  the bundle URL is versioned so browsers never keep an outdated copy.
+- **New:** *Explicit sensors below area name* in the integration options, next
+  to the existing explicit binary sensors. A selected sensor replaces the
+  average of its device class on its own area tile.
+- **New:** diagnostics download (Settings → Devices & services → Dwains
+  Dashboard → ⋮ → Download diagnostics), including configuration entries that
+  point to entities which no longer exist.
+
+## Development
+
+```bash
+# Frontend (Node 22, see .nvmrc): sources in frontend/src
+npm ci
+npm test          # unit tests
+npm run build     # writes custom_components/dwains_dashboard/js/* (+ .gz) and const.py revision
+
+# Backend (Python 3.14)
+pip install -r requirements_test.txt
+pytest
+```
+
+CI rebuilds the bundle and fails if the committed files differ from the sources,
+runs the tests against the pinned Home Assistant release and the newest beta,
+and validates the integration with hassfest and HACS.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 
