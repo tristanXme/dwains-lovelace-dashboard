@@ -9,10 +9,17 @@ from datetime import datetime
 
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 
 from .configuration_runtime import get_configuration_runtime
-from .maintenance_files import OrphanReport, find_orphans, remove_orphans, rename_entity
+from .maintenance_files import (
+    OrphanReport,
+    find_orphans,
+    migrate_area_sensor_entities,
+    remove_orphans,
+    rename_entity,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,6 +33,7 @@ ORPHAN_LOCATIONS = {
     "settings_entities": "settings.yaml",
     "areas": "areas.yaml",
     "area_card_folders": "cards/areas/",
+    "area_entities": "areas.yaml",
 }
 RELOAD_EVENTS = (
     "dwains_dashboard_config_reload",
@@ -75,7 +83,7 @@ def orphan_description_placeholders(report: OrphanReport) -> dict[str, str]:
         "entities": str(len(report.entities)),
         "cards": str(len(report.entity_cards) + len(report.entity_popups)),
         "areas": str(len(report.areas) + len(report.area_card_folders)),
-        "settings": str(len(report.settings_entities)),
+        "settings": str(len(report.settings_entities) + len(report.area_entities)),
         "items": listed,
     }
 
@@ -112,6 +120,43 @@ async def async_remove_orphans(hass: HomeAssistant) -> tuple[int, str]:
         _LOGGER.info("Removed %d orphaned dashboard entries, backup in %s", removed, backup)
         _notify_dashboard(hass)
     return removed, backup
+
+
+async def async_migrate_area_sensor_entities(hass: HomeAssistant) -> None:
+    """Move the global explicit sensor lists into the areas (once).
+
+    Up to 3.11.0 the sensors below the area name were chosen in one global
+    list per type in the integration options; now they are part of each
+    area's settings.
+    """
+    entities = er.async_get(hass)
+    devices = dr.async_get(hass)
+    areas_by_entity: dict[str, str | None] = {}
+    for entry in entities.entities.values():
+        area_id = entry.area_id
+        if not area_id and entry.device_id and (device := devices.async_get(entry.device_id)):
+            area_id = device.area_id
+        areas_by_entity[entry.entity_id] = area_id
+
+    runtime = get_configuration_runtime(hass)
+    backup = os.path.join(
+        BACKUPS_PATH, f"migration-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    )
+    async with runtime.mutation_lock:
+        moved, dropped = await hass.async_add_executor_job(
+            migrate_area_sensor_entities,
+            hass.config.path(CONFIGS_PATH),
+            areas_by_entity.get,
+            hass.config.path(backup),
+        )
+        runtime.clear_cache()
+    if moved or dropped:
+        _LOGGER.info(
+            "Moved %d explicit area sensors into their areas (backup in %s)%s",
+            moved,
+            backup,
+            f"; without an area and dropped: {', '.join(dropped)}" if dropped else "",
+        )
 
 
 async def _async_rename(hass: HomeAssistant, old_entity_id: str, new_entity_id: str) -> None:

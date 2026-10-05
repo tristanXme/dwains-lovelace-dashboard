@@ -40,6 +40,13 @@ HOMEPAGE_HEADER_FIELDS = (
         vol.Optional("graphHours", default=24): vol.All(
             vol.Coerce(int), vol.In(AREA_GRAPH_HOURS)
         ),
+        # Sensors shown below the area name; left out: unchanged.
+        vol.Optional("sensorEntities"): vol.All(
+            [vol.All(str, vol.Match(r"^sensor\.[a-z0-9_]+$"))], vol.Length(max=20)
+        ),
+        vol.Optional("binarySensorEntities"): vol.All(
+            [vol.All(str, vol.Match(r"^binary_sensor\.[a-z0-9_]+$"))], vol.Length(max=20)
+        ),
     }
 )
 @websocket_api.require_admin
@@ -82,6 +89,17 @@ async def ws_handle_edit_area_button(
         else:
             area.pop("graph_entity", None)
             area.pop("graph_hours", None)
+        for msg_key, area_key in (
+            ("sensorEntities", "sensor_entities"),
+            ("binarySensorEntities", "binary_sensor_entities"),
+        ):
+            if msg_key not in msg:
+                continue
+            values = list(dict.fromkeys(msg[msg_key]))
+            if values:
+                area[area_key] = values
+            else:
+                area.pop(area_key, None)
         area.pop("floor", None)
 
         await hass.async_add_executor_job(

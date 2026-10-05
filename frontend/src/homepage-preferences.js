@@ -46,16 +46,23 @@ function areaBinarySensorDeviceClasses(configuration) {
   );
 }
 
-function areaBinarySensorEntities(configuration) {
-  return normalizeStringList(
-    homepageHeader(configuration).area_binary_sensor_entities,
-  );
+// Sensors shown below the name of one area: chosen per area in areas.yaml.
+// The global lists of older versions still count until the integration has
+// moved them into the areas.
+function areaEntityList(configuration, areaId, areaKey, legacyKey) {
+  const area = configuration?.areas?.[areaId] || {};
+  return [...new Set([
+    ...normalizeStringList(area[areaKey]),
+    ...normalizeStringList(homepageHeader(configuration)[legacyKey]),
+  ])];
 }
 
-function areaSensorEntities(configuration) {
-  return normalizeStringList(
-    homepageHeader(configuration).area_sensor_entities,
-  );
+function areaBinarySensorEntities(configuration, areaId) {
+  return areaEntityList(configuration, areaId, "binary_sensor_entities", "area_binary_sensor_entities");
+}
+
+function areaSensorEntities(configuration, areaId) {
+  return areaEntityList(configuration, areaId, "sensor_entities", "area_sensor_entities");
 }
 
 module.exports = {

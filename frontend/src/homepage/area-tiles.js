@@ -95,12 +95,12 @@ export const AreaTilesMixin = (Base) => class extends Base {
       return areaBinarySensorDeviceClasses(this.configuration);
     }
 
-    _areaBinarySensorEntities() {
-      return areaBinarySensorEntities(this.configuration);
+    _areaBinarySensorEntities(areaId) {
+      return areaBinarySensorEntities(this.configuration, areaId);
     }
 
-    _areaSensorEntities() {
-      return areaSensorEntities(this.configuration);
+    _areaSensorEntities(areaId) {
+      return areaSensorEntities(this.configuration, areaId);
     }
 
     _areaBinarySensorLabel(deviceClass) {
@@ -276,7 +276,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
         areaEntityIds: this._areaEntityIdsForArea(areaId),
         states: this._hass.states,
         deviceClasses: this._areaBinarySensorDeviceClasses(),
-        explicitEntityIds: this._areaBinarySensorEntities(),
+        explicitEntityIds: this._areaBinarySensorEntities(areaId),
         unavailableStates: UNAVAILABLE_STATES,
         offStates: STATES_OFF,
         belongsToArea: (entityId, targetAreaId) => (
@@ -297,7 +297,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
         average: (deviceClass) => SENSOR_DOMAINS
           .map((domain) => this._average(entitiesByDomain, domain, deviceClass))
           .find(Boolean),
-        explicitEntityIds: this._areaSensorEntities(),
+        explicitEntityIds: this._areaSensorEntities(data.area.area_id),
         states: this._hass.states,
         unavailableStates: UNAVAILABLE_STATES,
         belongsToArea: (entityId, areaId) => this._entityBelongsToArea(entityId, areaId),

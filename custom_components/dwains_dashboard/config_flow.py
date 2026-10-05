@@ -511,12 +511,6 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             header["area_binary_sensor_device_classes"] = _binary_sensor_device_classes_from_input(
                 user_input.get("area_binary_sensor_device_classes", DEFAULT_AREA_BINARY_SENSOR_DEVICE_CLASSES)
             )
-            header["area_sensor_entities"] = _entity_list_from_input(
-                user_input.get("area_sensor_entities", [])
-            )
-            header["area_binary_sensor_entities"] = _entity_list_from_input(
-                user_input.get("area_binary_sensor_entities", [])
-            )
             header["house_information_entries"] = [
                 entry
                 for entry in _entity_list_from_input(
@@ -590,18 +584,12 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             ),
-            vol.Optional("area_sensor_entities", default=cur.get("area_sensor_entities") or []): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="sensor", multiple=True)
-            ),
             vol.Optional("area_binary_sensor_device_classes", default=_binary_sensor_device_classes_to_input(cur)): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=_binary_sensor_device_class_options(translations),
                     multiple=True,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
-            ),
-            vol.Optional("area_binary_sensor_entities", default=cur.get("area_binary_sensor_entities") or []): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
             ),
             vol.Optional("area_view_grouping_mode", default=_area_view_grouping_mode(cur.get("area_view_grouping_mode"))): selector.SelectSelector(
                 selector.SelectSelectorConfig(

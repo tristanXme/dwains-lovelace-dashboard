@@ -5,7 +5,7 @@ import yaml
 from homeassistant.core import HomeAssistant
 
 
-async def test_options_flow_saves_area_sensor_entities(
+async def test_options_flow_saves_settings_and_keeps_other_keys(
     hass: HomeAssistant, setup_dashboard, config_path
 ) -> None:
     settings = config_path("dwains-dashboard/configs/settings.yaml")
@@ -21,13 +21,17 @@ async def test_options_flow_saves_area_sensor_entities(
         result["flow_id"], {"next_step_id": "settings"}
     )
     assert result["type"] == "form"
-    assert "area_sensor_entities" in result["data_schema"].schema
+    fields = {str(key) for key in result["data_schema"].schema}
+    assert "area_sensor_device_classes" in fields
+    # The sensors below the area name are chosen per area now.
+    assert "area_sensor_entities" not in fields
+    assert "area_binary_sensor_entities" not in fields
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         user_input={
-            "area_sensor_entities": ["sensor.living_room_temperature"],
-            "area_binary_sensor_entities": ["binary_sensor.front_door"],
+            "area_sensor_device_classes": ["temperature"],
+            "area_binary_sensor_device_classes": ["window"],
             "disable_clock": False,
         },
     )
@@ -35,8 +39,9 @@ async def test_options_flow_saves_area_sensor_entities(
     await hass.async_block_till_done()
 
     saved = yaml.safe_load(settings.read_text())
-    assert saved["area_sensor_entities"] == ["sensor.living_room_temperature"]
-    assert saved["area_binary_sensor_entities"] == ["binary_sensor.front_door"]
+    assert saved["area_sensor_device_classes"] == ["temperature"]
+    assert saved["area_binary_sensor_device_classes"] == ["window"]
+    assert "area_sensor_entities" not in saved
     assert saved["disable_clock"] is False
     assert saved["custom_key"] == "keep me"
 

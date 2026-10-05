@@ -110,6 +110,7 @@ async def test_orphan_rules(hass: HomeAssistant, setup_dashboard, config_path) -
         "settings_entities": ["sensor.gone"],
         "areas": ["whirlpool"],
         "area_card_folders": ["whirlpool"],
+        "area_entities": [],
     }
     # No repair issue: the cleanup lives in the dashboard settings.
     assert not [
@@ -186,3 +187,98 @@ async def test_cleanup_without_orphans(
     result = await _open_cleanup(hass, setup_dashboard.entry_id)
     assert result["type"] == "abort"
     assert result["reason"] == "nothing_to_clean"
+
+
+async def test_area_sensor_lists_follow_renames_and_cleanup(
+    hass: HomeAssistant, setup_dashboard, config_path
+) -> None:
+    configs = config_path("dwains-dashboard/configs")
+    ar.async_get(hass).async_create("Living")
+    registry = er.async_get(hass)
+    registry.async_get_or_create("sensor", "test", "t-1", suggested_object_id="old_temp")
+    _write(
+        configs / "areas.yaml",
+        "living:\n  sensor_entities: [sensor.old_temp, sensor.gone]\n"
+        "  binary_sensor_entities: [binary_sensor.gone_too]\n",
+    )
+
+    registry.async_update_entity("sensor.old_temp", new_entity_id="sensor.new_temp")
+    await hass.async_block_till_done()
+    assert _read(configs / "areas.yaml")["living"]["sensor_entities"] == [
+        "sensor.new_temp",
+        "sensor.gone",
+    ]
+
+    report = await async_find_orphans(hass)
+    assert report.area_entities == ["binary_sensor.gone_too", "sensor.gone"]
+
+    result = await hass.config_entries.options.async_init(setup_dashboard.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"next_step_id": "cleanup"}
+    )
+    assert "`sensor.gone` – areas.yaml" in result["description_placeholders"]["items"]
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {"confirm": True}
+    )
+    assert result["reason"] == "cleanup_done"
+    living = _read(configs / "areas.yaml")["living"]
+    assert living["sensor_entities"] == ["sensor.new_temp"]
+    assert living["binary_sensor_entities"] == []
+    backup = next(config_path("dwains-dashboard/backups").iterdir())
+    assert "sensor.gone" in (backup / "areas.yaml").read_text()
+
+
+async def test_global_area_sensor_lists_move_into_the_areas(
+    hass: HomeAssistant, config_path
+) -> None:
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.setup import async_setup_component
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    configs = config_path("dwains-dashboard/configs")
+    living = ar.async_get(hass).async_create("Living")
+    entry = MockConfigEntry(domain=DOMAIN, title="Dwains Dashboard")
+    entry.add_to_hass(hass)
+    devices = dr.async_get(hass)
+    device = devices.async_get_or_create(
+        config_entry_id=entry.entry_id, identifiers={("test", "dev")}
+    )
+    devices.async_update_device(device.id, area_id=living.id)
+    registry = er.async_get(hass)
+    registry.async_get_or_create("sensor", "test", "t-1", suggested_object_id="temp")
+    registry.async_update_entity("sensor.temp", area_id=living.id)
+    registry.async_get_or_create(
+        "binary_sensor", "test", "w-1", suggested_object_id="window", device_id=device.id
+    )
+    registry.async_get_or_create("sensor", "test", "x-1", suggested_object_id="nowhere")
+    _write(
+        configs / "settings.yaml",
+        "area_sensor_entities: [sensor.temp, sensor.nowhere]\n"
+        "area_binary_sensor_entities: [binary_sensor.window]\n"
+        "disable_clock: true\n",
+    )
+    _write(configs / "areas.yaml", f"{living.id}:\n  icon: mdi:sofa\n")
+
+    assert await async_setup_component(hass, "http", {})
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    area = _read(configs / "areas.yaml")[living.id]
+    assert area == {
+        "icon": "mdi:sofa",
+        "sensor_entities": ["sensor.temp"],
+        "binary_sensor_entities": ["binary_sensor.window"],
+    }
+    settings = _read(configs / "settings.yaml")
+    assert "area_sensor_entities" not in settings
+    assert "area_binary_sensor_entities" not in settings
+    assert settings["disable_clock"] is True
+    backup = next(config_path("dwains-dashboard/backups").iterdir())
+    assert "sensor.nowhere" in (backup / "settings.yaml").read_text()
+
+    # Second start: nothing left to move, nothing written.
+    before = (configs / "areas.yaml").read_text()
+    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert (configs / "areas.yaml").read_text() == before
+    assert len(list(config_path("dwains-dashboard/backups").iterdir())) == 1

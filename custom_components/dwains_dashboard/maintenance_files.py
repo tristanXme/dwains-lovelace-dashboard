@@ -6,7 +6,8 @@ Dwains Dashboard keys several files by entity id or area id:
 - configs/cards/entities/<entity_id>.yaml    custom entity card
 - configs/cards/entities_popup/<id>.yaml     custom entity popup
 - configs/settings.yaml                      lists of explicit (binary) sensors
-- configs/areas.yaml                         area id -> area settings
+- configs/areas.yaml                         area id -> area settings (graph
+                                             sensor, sensors below the name)
 - configs/cards/areas/<area_id>/             custom area cards
 
 Home Assistant does not know these files, so renamed or removed entities and
@@ -27,6 +28,9 @@ from .yaml_files import dump_yaml_file, load_yaml_file_or_default
 ENTITY_CARD_DIRECTORIES = ("entities", "entities_popup")
 SETTINGS_ENTITY_LISTS = ("area_sensor_entities", "area_binary_sensor_entities")
 SETTINGS_ENTITY_VALUES = ("weather_entity", "alarm_entity")
+# Sensors shown below the area name, per area in areas.yaml. They used to be
+# global lists in settings.yaml (SETTINGS_ENTITY_LISTS, same order).
+AREA_ENTITY_LISTS = ("sensor_entities", "binary_sensor_entities")
 
 
 @dataclass
@@ -39,6 +43,7 @@ class OrphanReport:
     settings_entities: list[str] = field(default_factory=list)
     areas: list[str] = field(default_factory=list)
     area_card_folders: list[str] = field(default_factory=list)
+    area_entities: list[str] = field(default_factory=list)
 
     @property
     def total(self) -> int:
@@ -52,6 +57,7 @@ class OrphanReport:
             "settings_entities": self.settings_entities,
             "areas": self.areas,
             "area_card_folders": self.area_card_folders,
+            "area_entities": self.area_entities,
         }
 
 
@@ -105,10 +111,19 @@ def find_orphans(
             if isinstance(entity_id, str) and not entity_exists(entity_id)
         }
     )
+    areas = _mapping(os.path.join(configs_path, "areas.yaml"))
     report.areas = sorted(
-        area_id
-        for area_id in _mapping(os.path.join(configs_path, "areas.yaml"))
-        if not area_exists(str(area_id))
+        area_id for area_id in areas if not area_exists(str(area_id))
+    )
+    report.area_entities = sorted(
+        {
+            entity_id
+            for area_id, area in areas.items()
+            if area_exists(str(area_id)) and isinstance(area, dict)
+            for key in AREA_ENTITY_LISTS
+            for entity_id in (area.get(key) or [])
+            if isinstance(entity_id, str) and not entity_exists(entity_id)
+        }
     )
     area_cards = _cards_path(configs_path, "areas")
     if os.path.isdir(area_cards):
@@ -171,9 +186,20 @@ def rename_entity(configs_path: str, old_entity_id: str, new_entity_id: str) -> 
     areas = _mapping(areas_path)
     areas_changed = False
     for area in areas.values():
-        if isinstance(area, dict) and area.get("graph_entity") == old_entity_id:
+        if not isinstance(area, dict):
+            continue
+        if area.get("graph_entity") == old_entity_id:
             area["graph_entity"] = new_entity_id
             areas_changed = True
+        for key in AREA_ENTITY_LISTS:
+            values = area.get(key)
+            if isinstance(values, list) and old_entity_id in values:
+                area[key] = [
+                    new_entity_id if value == old_entity_id else value
+                    for value in values
+                    if value != new_entity_id
+                ]
+                areas_changed = True
     if areas_changed:
         dump_yaml_file(areas_path, areas)
         changed = True
@@ -183,6 +209,8 @@ def rename_entity(configs_path: str, old_entity_id: str, new_entity_id: str) -> 
 
 def _backup(source: str, backup_dir: str, configs_path: str) -> None:
     target = os.path.join(backup_dir, os.path.relpath(source, configs_path))
+    if os.path.exists(target):
+        return  # the first copy is the original, keep it
     os.makedirs(os.path.dirname(target), exist_ok=True)
     if os.path.isdir(source):
         shutil.copytree(source, target, dirs_exist_ok=True)
@@ -211,6 +239,25 @@ def remove_orphans(configs_path: str, report: OrphanReport, backup_dir: str) -> 
 
     prune_mapping("entities.yaml", report.entities)
     prune_mapping("areas.yaml", report.areas)
+
+    if report.area_entities:
+        path = os.path.join(configs_path, "areas.yaml")
+        areas = _mapping(path)
+        stale = set(report.area_entities)
+        pruned = 0
+        for area in areas.values():
+            if not isinstance(area, dict):
+                continue
+            for key in AREA_ENTITY_LISTS:
+                values = area.get(key)
+                if isinstance(values, list):
+                    kept = [value for value in values if value not in stale]
+                    pruned += len(values) - len(kept)
+                    area[key] = kept
+        if pruned:
+            _backup(path, backup_dir, configs_path)
+            dump_yaml_file(path, areas)
+            removed += pruned
 
     for directory, entity_ids in (
         ("entities", report.entity_cards),
@@ -245,3 +292,53 @@ def remove_orphans(configs_path: str, report: OrphanReport, backup_dir: str) -> 
             removed += before - after
 
     return removed
+
+
+def migrate_area_sensor_entities(
+    configs_path: str,
+    area_of: Callable[[str], str | None],
+    backup_dir: str,
+) -> tuple[int, list[str]]:
+    """Move the global explicit (binary) sensor lists into their areas.
+
+    Each entity goes to the area it belongs to (it was only ever shown
+    there). Entities without an area are dropped, they never showed up.
+    Returns the number of moved entities and the dropped ones; both files
+    are copied to backup_dir before they change.
+    """
+    settings_path = os.path.join(configs_path, "settings.yaml")
+    settings = _mapping(settings_path)
+    if not any(key in settings for key in SETTINGS_ENTITY_LISTS):
+        return 0, []
+
+    areas_path = os.path.join(configs_path, "areas.yaml")
+    areas = _mapping(areas_path)
+    moved = 0
+    dropped: list[str] = []
+    for settings_key, area_key in zip(SETTINGS_ENTITY_LISTS, AREA_ENTITY_LISTS, strict=True):
+        for entity_id in settings.get(settings_key) or []:
+            if not isinstance(entity_id, str):
+                continue
+            area_id = area_of(entity_id)
+            if not area_id:
+                dropped.append(entity_id)
+                continue
+            area = areas.get(area_id)
+            if not isinstance(area, dict):
+                area = areas[area_id] = OrderedDict()
+            values = area.get(area_key)
+            if not isinstance(values, list):
+                values = area[area_key] = []
+            if entity_id not in values:
+                values.append(entity_id)
+                moved += 1
+
+    for path in (settings_path, areas_path):
+        if os.path.isfile(path):
+            _backup(path, backup_dir, configs_path)
+    if moved:
+        dump_yaml_file(areas_path, areas)
+    for key in SETTINGS_ENTITY_LISTS:
+        settings.pop(key, None)
+    dump_yaml_file(settings_path, settings)
+    return moved, dropped

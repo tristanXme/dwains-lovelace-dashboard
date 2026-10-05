@@ -190,3 +190,51 @@ async def test_area_graph_rejects_invalid_input(
         graphHours=5,
     )
     assert not response["success"]
+
+
+async def test_area_sensors_below_the_name(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client, config_path
+) -> None:
+    client = await hass_ws_client(hass)
+    areas_file = config_path("dwains-dashboard/configs/areas.yaml")
+
+    response = await _call(
+        client,
+        "dwains_dashboard/edit_area_button",
+        areaId="living",
+        sensorEntities=["sensor.living_temperature", "sensor.living_temperature"],
+        binarySensorEntities=["binary_sensor.living_window"],
+    )
+    assert response["success"], response
+    area = yaml.safe_load(areas_file.read_text())["living"]
+    assert area["sensor_entities"] == ["sensor.living_temperature"]
+    assert area["binary_sensor_entities"] == ["binary_sensor.living_window"]
+
+    # Left out: unchanged (older dialogs do not send the lists).
+    response = await _call(client, "dwains_dashboard/edit_area_button", areaId="living")
+    assert response["success"], response
+    area = yaml.safe_load(areas_file.read_text())["living"]
+    assert area["sensor_entities"] == ["sensor.living_temperature"]
+
+    # Empty: removed.
+    response = await _call(
+        client,
+        "dwains_dashboard/edit_area_button",
+        areaId="living",
+        sensorEntities=[],
+        binarySensorEntities=[],
+    )
+    assert response["success"], response
+    area = yaml.safe_load(areas_file.read_text())["living"]
+    assert "sensor_entities" not in area
+    assert "binary_sensor_entities" not in area
+
+    for field, value in (
+        ("sensorEntities", ["binary_sensor.window"]),
+        ("binarySensorEntities", ["sensor.temperature"]),
+        ("sensorEntities", ["sensor.../x"]),
+    ):
+        response = await _call(
+            client, "dwains_dashboard/edit_area_button", areaId="living", **{field: value}
+        )
+        assert not response["success"], (field, value)

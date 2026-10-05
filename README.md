@@ -33,9 +33,11 @@ Security, stability and performance release of DD3.
   registry and dashboard data are reused across navigations instead of being
   downloaded on every page change; opening an area causes far less layout work;
   the bundle URL is versioned so browsers never keep an outdated copy.
-- **New:** *Explicit sensors below area name* in the integration options, next
-  to the existing explicit binary sensors. A selected sensor replaces the
-  average of its device class on its own area tile.
+- **New:** sensors and binary sensors below the area name are chosen per area
+  under *Edit* of the area tile (only the entities of that area are offered).
+  A chosen sensor replaces the average of its device class on that tile. The
+  global lists of earlier versions are moved into the areas automatically on
+  the first start (backup in `dwains-dashboard/backups/`).
 - **New:** renaming an entity in Home Assistant now takes its dashboard
   settings, custom card and popup along automatically.
 - **New:** *Clean up orphaned settings* in the dashboard settings (Settings →

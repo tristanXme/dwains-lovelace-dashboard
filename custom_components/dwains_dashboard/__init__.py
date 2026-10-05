@@ -24,7 +24,7 @@ from .configuration_runtime import (
 )
 from .runtime_data import get_domain_data
 from .legacy_entities import async_remove_legacy_latest_version_sensor
-from .maintenance import async_setup_maintenance
+from .maintenance import async_migrate_area_sensor_entities, async_setup_maintenance
 from .settings_export import async_register_export_view
 
 from homeassistant.core import HomeAssistant
@@ -75,6 +75,10 @@ async def async_setup_entry(hass, config_entry):
     # being (re-)enabled, so it no longer applies.
     ir.async_delete_issue(hass, DOMAIN, "restart_required")
     await async_remove_legacy_latest_version_sensor(hass)
+    try:
+        await async_migrate_area_sensor_entities(hass)
+    except Exception:
+        _LOGGER.exception("Could not move the explicit area sensors into their areas")
 
     try:
         await process_yaml(hass, config_entry)

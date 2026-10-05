@@ -1180,6 +1180,8 @@ function getDwainsHass() {
           hideIcon: hideIcon,
           graphEntity: configuredArea['graph_entity'] || "",
           graphHours: configuredArea['graph_hours'],
+          sensorEntities: configuredArea['sensor_entities'] || [],
+          binarySensorEntities: configuredArea['binary_sensor_entities'] || [],
         }, false, '');
       });
     }

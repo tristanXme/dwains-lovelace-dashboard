@@ -55,6 +55,8 @@ class DwainsEditAreaButtonCard extends LitElement {
       this.hideIcon = config.hideIcon ? config.hideIcon : false;
       this.graphEntity = config.graphEntity || "";
       this.graphHours = normalizeGraphHours(config.graphHours);
+      this.sensorEntities = Array.isArray(config.sensorEntities) ? config.sensorEntities : [];
+      this.binarySensorEntities = Array.isArray(config.binarySensorEntities) ? config.binarySensorEntities : [];
     }
     connectedCallback(){
       //console.log('connectedCallBack');
@@ -85,6 +87,36 @@ class DwainsEditAreaButtonCard extends LitElement {
     _graphEntityFilter(stateObj) {
       return Boolean(stateObj.attributes && stateObj.attributes.unit_of_measurement);
     }
+    // Entities of this area (directly or through their device) in a domain;
+    // only those can be shown below the area name.
+    _areaEntities(domain) {
+      const entities = this.hass?.entities || {};
+      const devices = this.hass?.devices || {};
+      return Object.values(entities)
+        .filter((entry) => entry.entity_id.startsWith(`${domain}.`))
+        .filter((entry) => (entry.area_id || devices[entry.device_id]?.area_id) === this.areaId)
+        .map((entry) => entry.entity_id);
+    }
+    _entityListChanged(key, ev) {
+      ev.stopPropagation();
+      this[key] = Array.isArray(ev.detail.value) ? ev.detail.value : [];
+      this.requestUpdate();
+    }
+    _renderEntityList(key, domain, label, helper) {
+      const choices = this._areaEntities(domain);
+      // Keep chosen entities selectable even if they moved to another area.
+      const include = [...new Set([...choices, ...this[key]])];
+      return html`
+        <ha-selector
+          .hass=${this.hass}
+          .label=${label}
+          .helper=${helper}
+          .value=${this[key]}
+          .selector=${{ entity: { multiple: true, include_entities: include.length ? include : ["none.none"] } }}
+          @value-changed=${(ev) => this._entityListChanged(key, ev)}
+        ></ha-selector>
+      `;
+    }
     _saveButton(ev){
       closeParentDropdown(ev);
       ev.stopPropagation();
@@ -96,6 +128,8 @@ class DwainsEditAreaButtonCard extends LitElement {
         hideIcon: this.hideIcon,
         graphEntity: this.graphEntity,
         graphHours: this.graphHours,
+        sensorEntities: this.sensorEntities,
+        binarySensorEntities: this.binarySensorEntities,
       }).then(
           (resp) => {
               console.log(resp);
@@ -148,6 +182,18 @@ class DwainsEditAreaButtonCard extends LitElement {
               @value-changed=${this._graphHoursChanged}
             ></ha-selector>
           ` : ""}
+          ${this._renderEntityList(
+            'sensorEntities',
+            'sensor',
+            translateEngine(this.hass, 'area.sensor_entities'),
+            translateEngine(this.hass, 'area.sensor_entities_helper'),
+          )}
+          ${this._renderEntityList(
+            'binarySensorEntities',
+            'binary_sensor',
+            translateEngine(this.hass, 'area.binary_sensor_entities'),
+            translateEngine(this.hass, 'area.binary_sensor_entities_helper'),
+          )}
           <ha-formfield>
             <ha-checkbox
               @change=${this._disableValueChanged}
