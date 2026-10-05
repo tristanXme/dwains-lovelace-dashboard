@@ -150,12 +150,18 @@
     get updateComplete() { return Promise.resolve(true); }
     _render() {
       if (!this._wrap) return;
-      this._wrap.textContent = "";
-      if (this._cards) {
-        for (const c of this._cards) {
-          if (c) this._wrap.appendChild(c);
-        }
+      // HA sets the cards again whenever it rebuilds the view, mostly the
+      // same elements. Re-inserting them all would disconnect every card
+      // (reloading the page cards and their subscriptions); only remove
+      // and insert what changed.
+      const cards = (this._cards || []).filter(Boolean);
+      for (const child of [...this._wrap.children]) {
+        if (!cards.includes(child)) child.remove();
       }
+      cards.forEach((card, index) => {
+        const current = this._wrap.children[index];
+        if (current !== card) this._wrap.insertBefore(card, current || null);
+      });
       this._ensureNavigation();
       this._syncHeader();
     }

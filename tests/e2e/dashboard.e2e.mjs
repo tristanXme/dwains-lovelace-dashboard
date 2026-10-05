@@ -101,6 +101,9 @@ for (const colorScheme of ["light", "dark"]) {
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
+    // Subscriptions dropped while events were on the way: cards being torn
+    // down and set up again.
+    if (/unknown subscription/.test(message.text())) errors.push(message.text());
     if (message.type() === "error" && /dwains|homepage|devices|more-page|area-graph/i.test(message.text())) errors.push(message.text());
   });
   await page.goto(BASE + "/dwains-dashboard/home");

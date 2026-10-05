@@ -23,6 +23,7 @@ const { RegistryChangeWatcher } = require('./registry-change-watcher');
 const { entityIdsIn, hassChangeIsRelevant, relevanceFilter } = require('./state-relevance');
 const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
+const { DisconnectGrace } = require('./disconnect-grace');
 const { attachDeferredCard } = require('./deferred-card');
 const { entitySettingsFromConfiguration } = require('./entity-settings-config');
 const { createHomepageCardElement, propagateHomepageHass } = require('./homepage-card-runtime');
@@ -52,6 +53,7 @@ function getDwainsHass() {
 
     constructor() {
       super();
+      this._disconnectGrace = new DisconnectGrace();
       this._registryChanges = new RegistryChangeWatcher(() => {
         this._reloadCard().catch((error) => console.error('Error reloading homepage card:', error));
       });
@@ -216,6 +218,7 @@ function getDwainsHass() {
 
 	    async connectedCallback(){
 	      super.connectedCallback();
+	      if (this._disconnectGrace.cancel()) return;
 	      this._subscriptions.connect();
 	      this._timers.connect();
 
@@ -245,6 +248,10 @@ function getDwainsHass() {
 
 	    disconnectedCallback(){
 	      super.disconnectedCallback();
+	      this._disconnectGrace.schedule(this, () => this._teardown());
+	    }
+
+	    _teardown(){
 	      this._subscriptions.disconnect();
 	      this._timers.disconnect();
 	      this._registryChanges.reset();

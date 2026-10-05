@@ -9,6 +9,7 @@ const { ReloadableLoadOwner } = require('./reloadable-load-owner');
 const { hassConnectionIdentity, hasHassConnectionChanged } = require('./hass-connection');
 const { websocketReadStore } = require('./websocket-read-store');
 const { defineDwainsElement } = require('./custom-element-registration');
+const { DisconnectGrace } = require('./disconnect-grace');
 const { VisualViewportNavigationOwner } = require('./visual-viewport-navigation');
 const {
   createNavigationActiveState,
@@ -186,6 +187,7 @@ class DwainsNavigationCard extends LitElement {
 
       constructor() {
         super();
+        this._disconnectGrace = new DisconnectGrace();
         this.currentPath = navigationLocationPath(document.location);
         this.isLoading = true; // Start met laden aangeven
         this._subscriptions = new EventSubscriptionOwner();
@@ -233,6 +235,7 @@ class DwainsNavigationCard extends LitElement {
 
       connectedCallback() {
         super.connectedCallback();
+        if (this._disconnectGrace.cancel()) return;
         this._viewportNavigation.connect(this);
         this._subscriptions.connect();
         this._listeners.listen('location-changed', window, 'location-changed', this._routeChanged);
@@ -257,6 +260,10 @@ class DwainsNavigationCard extends LitElement {
 
       disconnectedCallback() {
         super.disconnectedCallback();
+        this._disconnectGrace.schedule(this, () => this._teardown());
+      }
+
+      _teardown(){
         this._viewportNavigation.disconnect();
         this._subscriptions.disconnect();
         this._listeners.disconnect();

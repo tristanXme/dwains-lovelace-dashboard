@@ -19,6 +19,7 @@ import {
     DETECTED_DEVICE_CLASSES
 } from './variables';
 const { defineDwainsElement } = require('./custom-element-registration');
+const { DisconnectGrace } = require('./disconnect-grace');
 import translateEngine from './translate-engine';
 import { myComputeStateDisplay, resolveEntityName } from "./helpers";
 import { subtleHouseInformationStyles } from './styles/dwains-subtle-style';
@@ -35,6 +36,7 @@ const { isEntityHiddenInArea } = require('./entity-aggregation');
 class DwainsHouseInformationCard extends LitElement {
     constructor() {
         super();
+        this._disconnectGrace = new DisconnectGrace();
         this._registryChanges = new RegistryChangeWatcher(() => {
             this._reloadCard().catch((error) => console.error('Error reloading house information card:', error));
         });
@@ -218,6 +220,7 @@ class DwainsHouseInformationCard extends LitElement {
 
     async connectedCallback() {
         super.connectedCallback();
+      if (this._disconnectGrace.cancel()) return;
         this._timers.connect();
         await this._startIfReady();
     }
@@ -238,6 +241,10 @@ class DwainsHouseInformationCard extends LitElement {
 
     disconnectedCallback() {
         super.disconnectedCallback();
+      this._disconnectGrace.schedule(this, () => this._teardown());
+    }
+
+    _teardown(){
         this._startedHass = undefined;
         this._loads.invalidate();
         this._timers.disconnect();

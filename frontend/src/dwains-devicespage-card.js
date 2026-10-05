@@ -22,6 +22,7 @@ const { registryOrderedEntityUnion } = require('./registry-indexes');
 const { resolveHass } = require('./hass-provider');
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { defineDwainsElement } = require('./custom-element-registration');
+const { DisconnectGrace } = require('./disconnect-grace');
 const { RegistryChangeWatcher } = require('./registry-change-watcher');
 const { entityIdsIn, hassChangeIsRelevant, relevanceFilter } = require('./state-relevance');
 const { attachDeferredCard } = require('./deferred-card');
@@ -49,6 +50,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 
         constructor() {
           super();
+          this._disconnectGrace = new DisconnectGrace();
           this._registryChanges = new RegistryChangeWatcher(() => {
             this._reloadCard().catch((error) => console.error('Error reloading devices page card:', error));
           });
@@ -185,6 +187,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 	        async connectedCallback(){
 	          //console.log('connectedCallBack');
 	          super.connectedCallback();
+	          if (this._disconnectGrace.cancel()) return;
 	          this._subscriptions.connect();
 	          this._timers.connect();
 	          this._listeners.connect();
@@ -214,6 +217,10 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 
 	        disconnectedCallback(){
 	          super.disconnectedCallback();
+	          this._disconnectGrace.schedule(this, () => this._teardown());
+	        }
+
+	        _teardown(){
 	          this._subscriptions.disconnect();
 	          this._timers.disconnect();
 	          this._listeners.disconnect();

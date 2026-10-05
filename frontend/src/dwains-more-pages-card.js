@@ -17,6 +17,7 @@ const { hassConnectionIdentity, hasHassConnectionChanged } = require('./hass-con
 const { websocketReadStore } = require('./websocket-read-store');
 const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
+const { DisconnectGrace } = require('./disconnect-grace');
 const { dispatchMorePageMetadataChanged } = require('./more-page-events');
 const morePagesEditModes = new WeakMap();
 
@@ -44,6 +45,7 @@ class MorePagesCard extends LitElement {
          */
         constructor() {
           super();
+          this._disconnectGrace = new DisconnectGrace();
           this._subscriptions = new EventSubscriptionOwner();
           this._timers = new TimerOwner();
           this._popupOpens = new PopupOpenScheduler(this._timers);
@@ -83,6 +85,7 @@ class MorePagesCard extends LitElement {
         async connectedCallback(){
           //console.log('connectedCallBack');
           super.connectedCallback();
+          if (this._disconnectGrace.cancel()) return;
           this._subscriptions.connect();
           this._timers.connect();
 
@@ -110,6 +113,10 @@ class MorePagesCard extends LitElement {
 
         disconnectedCallback(){
           super.disconnectedCallback();
+          this._disconnectGrace.schedule(this, () => this._teardown());
+        }
+
+        _teardown(){
           this._subscriptions.disconnect();
           this._timers.disconnect();
           this._startedHass = undefined;
