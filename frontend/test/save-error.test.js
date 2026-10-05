@@ -29,3 +29,19 @@ test("error texts", () => {
   assert.equal(errorText({ code: "unauthorized" }), "unauthorized");
   assert.equal(errorText(new Error("offline")), "offline");
 });
+
+test("an outdated page asks once for a reload", () => {
+  const { reportOutdatedPage } = require("../src/save-error");
+  const events = [];
+  let reloads = 0;
+  const target = { dispatchEvent: (event) => events.push(event) };
+  const options = { translate: (key) => `<${key}>`, refreshText: "Refresh", target, reload: () => { reloads += 1; } };
+  assert.equal(reportOutdatedPage(options), true);
+  assert.equal(reportOutdatedPage(options), false, "only once per page");
+  assert.equal(events.length, 1);
+  assert.equal(events[0].type, "hass-notification");
+  assert.equal(events[0].detail.message, "<global.reload_after_update>");
+  assert.equal(events[0].detail.action.text, "Refresh");
+  events[0].detail.action.action();
+  assert.equal(reloads, 1);
+});

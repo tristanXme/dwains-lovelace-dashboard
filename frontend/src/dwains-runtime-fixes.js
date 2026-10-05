@@ -5,6 +5,8 @@ const {
 const { iconDbRecovery } = require('./icon-db-recovery');
 const { registerLazyCard } = require('./lazy-card');
 const { getDwainsRuntimeState } = require('./runtime-state');
+const { setLoadFailureHandler } = require('./load-failure');
+import { showReloadHint } from './save-error-toast';
 
 (function() {
   'use strict';
@@ -19,6 +21,9 @@ const { getDwainsRuntimeState } = require('./runtime-state');
   iconDbRecovery.start();
 
   registerLazyCard();
+
+  // Parts that cannot be loaded after an update: ask for a reload.
+  setLoadFailureHandler(showReloadHint);
 
   // Error handler: log diagnostics without suppressing browser error reporting.
   window.addEventListener('error', reportRuntimeWindowError, true);

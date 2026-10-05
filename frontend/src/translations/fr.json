@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "L'enregistrement a échoué",
+    "reload_after_update": "Dwains Dashboard a été mis à jour. Rechargez la page pour pouvoir tout utiliser à nouveau.",
+    "reload": "Recharger",
     "enable_edit_mode": "Activer le mode d'édition",
     "disable_edit_mode": "Désactiver le mode d'édition",
     "version": "Version",

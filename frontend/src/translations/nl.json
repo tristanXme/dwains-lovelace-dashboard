@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Opslaan mislukt",
+    "reload_after_update": "Dwains Dashboard is bijgewerkt. Laad de pagina opnieuw om alles weer te kunnen gebruiken.",
+    "reload": "Opnieuw laden",
     "enable_edit_mode": "Bewerkingsmodus inschakelen",
     "disable_edit_mode": "Bewerkingsmodus uitschakelen",
     "version": "Versie",

@@ -8,6 +8,7 @@
 
 const { getDwainsRuntimeState } = require("./runtime-state");
 const { isDwainsElementName } = require("./custom-element-registration");
+const { reportLoadFailure } = require("./load-failure");
 
 function languageState(windowObject) {
   const state = getDwainsRuntimeState(windowObject);
@@ -60,10 +61,35 @@ function requestLanguage(
       return strings;
     })
     .catch((error) => {
+      state.failedLanguages ||= {};
+      state.failedLanguages[code] = true;
       reportError(`Dwains Dashboard: failed to load the "${code}" strings`, error);
+      reportLoadFailure(error);
       return undefined;
     });
   return state.languageRequests[code];
 }
 
-module.exports = { loadedLanguage, requestLanguage, rerenderDwainsElements };
+// The strings to fall back on while the language (or its base language,
+// "pt" for "pt-BR") is still on the way: those of the language shown before,
+// so a language switch does not flash English. undefined once one of them is
+// there, when it is English, or when it cannot be loaded at all; English is
+// the fallback then.
+function stringsWhileLoading(codes, windowObject = window) {
+  const state = languageState(windowObject);
+  const ready = codes.find((code) => code === "en" || state.translations[code]);
+  if (ready) {
+    state.shownLanguage = ready;
+    return undefined;
+  }
+  const loading = codes.some(
+    (code) => state.languageRequests[code] && !state.failedLanguages?.[code],
+  );
+  if (!loading) {
+    state.shownLanguage = "en";
+    return undefined;
+  }
+  return state.translations[state.shownLanguage];
+}
+
+module.exports = { loadedLanguage, requestLanguage, rerenderDwainsElements, stringsWhileLoading };

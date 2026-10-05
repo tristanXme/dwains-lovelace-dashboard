@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Zapisywanie nie powiodło się",
+    "reload_after_update": "Dwains Dashboard został zaktualizowany. Odśwież stronę, aby znów korzystać ze wszystkich funkcji.",
+    "reload": "Odśwież",
     "enable_edit_mode": "Edytuj",
     "disable_edit_mode": "Wyłącz edycję",
     "version": "Wersja",

@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "保存失败",
+    "reload_after_update": "Dwains Dashboard 已更新。请重新加载页面以继续使用全部功能。",
+    "reload": "重新加载",
     "enable_edit_mode": "启用编辑模式",
     "disable_edit_mode": "禁用编辑模式",
     "version": "版本",

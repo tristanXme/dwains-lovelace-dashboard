@@ -42,6 +42,9 @@ Security, stability and performance release of DD3.
     gzip-compressed).
     Edit dialogs, drag and drop and the strings of other languages load only
     when needed; the strings of your language arrive before the first render.
+    A tab left open across an update asks to be reloaded when it cannot load
+    these parts anymore, and switching the language keeps the previous one
+    until the new strings have arrived.
   - Areas, devices and entities come from the registries Home Assistant
     already keeps in the browser instead of downloading the full lists (the
     entity list is several MB on large installations).

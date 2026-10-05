@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Salvataggio non riuscito",
+    "reload_after_update": "Dwains Dashboard è stato aggiornato. Ricarica la pagina per poterlo usare di nuovo completamente.",
+    "reload": "Ricarica",
     "enable_edit_mode": "Abilita la modalità di modifica",
     "disable_edit_mode": "Disabilita la modalità di modifica",
     "version": "Versione",

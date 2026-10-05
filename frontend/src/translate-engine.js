@@ -1,5 +1,5 @@
 import en from './translations/en.json';
-const { loadedLanguage, requestLanguage } = require('./language-loader');
+const { loadedLanguage, requestLanguage, stringsWhileLoading } = require('./language-loader');
 
 //From Mini Media Player, Credits to Kalkih
 
@@ -21,6 +21,7 @@ const translation = (hass, label, hassLabel = undefined, fallback = 'unknown') =
   return getNestedProp(strings(lang), label)
     || hass && hass.resources && hass.resources[lang] && hass.resources[lang][hassLabel]
     || l639 !== lang && getNestedProp(strings(l639), label)
+    || getNestedProp(stringsWhileLoading([lang, l639]), label)
     || getNestedProp(en, label)
     || fallback;
 };

@@ -10,14 +10,17 @@ function isEditorTag(tag) {
     && (tag.startsWith("dwains-edit-") || tag.startsWith("dwains-create-") || tag.startsWith("dwains-card-"));
 }
 
+const { reportLoadFailure } = require("./load-failure");
+
 // A failed load is forgotten so the next attempt can retry, e.g. after a
 // connection drop. After an update a page still running the old bundle
-// asks for chunk files that no longer exist; reloading the page fixes that.
+// asks for chunk files that no longer exist; the user is told to reload.
 function once(load) {
   let pending;
   return () => {
     pending ||= load().catch((error) => {
       pending = undefined;
+      reportLoadFailure(error);
       throw error;
     });
     return pending;

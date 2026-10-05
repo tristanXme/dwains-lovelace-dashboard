@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Speichern fehlgeschlagen",
+    "reload_after_update": "Dwains Dashboard wurde aktualisiert. Lade die Seite neu, um wieder alles nutzen zu können.",
+    "reload": "Neu laden",
     "invert_cover": "Rollläden umkehren",
     "enable_edit_mode": "Aktiviere Bearbeitungsmodus",
     "disable_edit_mode": "Deaktiviere Bearbeitungsmodus",

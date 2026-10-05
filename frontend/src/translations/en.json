@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Saving failed",
+    "reload_after_update": "Dwains Dashboard was updated. Reload the page to use all of it again.",
+    "reload": "Reload",
     "enable_edit_mode": "Enable edit mode",
     "disable_edit_mode": "Disable edit mode",
     "version": "Version",

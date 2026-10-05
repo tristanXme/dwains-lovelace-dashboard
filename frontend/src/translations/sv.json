@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Det gick inte att spara",
+    "reload_after_update": "Dwains Dashboard har uppdaterats. Ladda om sidan för att kunna använda allt igen.",
+    "reload": "Ladda om",
     "enable_edit_mode": "Aktivera redigeringsläge",
     "disable_edit_mode": "Inaktivera redigeringsläge",
     "version": "Version",
