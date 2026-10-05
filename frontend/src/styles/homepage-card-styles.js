@@ -313,16 +313,16 @@ export const homepageCardStyles = (css) => css`
         .grid-flow-row-dense {
             grid-auto-flow: row dense
         }
-        .dd-fav-masonry {
+        .dd-fav-masonry,
+        .dd-masonry {
           grid-auto-rows: 8px;
           row-gap: 0 !important;
           align-items: start;
         }
-        .dd-masonry > div > div,
-        .dd-masonry > div > div > dd-lazy-card {
-            display: block;
-            height: 100%;
-            min-height: 100%;
+        /* Each cell includes the 16px gap below its card; the last row's
+           gap would add to the spacing of the next group. */
+        .dd-masonry {
+          margin-bottom: -1rem;
         }
         .grid-cols-1 {
             grid-template-columns: repeat(1, minmax(0, 1fr))

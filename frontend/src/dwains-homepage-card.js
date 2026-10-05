@@ -339,9 +339,9 @@ function getDwainsHass() {
 	          Array.from(grid.children).forEach((item) => {
 	            try {
 	              if(this.__masonryRO) this.__masonryRO.observe(item);
-	              // Favorite cells have a fixed row span; watch the card itself
-	              // so the span follows when the card finishes loading.
-	              if(this.__masonryRO && grid.classList.contains("dd-fav-masonry") && item.firstElementChild){
+	              // Cells have a fixed row span; watch the card itself so the
+	              // span follows when the card finishes loading.
+	              if(this.__masonryRO && item.firstElementChild){
 	                this.__masonryRO.observe(item.firstElementChild);
 	              }
 	            } catch (error) {
@@ -375,50 +375,45 @@ function getDwainsHass() {
 	        if(!this.shadowRoot) return;
 	        // Favorites: real masonry on 8px rows, so a short tile no longer
 	        // leaves a gap below it next to a tall one.
-	        this.shadowRoot.querySelectorAll(".dd-fav-masonry").forEach((grid) => {
+	        // Favorites and area cards: real masonry on 8px rows, so a short card
+	        // no longer leaves a gap below it next to a tall one.
+	        const grids = Array.from(this.shadowRoot.querySelectorAll(".dd-fav-masonry, .dd-masonry"));
+	        // Read every height first and write afterwards: interleaving
+	        // getBoundingClientRect() with style writes forces one full layout
+	        // per card (the main cost when opening an area).
+	        const layouts = grids.map((grid) => {
 	          const items = Array.from(grid.children);
-	          const spans = items.map((item) => {
+	          const heights = items.map((item) => {
 	            const content = item.firstElementChild;
-	            const height = content ? content.getBoundingClientRect().height : 0;
-	            return height > 0 ? "span " + Math.ceil((height + 16) / 8) : undefined;
+	            return content ? content.getBoundingClientRect().height : 0;
 	          });
-	          items.forEach((item, index) => {
-	            // Set start and end: with the row-span-* classes both sides are
-	            // spans and a span on grid-row-end alone would be ignored.
-	            const row = spans[index] && `${spans[index]} / ${spans[index]}`;
-	            if(row && item.style.gridRow !== row){
-	              item.style.gridRow = row;
-	            }
+	          // A card configured with a row span of 2+ keeps that much room:
+	          // a multiple of the typical single card.
+	          const single = heights
+	            .filter((height, index) => height > 0 && this._currentMasonryRowSpan(items[index]) === 1)
+	            .sort((a, b) => a - b);
+	          const typical = single.length ? single[Math.floor(single.length / 2)] : 0;
+	          return items.map((item, index) => {
+	            const rowSpan = this._currentMasonryRowSpan(item);
+	            const height = Math.max(heights[index], rowSpan > 1 ? rowSpan * typical + (rowSpan - 1) * 16 : 0);
+	            return [item, height > 0 ? Math.ceil((height + 16) / 8) : undefined];
 	          });
 	        });
-	        const edit = this.areaViewEditMode || this.favoriteEditMode;
-	        this.shadowRoot.querySelectorAll(edit ? ".dd-masonry, .area-view-entity-sortable" : ".dd-masonry").forEach((grid) => {
-	          if(edit){
-	            grid.style.gridAutoRows = "auto";
-	            grid.style.alignItems = "stretch";
-	            grid.style.rowGap = "1rem";
-	            Array.from(grid.children).forEach((item) => item.style.gridRowEnd = "");
-	          } else {
-	            grid.style.gridAutoRows = "";
-	            grid.style.alignItems = "";
-	            grid.style.rowGap = "";
-	            // Read every height first and write afterwards: interleaving
-	            // getBoundingClientRect() with style writes forced one full
-	            // layout per tile (the main cost when opening an area).
-	            const items = Array.from(grid.children);
-	            const spans = items.map((item) => {
-	              if(this._currentMasonryRowSpan(item) > 1) return "";
-	              const height = item.getBoundingClientRect().height;
-	              return height > 0 ? "span " + (Math.ceil(height) + 16) : undefined;
-	            });
-	            items.forEach((item, index) => {
-	              const span = spans[index];
-	              if(span !== undefined && item.style.gridRowEnd !== span){
-	                item.style.gridRowEnd = span;
-	              }
-	            });
+	        layouts.flat().forEach(([item, span]) => {
+	          // Set start and end: with the row-span-* classes both sides are
+	          // spans and a span on grid-row-end alone would be ignored.
+	          const row = span && `span ${span} / span ${span}`;
+	          if(row && item.style.gridRow !== row){
+	            item.style.gridRow = row;
 	          }
 	        });
+	        // Edit mode uses the plain grid again (no masonry class): drop the
+	        // spans written above.
+	        if(this.areaViewEditMode || this.favoriteEditMode){
+	          this.shadowRoot.querySelectorAll(".area-view-entity-sortable:not(.dd-masonry) > *, .sortable:not(.dd-fav-masonry):not(.dd-masonry) > *").forEach((item) => {
+	            if(item.style.gridRow) item.style.gridRow = "";
+	          });
+	        }
 	      } catch (error) {
 	        console.error("Failed to apply homepage masonry spans", error);
 	      }
