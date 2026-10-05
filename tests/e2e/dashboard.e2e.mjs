@@ -249,6 +249,52 @@ for (const colorScheme of ["light", "dark"]) {
       }), "device edit mode with drag sorting");
     });
 
+    await step("dragging device types saves the order, a failed save puts it back", async () => {
+      // Sortable calls onStart/onEnd around a drag; calling them around
+      // sort() is the same without moving the mouse.
+      const drag = (order) => deep(page, async (all, order) => {
+        const sortable = all.find((el) => el.localName === "devices-card")._sortable[0];
+        sortable.options.onStart.call(sortable);
+        sortable.sort(order);
+        await sortable.options.onEnd.call(sortable);
+        return sortable.toArray();
+      }, order);
+      const shown = () => deep(page, (all) => [...(all.find((el) => el.localName === "devices-card")?.shadowRoot?.querySelectorAll(".device-button") || [])].map((button) => button.dataset.device));
+      const before = await shown();
+      assert.ok(before.length > 1, before.join(","));
+      const reversed = [...before].reverse();
+      assert.deepEqual(await drag(reversed), reversed);
+      await page.reload();
+      await poll(async () => JSON.stringify(await shown()) === JSON.stringify(reversed), "saved device order after reload");
+
+      // The save fails: the toast tells so and the order goes back.
+      await clickMenuItem(page, "devices-card", "", "Bearbeitungsmodus");
+      await poll(() => deep(page, (all) => all.find((el) => el.localName === "devices-card")._sortable?.length === 1), "drag sorting");
+      await page.evaluate(() => {
+        const ha = document.querySelector("home-assistant");
+        window.__ddToasts = [];
+        ha.addEventListener("hass-notification", (event) => window.__ddToasts.push(event.detail.message));
+        const connection = ha.hass.connection;
+        const send = connection.sendMessagePromise.bind(connection);
+        connection.sendMessagePromise = (message) => (message.type === "dwains_dashboard/sort_device_button"
+          ? Promise.reject({ code: "e2e", message: "simulated failure" })
+          : send(message));
+        window.__ddRestoreSend = () => { connection.sendMessagePromise = send; };
+      });
+      assert.deepEqual(await drag(before), reversed);
+      assert.deepEqual(await shown(), reversed);
+      const toasts = await page.evaluate(() => window.__ddToasts);
+      assert.ok(toasts.some((text) => text.includes("simulated failure")), toasts.join(" | "));
+      await page.evaluate(() => window.__ddRestoreSend());
+      // Expected: the failed save is logged.
+      await page.waitForTimeout(300);
+      for (let index = errors.length - 1; index >= 0; index -= 1) {
+        if (/saving failed/.test(errors[index])) errors.splice(index, 1);
+      }
+
+      assert.deepEqual(await drag(before), before);
+    });
+
     await step("registries are read from Home Assistant, changes show up live", async () => {
       // HA requests the device, area and floor lists itself to fill hass;
       // the full entity list is what the dashboard used to download.
