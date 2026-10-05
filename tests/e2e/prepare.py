@@ -89,12 +89,22 @@ async def _setup(config_dir: Path) -> None:
             area = next((a for a in areas if a["name"] == "Wohnzimmer"), None) or await ws.call(
                 type="config/area_registry/create", name="Wohnzimmer", icon="mdi:sofa"
             )
-            for entity_id in (
+            entity_ids = (
                 "sensor.temperatur_wohnzimmer",
                 "sensor.luftfeuchte_wohnzimmer",
                 "binary_sensor.fenster_wohnzimmer",
                 "input_boolean.e2e_lamp",
-            ):
+            )
+            # HTTP answers before every integration has registered its
+            # entities (on a fast machine the template sensors come later).
+            async with asyncio.timeout(60):
+                while True:
+                    registry = await ws.call(type="config/entity_registry/list")
+                    known = {entry["entity_id"] for entry in registry}
+                    if known.issuperset(entity_ids):
+                        break
+                    await asyncio.sleep(0.5)
+            for entity_id in entity_ids:
                 await ws.call(
                     type="config/entity_registry/update",
                     entity_id=entity_id,

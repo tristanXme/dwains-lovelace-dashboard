@@ -91,15 +91,19 @@ class DwainsAreaGraph extends LitElement {
     } catch (error) {
       if (this._loadedFor === key) this._points = [];
     }
+    if (this._loadedFor === key) this._appendLiveState();
   }
 
   _appendLiveState() {
     const state = this.hass?.states?.[this.entity];
-    if (!state || !this._points.length) return;
+    if (!state || this._loadedFor !== `${this.entity}|${normalizeGraphHours(this.hours)}`) return;
     const value = Number(state.state);
     const time = Date.parse(state.last_updated);
+    if (state.state === '' || !Number.isFinite(value) || !Number.isFinite(time)) return;
+    // Without recorded history (new sensor, excluded from the recorder) the
+    // graph starts at the current value and grows with live updates.
     const last = this._points[this._points.length - 1];
-    if (!Number.isFinite(value) || !Number.isFinite(time) || time <= last.time) return;
+    if (last && time <= last.time) return;
     this._points = [...this._points, { time, value }];
   }
 
