@@ -150,8 +150,6 @@ function getDwainsHass() {
       this.timeout = false;
       this._pendingHassUpdate = false;
 
-	      if (!this._hass) this._hass = getDwainsHass();
-
       this.selectedArea = window.location.hash.substring(1);
       this.areaEditMode = false;
       this.favoriteEditMode = false;

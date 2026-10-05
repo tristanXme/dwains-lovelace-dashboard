@@ -1,4 +1,3 @@
-import { hass } from "./hass-compat";
 import { css, html, LitElement } from 'lit';
 import {
   SUPPORTED_CARDS_WITH_ENTITY
@@ -213,7 +212,6 @@ class DwainsEditEntityPopupCard extends LitElement {
         return;
       }
       this._editorSessionInitialized = true;
-      if (!this.hass) this.hass = hass();
       this.mode = config.mode ? config.mode : 'pre-select'; //Set default mode to hui-card-picker
       this.entity_id = config.entity_id;
       if(config.cardConfig){

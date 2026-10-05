@@ -29,7 +29,7 @@ const waitForDwainsConstructor = async (tag) => {
   return ctor;
 };
 
-const createDwainsElement = async (tag, ctor, config) => {
+const createDwainsElement = async (tag, ctor, config, hassObj) => {
   const fixedTag = `${tag}-ddfix`;
   if (!customElements.get(fixedTag)) {
     defineDwainsElement(fixedTag, class extends ctor {});
@@ -39,6 +39,8 @@ const createDwainsElement = async (tag, ctor, config) => {
   if (typeof element.setConfig !== 'function') {
     throw new TypeError(`${fixedTag}.setConfig is not a function`);
   }
+  // Cards and dialogs read hass in setConfig; give it to them first.
+  if (hassObj) element.hass = hassObj;
   await element.setConfig(config);
   return element;
 };
@@ -64,8 +66,7 @@ export async function createCardElementSafe(cardHelpers, config, hassObj) {
     const ctor = await waitForDwainsConstructor(tag);
     if (ctor) {
       try {
-        const element = await createDwainsElement(tag, ctor, config);
-        if (hassObj) element.hass = hassObj;
+        const element = await createDwainsElement(tag, ctor, config, hassObj);
         return element;
       } catch (err) {
         originalError = err;

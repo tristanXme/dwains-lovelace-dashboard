@@ -1,4 +1,3 @@
-import { hass } from "./hass-compat";
 import { css, html, LitElement } from 'lit';
 import translateEngine from './translate-engine';
 import { closePopup } from "./helpers";
@@ -209,7 +208,6 @@ class DwainsEditDevicePopupCard extends LitElement {
           return;
         }
         this._editorSessionInitialized = true;
-        if (!this.hass) this.hass = hass();
         this.mode = config.mode ? config.mode : 'dwains-dashboard-blueprint-select'; //Set default mode to hui-card-picker
         this.domain = config.domain;
         if(config.cardConfig){

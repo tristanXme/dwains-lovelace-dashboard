@@ -32,6 +32,7 @@ class DwainsBlueprintCard extends LitElement {
         async setConfig(config) {
           const generation = (this._configGeneration || 0) + 1;
           this._configGeneration = generation;
+          // HA's card preview creates this card without hass.
           if (!this._hass) this._hass = hass();
 
           const data = config.data;
@@ -156,7 +157,6 @@ class DwainsBlueprintCard extends LitElement {
 
         setConfig(config) {
           this._config = config;
-          if (!this.hass) this.hass = hass();
           this._loadBlueprintsIfReady();
         }
 

@@ -1,4 +1,3 @@
-import { hass } from "./hass-compat";
 import { css, html, LitElement } from 'lit';
 import translateEngine from './translate-engine';
 import { closePopup } from "./helpers";
@@ -211,7 +210,6 @@ class DwainsCreateCustomCardCard extends LitElement {
         return;
       }
       this._editorSessionInitialized = true;
-      if (!this.hass) this.hass = hass();
       this.mode = config.mode ? config.mode : 'pre-select'; //Set default mode to hui-card-picker
       this.area_id = config.area ? config.area : "";
       this.domain = config.domain ? config.domain : "";

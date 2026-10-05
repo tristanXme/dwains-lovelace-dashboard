@@ -121,7 +121,7 @@
   `}class z extends p.WF{static properties={hass:{attribute:!1},config:{attribute:!1},_error:{state:!0}};constructor(){super(),this._generation=0,this._card=void 0,this._loadedType=void 0}connectedCallback(){super.connectedCallback()}disconnectedCallback(){super.disconnectedCallback(),this._generation+=1,this._card=void 0,this._loadedType=void 0}updated(e){e.has("hass")&&this._card&&(this._card.hass=this.hass),(e.has("config")||e.has("hass")&&!this._card)&&this._loadPreview()}async _loadPreview(){if(!this.isConnected||!this.hass||!this.config?.type)return;const e=++this._generation;if(this._error=void 0,this._card&&this._loadedType===this.config.type&&"function"==typeof this._card.setConfig)try{if(await this._card.setConfig(x(this.config)),!this.isConnected||e!==this._generation)return;return void(this._card.hass=this.hass)}catch(e){console.warn(`Unable to update preview ${this.config.type} in place`,e)}try{const t=await m(),i=await t.createCardElement(x(this.config));if(!this.isConnected||e!==this._generation)return;if(await this.updateComplete,!this.isConnected||e!==this._generation)return;i.hass=this.hass,this.renderRoot.querySelector("#preview")?.replaceChildren(i),this._card=i,this._loadedType=this.config.type}catch(t){if(!this.isConnected||e!==this._generation)return;this._error=t instanceof Error?t.message:String(t),console.error(`Unable to preview ${this.config.type}`,t)}}render(){return p.qy`<div id="preview"></div>${this._error?p.qy`<p>${this._error}</p>`:""}`}static styles=p.AH`
     :host { display: block; width: 100%; margin-top: 16px; }
     p { color: var(--error-color); overflow-wrap: anywhere; }
-  `}g("dwains-card-picker",q),g("dwains-card-config-editor",B),g("dwains-card-preview",z);var I=i(6009),L=i(4169);const{readSelectEvent:O}=c(),{websocketReadStore:R}=h(),{ConnectedLoadOwner:M}=a(),{hassConnectionIdentity:P,hasHassConnectionChanged:N}=o(),{defineDwainsElement:D}=r();class T extends p.WF{constructor(){super(),this._connectedLoadOwner=new M(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load custom-card editor data"}),this._configReady=!1}set hass(e){const t=N(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}get hass(){return this._hass}static get styles(){return[p.AH`
+  `}g("dwains-card-picker",q),g("dwains-card-config-editor",B),g("dwains-card-preview",z);var I=i(4169);const{readSelectEvent:L}=c(),{websocketReadStore:O}=h(),{ConnectedLoadOwner:R}=a(),{hassConnectionIdentity:M,hasHassConnectionChanged:P}=o(),{defineDwainsElement:N}=r();class D extends p.WF{constructor(){super(),this._connectedLoadOwner=new R(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load custom-card editor data"}),this._configReady=!1}set hass(e){const t=P(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}get hass(){return this._hass}static get styles(){return[p.AH`
         .edit-element {
           padding: 20px;
         }
@@ -277,7 +277,7 @@
           margin: 0;
           font-size: 1rem;
         }
-        `]}static get properties(){return{mode:{},blueprints:{}}}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();if(this._editorSessionInitialized=!0,this.hass||(this.hass=(0,I.mo)()),this.mode=e.mode?e.mode:"pre-select",this.area_id=e.area?e.area:"",this.domain=e.domain?e.domain:"",this.position=e.position,this.page=e.page,e.cardConfig){const t=structuredClone(e.cardConfig);delete t.input_entity,delete t.input_name,this.cardConfig=t}else this.cardConfig="";this.filename=e.filename?e.filename.replace(".yaml",""):"",this.name=e.name?e.name:"Dwains Dashboard",this.rowSpan=e.rowSpan?e.rowSpan:"1",this.colSpan=e.colSpan?e.colSpan:"1",this.rowSpanLg=e.rowSpanLg?e.rowSpanLg:"1",this.colSpanLg=e.colSpanLg?e.colSpanLg:"1",this.rowSpanXl=e.rowSpanXl?e.rowSpanXl:"1",this.colSpanXl=e.colSpanXl?e.colSpanXl:"1",this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=P(t),s=await R.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&P(this._hass)===i&&(this.blueprints=s)}_loadBlueprints(){return this._connectedLoadOwner.reload()}magicStuff(e){this.cardConfig=structuredClone(e.detail.config),this.mode="editor-element"}magicStuffSecond(e){}async _sendCard(){const e=this.renderRoot?.querySelector("dwains-card-config-editor"),t=await(e?.commitConfig?.()??e?.getConfig?.());t&&"object"==typeof t&&(this.cardConfig=t),this.shadowRoot?.querySelectorAll("ha-select").forEach(e=>{const t=e.name||e.type;t&&void 0!==e.value&&(this[t]=`${e.value}`)});const i=JSON.stringify(this.cardConfig);this.hass.callWS({type:"dwains_dashboard/add_card",card_data:i,area_id:this.area_id,domain:this.domain,position:this.position,filename:this.filename,page:this.page,rowSpan:this.rowSpan,colSpan:this.colSpan,rowSpanLg:this.rowSpanLg,colSpanLg:this.colSpanLg,rowSpanXl:this.rowSpanXl,colSpanXl:this.colSpanXl}).then(e=>{(0,L.fs)()},e=>{console.error("Message failed!",e)})}_removeCard(){this.hass.callWS({type:"dwains_dashboard/remove_card",area_id:this.area_id,domain:this.domain,filename:this.filename,page:this.page}).then(e=>{(0,L.fs)()},e=>{console.error("Message failed!",e)})}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this.hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{R.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint;this.mode="editor-element",this.name=this.blueprints.blueprints[t].blueprint.name,this.cardConfig={type:"custom:dwains-blueprint-card",blueprint:t,card:this.blueprints.blueprints[t].card}}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.installBlueprintYaml||alert("No YAML code entered!"),this.hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this.hass.localize("ui.common.successfully_saved")),R.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_haSelectChanged(e){e.stopPropagation();const{field:t,value:i}=O(e);t&&void 0!==i&&(this[t]=`${i}`,this.requestUpdate())}_stopPropagation(e){e.stopPropagation()}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
+        `]}static get properties(){return{mode:{},blueprints:{}}}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();if(this._editorSessionInitialized=!0,this.mode=e.mode?e.mode:"pre-select",this.area_id=e.area?e.area:"",this.domain=e.domain?e.domain:"",this.position=e.position,this.page=e.page,e.cardConfig){const t=structuredClone(e.cardConfig);delete t.input_entity,delete t.input_name,this.cardConfig=t}else this.cardConfig="";this.filename=e.filename?e.filename.replace(".yaml",""):"",this.name=e.name?e.name:"Dwains Dashboard",this.rowSpan=e.rowSpan?e.rowSpan:"1",this.colSpan=e.colSpan?e.colSpan:"1",this.rowSpanLg=e.rowSpanLg?e.rowSpanLg:"1",this.colSpanLg=e.colSpanLg?e.colSpanLg:"1",this.rowSpanXl=e.rowSpanXl?e.rowSpanXl:"1",this.colSpanXl=e.colSpanXl?e.colSpanXl:"1",this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=M(t),s=await O.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&M(this._hass)===i&&(this.blueprints=s)}_loadBlueprints(){return this._connectedLoadOwner.reload()}magicStuff(e){this.cardConfig=structuredClone(e.detail.config),this.mode="editor-element"}magicStuffSecond(e){}async _sendCard(){const e=this.renderRoot?.querySelector("dwains-card-config-editor"),t=await(e?.commitConfig?.()??e?.getConfig?.());t&&"object"==typeof t&&(this.cardConfig=t),this.shadowRoot?.querySelectorAll("ha-select").forEach(e=>{const t=e.name||e.type;t&&void 0!==e.value&&(this[t]=`${e.value}`)});const i=JSON.stringify(this.cardConfig);this.hass.callWS({type:"dwains_dashboard/add_card",card_data:i,area_id:this.area_id,domain:this.domain,position:this.position,filename:this.filename,page:this.page,rowSpan:this.rowSpan,colSpan:this.colSpan,rowSpanLg:this.rowSpanLg,colSpanLg:this.colSpanLg,rowSpanXl:this.rowSpanXl,colSpanXl:this.colSpanXl}).then(e=>{(0,I.fs)()},e=>{console.error("Message failed!",e)})}_removeCard(){this.hass.callWS({type:"dwains_dashboard/remove_card",area_id:this.area_id,domain:this.domain,filename:this.filename,page:this.page}).then(e=>{(0,I.fs)()},e=>{console.error("Message failed!",e)})}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this.hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{O.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint;this.mode="editor-element",this.name=this.blueprints.blueprints[t].blueprint.name,this.cardConfig={type:"custom:dwains-blueprint-card",blueprint:t,card:this.blueprints.blueprints[t].card}}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.installBlueprintYaml||alert("No YAML code entered!"),this.hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this.hass.localize("ui.common.successfully_saved")),O.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_haSelectChanged(e){e.stopPropagation();const{field:t,value:i}=L(e);t&&void 0!==i&&(this[t]=`${i}`,this.requestUpdate())}_stopPropagation(e){e.stopPropagation()}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
         <div>
           ${t?p.qy`
             <ha-icon
@@ -386,7 +386,7 @@
               .lovelace=${{views:[]}}
             ></dwains-card-picker>
             <div class="card-footer">
-              <ha-button slot="secondaryAction" @click=${e=>(0,L.fs)()}>
+              <ha-button slot="secondaryAction" @click=${e=>(0,I.fs)()}>
                 ${this.hass.localize("ui.common.cancel")}
               </ha-button>
             </div>
@@ -495,7 +495,7 @@
               <ha-button @click=${this._sendCard}>${this.hass.localize("ui.common.submit")}</ha-button>
             </div>
           </div>
-        `:void 0}}D("dwains-create-custom-card-card",T);var j=i(5213);const{closeParentDropdown:H}=n(),{defineDwainsElement:U}=r(),{AREA_GRAPH_HOURS:W,normalizeGraphHours:F}=i(1495);class X extends p.WF{static get styles(){return[(0,j.F)(p.AH),p.AH`
+        `:void 0}}N("dwains-create-custom-card-card",D);var T=i(5213);const{closeParentDropdown:j}=n(),{defineDwainsElement:H}=r(),{AREA_GRAPH_HOURS:U,normalizeGraphHours:W}=i(1495);class F extends p.WF{static get styles(){return[(0,T.F)(p.AH),p.AH`
         .edit-element {
           padding: 20px;
           max-width: 460px;
@@ -530,7 +530,7 @@
           padding: 8px;
           border-top: 1px solid var(--divider-color);
         }
-        `]}setConfig(e){this.hass||(this.hass=(0,I.mo)()),this.areaId=e.areaId,this.icon=e.icon?e.icon:"",this.disableArea=!!e.disableArea&&e.disableArea,this.hideIcon=!!e.hideIcon&&e.hideIcon,this.graphEntity=e.graphEntity||"",this.graphHours=F(e.graphHours),this.sensorEntities=Array.isArray(e.sensorEntities)?e.sensorEntities:[],this.binarySensorEntities=Array.isArray(e.binarySensorEntities)?e.binarySensorEntities:[]}connectedCallback(){super.connectedCallback()}_iconPickerChange(e){this.icon=e.detail.value}_disableValueChanged(e){this.disableArea=e.target.checked}_hideIconValueChanged(e){this.hideIcon=e.target.checked,this.requestUpdate()}_graphEntityChanged(e){this.graphEntity=e.detail.value||"",this.requestUpdate()}_graphHoursChanged(e){e.stopPropagation();const t=e.detail?.value;null!=t&&""!==t&&(this.graphHours=F(t),this.requestUpdate())}_graphEntityFilter(e){return Boolean(e.attributes&&e.attributes.unit_of_measurement)}_areaEntities(e){const t=this.hass?.entities||{},i=this.hass?.devices||{};return Object.values(t).filter(t=>t.entity_id.startsWith(`${e}.`)).filter(e=>(e.area_id||i[e.device_id]?.area_id)===this.areaId).map(e=>e.entity_id)}_entityListChanged(e,t){t.stopPropagation(),this[e]=Array.isArray(t.detail.value)?t.detail.value:[],this.requestUpdate()}_renderEntityList(e,t,i,s){const a=this._areaEntities(t),r=[...new Set([...a,...this[e]])];return p.qy`
+        `]}setConfig(e){this.areaId=e.areaId,this.icon=e.icon?e.icon:"",this.disableArea=!!e.disableArea&&e.disableArea,this.hideIcon=!!e.hideIcon&&e.hideIcon,this.graphEntity=e.graphEntity||"",this.graphHours=W(e.graphHours),this.sensorEntities=Array.isArray(e.sensorEntities)?e.sensorEntities:[],this.binarySensorEntities=Array.isArray(e.binarySensorEntities)?e.binarySensorEntities:[]}connectedCallback(){super.connectedCallback()}_iconPickerChange(e){this.icon=e.detail.value}_disableValueChanged(e){this.disableArea=e.target.checked}_hideIconValueChanged(e){this.hideIcon=e.target.checked,this.requestUpdate()}_graphEntityChanged(e){this.graphEntity=e.detail.value||"",this.requestUpdate()}_graphHoursChanged(e){e.stopPropagation();const t=e.detail?.value;null!=t&&""!==t&&(this.graphHours=W(t),this.requestUpdate())}_graphEntityFilter(e){return Boolean(e.attributes&&e.attributes.unit_of_measurement)}_areaEntities(e){const t=this.hass?.entities||{},i=this.hass?.devices||{};return Object.values(t).filter(t=>t.entity_id.startsWith(`${e}.`)).filter(e=>(e.area_id||i[e.device_id]?.area_id)===this.areaId).map(e=>e.entity_id)}_entityListChanged(e,t){t.stopPropagation(),this[e]=Array.isArray(t.detail.value)?t.detail.value:[],this.requestUpdate()}_renderEntityList(e,t,i,s){const a=this._areaEntities(t),r=[...new Set([...a,...this[e]])];return p.qy`
         <ha-selector
           .hass=${this.hass}
           .label=${i}
@@ -539,7 +539,7 @@
           .selector=${{entity:{multiple:!0,include_entities:r.length?r:["none.none"]}}}
           @value-changed=${t=>this._entityListChanged(e,t)}
         ></ha-selector>
-      `}_saveButton(e){H(e),e.stopPropagation(),this.hass.callWS({type:"dwains_dashboard/edit_area_button",icon:this.icon,areaId:this.areaId,disableArea:this.disableArea,hideIcon:this.hideIcon,graphEntity:this.graphEntity,graphHours:this.graphHours,sensorEntities:this.sensorEntities,binarySensorEntities:this.binarySensorEntities}).then(e=>{(0,L.fs)()},e=>{console.error("Message failed!",e)})}render(){return p.qy`
+      `}_saveButton(e){j(e),e.stopPropagation(),this.hass.callWS({type:"dwains_dashboard/edit_area_button",icon:this.icon,areaId:this.areaId,disableArea:this.disableArea,hideIcon:this.hideIcon,graphEntity:this.graphEntity,graphHours:this.graphHours,sensorEntities:this.sensorEntities,binarySensorEntities:this.binarySensorEntities}).then(e=>{(0,I.fs)()},e=>{console.error("Message failed!",e)})}render(){return p.qy`
       <div class="edit-element">
           <ha-icon-picker
             label=${(0,u.A)(this.hass,"area.icon")}
@@ -548,7 +548,7 @@
             .disabled=${this.hideIcon}
             @value-changed=${this._iconPickerChange}
           ></ha-icon-picker>
-          <label class="dd-check" @click=${j.H}>
+          <label class="dd-check" @click=${T.H}>
               <ha-checkbox
               @change=${this._hideIconValueChanged}
               .checked=${this.hideIcon}
@@ -570,13 +570,13 @@
               .hass=${this.hass}
               .label=${(0,u.A)(this.hass,"area.graph_hours")}
               .value=${String(this.graphHours)}
-              .selector=${{select:{mode:"dropdown",options:W.map(e=>({value:String(e),label:(0,u.A)(this.hass,`area.graph_hours_${e}`)}))}}}
+              .selector=${{select:{mode:"dropdown",options:U.map(e=>({value:String(e),label:(0,u.A)(this.hass,`area.graph_hours_${e}`)}))}}}
               @value-changed=${this._graphHoursChanged}
             ></ha-selector>
           `:""}
           ${this._renderEntityList("sensorEntities","sensor",(0,u.A)(this.hass,"area.sensor_entities"),(0,u.A)(this.hass,"area.sensor_entities_helper"))}
           ${this._renderEntityList("binarySensorEntities","binary_sensor",(0,u.A)(this.hass,"area.binary_sensor_entities"),(0,u.A)(this.hass,"area.binary_sensor_entities_helper"))}
-          <label class="dd-check" @click=${j.H}>
+          <label class="dd-check" @click=${T.H}>
               <ha-checkbox
               @change=${this._disableValueChanged}
               .checked=${this.disableArea}
@@ -584,7 +584,7 @@
               <span>${(0,u.A)(this.hass,"area.disable")}</span>
             </label>
           <div class="card-footer">
-            <ha-button slot="secondaryAction" @click=${e=>(0,L.fs)()}>
+            <ha-button slot="secondaryAction" @click=${e=>(0,I.fs)()}>
               ${this.hass.localize("ui.common.cancel")}
             </ha-button>
             <ha-button slot="primaryAction" @click=${this._saveButton}>
@@ -592,7 +592,7 @@
             </ha-button>
           </div>
       </div>
-      `}}U("dwains-edit-area-button-card",X);const{closeParentDropdown:Y}=n(),{defineDwainsElement:V}=r();class G extends p.WF{static get styles(){return[(0,j.F)(p.AH),p.AH`
+      `}}H("dwains-edit-area-button-card",F);const{closeParentDropdown:X}=n(),{defineDwainsElement:Y}=r();class V extends p.WF{static get styles(){return[(0,T.F)(p.AH),p.AH`
         .edit-element {
           padding: 20px;
           max-width: 460px;
@@ -630,7 +630,7 @@
           .dd-check {
             padding: 16px 6px;
           }
-          `]}setConfig(e){this.hass||(this.hass=(0,I.mo)()),this.device=e.device,this.icon=e.icon?e.icon:"",this.showInNavbar=!!e.showInNavbar&&e.showInNavbar}connectedCallback(){super.connectedCallback()}_iconPickerChange(e){this.icon=e.detail.value}_showInMainNavbarValueChanged(e){this.showInNavbar=e.target.checked}_saveButton(e){Y(e),e.stopPropagation(),!this.showInNavbar||this.icon?this.hass.callWS({type:"dwains_dashboard/edit_device_button",icon:this.icon,device:this.device,showInNavbar:this.showInNavbar}).then(e=>{(0,L.fs)()},e=>{console.error("Message failed!",e)}):alert((0,u.A)(this.hass,"device.icon_required"))}render(){return p.qy`
+          `]}setConfig(e){this.device=e.device,this.icon=e.icon?e.icon:"",this.showInNavbar=!!e.showInNavbar&&e.showInNavbar}connectedCallback(){super.connectedCallback()}_iconPickerChange(e){this.icon=e.detail.value}_showInMainNavbarValueChanged(e){this.showInNavbar=e.target.checked}_saveButton(e){X(e),e.stopPropagation(),!this.showInNavbar||this.icon?this.hass.callWS({type:"dwains_dashboard/edit_device_button",icon:this.icon,device:this.device,showInNavbar:this.showInNavbar}).then(e=>{(0,I.fs)()},e=>{console.error("Message failed!",e)}):alert((0,u.A)(this.hass,"device.icon_required"))}render(){return p.qy`
         <div class="edit-element">
             <ha-icon-picker
               label=${(0,u.A)(this.hass,"device.icon")}
@@ -638,7 +638,7 @@
               @value-changed=${this._iconPickerChange}
             ></ha-icon-picker>
 
-          <label class="dd-check" @click=${j.H}>
+          <label class="dd-check" @click=${T.H}>
               <ha-switch
                 @change=${this._showInMainNavbarValueChanged}
                 .checked=${this.showInNavbar}
@@ -647,7 +647,7 @@
             </label>
 
             <div class="card-footer">
-              <ha-button slot="secondaryAction" @click=${e=>(0,L.fs)()}>
+              <ha-button slot="secondaryAction" @click=${e=>(0,I.fs)()}>
                 ${this.hass.localize("ui.common.cancel")}
               </ha-button>
               <ha-button slot="primaryAction" @click=${this._saveButton}>
@@ -655,7 +655,7 @@
               </ha-button>
             </div>
         </div>
-        `}}V("dwains-edit-device-button-card",G);const{websocketReadStore:J}=h(),{ConnectedLoadOwner:K}=a(),{hassConnectionIdentity:Q,hasHassConnectionChanged:Z}=o(),{defineDwainsElement:ee}=r();class te extends p.WF{constructor(){super(),this._connectedLoadOwner=new K(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load device-card editor data"}),this._configReady=!1}set hass(e){const t=Z(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}get hass(){return this._hass}static get styles(){return[p.AH`
+        `}}Y("dwains-edit-device-button-card",V);const{websocketReadStore:G}=h(),{ConnectedLoadOwner:J}=a(),{hassConnectionIdentity:K,hasHassConnectionChanged:Q}=o(),{defineDwainsElement:Z}=r();class ee extends p.WF{constructor(){super(),this._connectedLoadOwner=new J(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load device-card editor data"}),this._configReady=!1}set hass(e){const t=Q(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}get hass(){return this._hass}static get styles(){return[p.AH`
           .edit-element {
             padding: 20px;
           }
@@ -811,7 +811,7 @@
             padding: 8px;
             border-top: 1px solid var(--divider-color);
           }
-          `]}static get properties(){return{mode:{},blueprints:{}}}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();if(this._editorSessionInitialized=!0,this.hass||(this.hass=(0,I.mo)()),this.mode=e.mode?e.mode:"dwains-dashboard-blueprint-select",this.domain=e.domain,e.cardConfig){const t=structuredClone(e.cardConfig);delete t.input_entity,delete t.input_name,this.cardConfig=t}else this.cardConfig="";this.existingCardEdit=!!e.existingCardEdit&&e.existingCardEdit,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=Q(t),s=await J.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&Q(this._hass)===i&&(this.blueprints=s)}_loadBlueprints(){return this._connectedLoadOwner.reload()}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_removeCard(){this.hass.callWS({type:"dwains_dashboard/remove_device_card",domain:this.domain}).then(e=>{(0,L.fs)()},e=>{console.error("Message failed!",e)})}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this.hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{J.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint,i=JSON.stringify({type:"custom:dwains-blueprint-card",blueprint:t,card:this.blueprints.blueprints[t].card});this.hass.callWS({type:"dwains_dashboard/edit_device_card",cardData:i,domain:this.domain}).then(e=>{(0,L.fs)()},e=>{console.error("Message failed!",e)})}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this.hass.localize("ui.common.successfully_saved")),J.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
+          `]}static get properties(){return{mode:{},blueprints:{}}}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();if(this._editorSessionInitialized=!0,this.mode=e.mode?e.mode:"dwains-dashboard-blueprint-select",this.domain=e.domain,e.cardConfig){const t=structuredClone(e.cardConfig);delete t.input_entity,delete t.input_name,this.cardConfig=t}else this.cardConfig="";this.existingCardEdit=!!e.existingCardEdit&&e.existingCardEdit,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=K(t),s=await G.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&K(this._hass)===i&&(this.blueprints=s)}_loadBlueprints(){return this._connectedLoadOwner.reload()}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_removeCard(){this.hass.callWS({type:"dwains_dashboard/remove_device_card",domain:this.domain}).then(e=>{(0,I.fs)()},e=>{console.error("Message failed!",e)})}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this.hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{G.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint,i=JSON.stringify({type:"custom:dwains-blueprint-card",blueprint:t,card:this.blueprints.blueprints[t].card});this.hass.callWS({type:"dwains_dashboard/edit_device_card",cardData:i,domain:this.domain}).then(e=>{(0,I.fs)()},e=>{console.error("Message failed!",e)})}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this.hass.localize("ui.common.successfully_saved")),G.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
           <div>
             ${t?p.qy`
               <ha-icon
@@ -909,7 +909,7 @@
                     </div>
                   `:p.qy`<div></div>`}
                 <div>
-                  <ha-button slot="secondaryAction" @click=${e=>(0,L.fs)()}>
+                  <ha-button slot="secondaryAction" @click=${e=>(0,I.fs)()}>
                     ${this.hass.localize("ui.common.cancel")}
                   </ha-button>
                   <ha-button slot="primaryAction" .blueprint=${this.cardConfig.blueprint} @click=${this._handleUseBlueprintClicked}>
@@ -918,7 +918,7 @@
                 </div>
               </div>
             </div>
-          `:void 0}}ee("dwains-edit-device-card-card",te);const{websocketReadStore:ie}=h(),{ConnectedLoadOwner:se}=a(),{hassConnectionIdentity:ae,hasHassConnectionChanged:re}=o(),{defineDwainsElement:ne}=r();class oe extends p.WF{constructor(){super(),this._connectedLoadOwner=new se(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load device-popup editor data"}),this._configReady=!1}set hass(e){const t=re(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}get hass(){return this._hass}static get styles(){return[p.AH`
+          `:void 0}}Z("dwains-edit-device-card-card",ee);const{websocketReadStore:te}=h(),{ConnectedLoadOwner:ie}=a(),{hassConnectionIdentity:se,hasHassConnectionChanged:ae}=o(),{defineDwainsElement:re}=r();class ne extends p.WF{constructor(){super(),this._connectedLoadOwner=new ie(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load device-popup editor data"}),this._configReady=!1}set hass(e){const t=ae(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}get hass(){return this._hass}static get styles(){return[p.AH`
           .edit-element {
             padding: 20px;
           }
@@ -1074,7 +1074,7 @@
             padding: 8px;
             border-top: 1px solid var(--divider-color);
           }
-          `]}static get properties(){return{mode:{},blueprints:{}}}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();if(this._editorSessionInitialized=!0,this.hass||(this.hass=(0,I.mo)()),this.mode=e.mode?e.mode:"dwains-dashboard-blueprint-select",this.domain=e.domain,e.cardConfig){const t=structuredClone(e.cardConfig);delete t.input_entity,delete t.input_name,this.cardConfig=t}else this.cardConfig="";this.existingCardEdit=!!e.existingCardEdit&&e.existingCardEdit,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=ae(t),s=await ie.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&ae(this._hass)===i&&(this.blueprints=s)}_loadBlueprints(){return this._connectedLoadOwner.reload()}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_removeCard(){this.hass.callWS({type:"dwains_dashboard/remove_device_popup",domain:this.domain}).then(e=>{(0,L.fs)()},e=>{console.error("Message failed!",e)})}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this.hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{ie.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint,i=JSON.stringify({type:"custom:dwains-blueprint-card",blueprint:t,card:this.blueprints.blueprints[t].card});this.hass.callWS({type:"dwains_dashboard/edit_device_popup",cardData:i,domain:this.domain}).then(e=>{(0,L.fs)()},e=>{console.error("Message failed!",e)})}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this.hass.localize("ui.common.successfully_saved")),ie.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
+          `]}static get properties(){return{mode:{},blueprints:{}}}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();if(this._editorSessionInitialized=!0,this.mode=e.mode?e.mode:"dwains-dashboard-blueprint-select",this.domain=e.domain,e.cardConfig){const t=structuredClone(e.cardConfig);delete t.input_entity,delete t.input_name,this.cardConfig=t}else this.cardConfig="";this.existingCardEdit=!!e.existingCardEdit&&e.existingCardEdit,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=se(t),s=await te.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&se(this._hass)===i&&(this.blueprints=s)}_loadBlueprints(){return this._connectedLoadOwner.reload()}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_removeCard(){this.hass.callWS({type:"dwains_dashboard/remove_device_popup",domain:this.domain}).then(e=>{(0,I.fs)()},e=>{console.error("Message failed!",e)})}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this.hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{te.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint,i=JSON.stringify({type:"custom:dwains-blueprint-card",blueprint:t,card:this.blueprints.blueprints[t].card});this.hass.callWS({type:"dwains_dashboard/edit_device_popup",cardData:i,domain:this.domain}).then(e=>{(0,I.fs)()},e=>{console.error("Message failed!",e)})}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this.hass.localize("ui.common.successfully_saved")),te.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
           <div>
             ${t?p.qy`
               <ha-icon
@@ -1166,7 +1166,7 @@
                     </div>
                   `:p.qy`<div></div>`}
                 <div>
-                  <ha-button slot="secondaryAction" @click=${e=>(0,L.fs)()}>
+                  <ha-button slot="secondaryAction" @click=${e=>(0,I.fs)()}>
                     ${this.hass.localize("ui.common.cancel")}
                   </ha-button>
                   <ha-button slot="primaryAction" .blueprint=${this.cardConfig.blueprint} @click=${this._handleUseBlueprintClicked}>
@@ -1175,7 +1175,7 @@
                 </div>
               </div>
             </div>
-          `}}ne("dwains-edit-device-popup-card",oe);var de=i(5890);const{websocketReadStore:le}=h(),{ConnectedLoadOwner:ce}=a(),{hassConnectionIdentity:he,hasHassConnectionChanged:pe}=o(),{prepareEntityEditorCardConfig:ue,renderBlueprintSelection:me}=s(),{defineDwainsElement:ge}=r();class be extends p.WF{constructor(){super(),this._connectedLoadOwner=new ce(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load entity-card editor data"}),this._configReady=!1}set hass(e){const t=pe(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}get hass(){return this._hass}static get styles(){return[p.AH`
+          `}}re("dwains-edit-device-popup-card",ne);var oe=i(5890);const{websocketReadStore:de}=h(),{ConnectedLoadOwner:le}=a(),{hassConnectionIdentity:ce,hasHassConnectionChanged:he}=o(),{prepareEntityEditorCardConfig:pe,renderBlueprintSelection:ue}=s(),{defineDwainsElement:me}=r();class ge extends p.WF{constructor(){super(),this._connectedLoadOwner=new le(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load entity-card editor data"}),this._configReady=!1}set hass(e){const t=he(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}get hass(){return this._hass}static get styles(){return[p.AH`
         .edit-element {
           padding: 20px;
         }
@@ -1331,7 +1331,7 @@
           padding: 8px;
           border-top: 1px solid var(--divider-color);
         }
-        `]}static get properties(){return{mode:{},blueprints:{}}}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();this._editorSessionInitialized=!0,this.hass||(this.hass=(0,I.mo)()),this.mode=e.mode?e.mode:"pre-select",this.entity_id=e.entity_id,e.cardConfig?this.cardConfig=ue(e.cardConfig,this.entity_id):this.cardConfig="",this.existingCardEdit=!!e.existingCardEdit&&e.existingCardEdit,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=he(t),s=await le.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&he(this._hass)===i&&(this.blueprints=s)}_loadBlueprints(){return this._connectedLoadOwner.reload()}magicStuff(e){const t=structuredClone(e.detail.config),i=t.type;de.SG.includes(i)?(t.entity||(t.entity=this.entity_id),this.cardConfig=t):this.cardConfig=t,this.mode="editor-element"}magicStuffSecond(e){}async _sendCard(){const e=this.renderRoot?.querySelector("dwains-card-config-editor"),t=await(e?.commitConfig?.()??e?.getConfig?.());t&&"object"==typeof t&&(this.cardConfig=t);try{await this.hass.callWS({type:"dwains_dashboard/edit_entity_card",cardData:JSON.stringify(this.cardConfig),entityId:this.entity_id}),le.invalidate(this.hass),(0,L.fs)()}catch(e){console.error("Message failed!",e)}}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_removeCard(){this.hass.callWS({type:"dwains_dashboard/remove_entity_card",entityId:this.entity_id}).then(e=>{(0,L.fs)()},e=>{console.error("Message failed!",e)})}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this.hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{le.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint;this.mode="editor-element",this.name=this.blueprints.blueprints[t].blueprint.name,this.cardConfig={type:"custom:dwains-blueprint-card",blueprint:t,input_entity:this.entity_id,card:this.blueprints.blueprints[t].card}}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this.hass.localize("ui.common.successfully_saved")),le.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
+        `]}static get properties(){return{mode:{},blueprints:{}}}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();this._editorSessionInitialized=!0,this.mode=e.mode?e.mode:"pre-select",this.entity_id=e.entity_id,e.cardConfig?this.cardConfig=pe(e.cardConfig,this.entity_id):this.cardConfig="",this.existingCardEdit=!!e.existingCardEdit&&e.existingCardEdit,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=ce(t),s=await de.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&ce(this._hass)===i&&(this.blueprints=s)}_loadBlueprints(){return this._connectedLoadOwner.reload()}magicStuff(e){const t=structuredClone(e.detail.config),i=t.type;oe.SG.includes(i)?(t.entity||(t.entity=this.entity_id),this.cardConfig=t):this.cardConfig=t,this.mode="editor-element"}magicStuffSecond(e){}async _sendCard(){const e=this.renderRoot?.querySelector("dwains-card-config-editor"),t=await(e?.commitConfig?.()??e?.getConfig?.());t&&"object"==typeof t&&(this.cardConfig=t);try{await this.hass.callWS({type:"dwains_dashboard/edit_entity_card",cardData:JSON.stringify(this.cardConfig),entityId:this.entity_id}),de.invalidate(this.hass),(0,I.fs)()}catch(e){console.error("Message failed!",e)}}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_removeCard(){this.hass.callWS({type:"dwains_dashboard/remove_entity_card",entityId:this.entity_id}).then(e=>{(0,I.fs)()},e=>{console.error("Message failed!",e)})}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this.hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{de.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint;this.mode="editor-element",this.name=this.blueprints.blueprints[t].blueprint.name,this.cardConfig={type:"custom:dwains-blueprint-card",blueprint:t,input_entity:this.entity_id,card:this.blueprints.blueprints[t].card}}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this.hass.localize("ui.common.successfully_saved")),de.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
         <div>
           ${t?p.qy`
             <ha-icon
@@ -1441,14 +1441,14 @@
               .entityId=${this.entity_id}
             ></dwains-card-picker>
             <div class="card-footer">
-              <ha-button slot="secondaryAction" @click=${e=>(0,L.fs)()}>
+              <ha-button slot="secondaryAction" @click=${e=>(0,I.fs)()}>
                 ${this.hass.localize("ui.common.cancel")}
               </ha-button>
             </div>
           </div>
         `:p.qy`
           <div class="edit-element">
-            ${me(p.qy,u.A,this.hass,this.cardConfig,this.blueprints)}
+            ${ue(p.qy,u.A,this.hass,this.cardConfig,this.blueprints)}
             <dwains-card-config-editor
               @save-config=${this.magicStuffSecond}
               @config-changed=${this.magicStuff}
@@ -1468,7 +1468,7 @@
                   </div>
                 `:p.qy`<div></div>`}
               <div>
-                <ha-button slot="secondaryAction" @click=${e=>(0,L.fs)()}>
+                <ha-button slot="secondaryAction" @click=${e=>(0,I.fs)()}>
                   ${this.hass.localize("ui.common.cancel")}
                 </ha-button>
                 <ha-button slot="primaryAction" @click=${this._sendCard}>
@@ -1477,7 +1477,7 @@
               </div>
             </div>
           </div>
-        `}}ge("dwains-edit-entity-card-card",be);const{closeParentDropdown:ye}=n(),{defineDwainsElement:fe}=r();class _e extends p.WF{static get styles(){return[(0,j.F)(p.AH),p.AH`
+        `}}me("dwains-edit-entity-card-card",ge);const{closeParentDropdown:be}=n(),{defineDwainsElement:ye}=r();class fe extends p.WF{static get styles(){return[(0,T.F)(p.AH),p.AH`
         h2 {
           margin: 0;
           font-size: 1rem;
@@ -1522,7 +1522,7 @@
           outline: none;
           border-color: var(--accent-color);
         }
-        `]}setConfig(e){this.hass||(this.hass=(0,I.mo)()),this.entity=e.entity,this.friendlyName=e.friendlyName?e.friendlyName:"",this.hideEntity=!!e.hideEntity&&e.hideEntity,this.hideEntityInArea=e.hideEntityInArea??!1,this.disableEntity=!!e.disableEntity&&e.disableEntity,this.excludeEntity=!!e.excludeEntity&&e.excludeEntity,this.rowSpan=e.rowSpan?e.rowSpan:"1",this.colSpan=e.colSpan?e.colSpan:"1",this.rowSpanLg=e.rowSpanLg?e.rowSpanLg:"1",this.colSpanLg=e.colSpanLg?e.colSpanLg:"1",this.rowSpanXl=e.rowSpanXl?e.rowSpanXl:"1",this.colSpanXl=e.colSpanXl?e.colSpanXl:"1",this.customCard=!!e.customCard&&e.customCard,this.customPopup=!!e.customPopup&&e.customPopup}async _saveButton(e){ye(e),e.stopPropagation();try{await this.hass.callWS({type:"dwains_dashboard/edit_entity",entity:this.entity,friendlyName:this.friendlyName,disableEntity:this.disableEntity,hideEntity:this.hideEntity,excludeEntity:this.excludeEntity,rowSpan:this.rowSpan,colSpan:this.colSpan,rowSpanLg:this.rowSpanLg,colSpanLg:this.colSpanLg,rowSpanXl:this.rowSpanXl,colSpanXl:this.colSpanXl,customCard:this.customCard,customPopup:this.customPopup}),await this.hass.callWS({type:"dwains_dashboard/edit_entity_bool_value",entityId:this.entity,key:"hidden_in_area",value:this.hideEntityInArea}),(0,L.fs)()}catch(e){console.error("Failed to save entity settings:",e)}}_friendlyNameChanged(e){this.friendlyName=e.target.value}_disableValueChanged(e){this.disableEntity=e.target.checked}_hideValueChanged(e){this.hideEntity=e.target.checked}_hideInAreaValueChanged(e){this.hideEntityInArea=e.target.checked}_excludeValueChanged(e){this.excludeEntity=e.target.checked}_customCardValueChanged(e){this.customCard=e.target.checked}_customPopupValueChanged(e){this.customPopup=e.target.checked}_haSelectChanged(e){ye(e),e.stopPropagation();const t=e.currentTarget||e.target,i=t.name||t.type||t.getAttribute?.("type"),s=e.detail?.value??e.detail?.item?.value??t.selectedItem?.value??t.value;i&&void 0!==s&&(this[i]=s),this.requestUpdate()}_stopPropagation(e){e.stopPropagation()}render(){return p.qy`
+        `]}setConfig(e){this.entity=e.entity,this.friendlyName=e.friendlyName?e.friendlyName:"",this.hideEntity=!!e.hideEntity&&e.hideEntity,this.hideEntityInArea=e.hideEntityInArea??!1,this.disableEntity=!!e.disableEntity&&e.disableEntity,this.excludeEntity=!!e.excludeEntity&&e.excludeEntity,this.rowSpan=e.rowSpan?e.rowSpan:"1",this.colSpan=e.colSpan?e.colSpan:"1",this.rowSpanLg=e.rowSpanLg?e.rowSpanLg:"1",this.colSpanLg=e.colSpanLg?e.colSpanLg:"1",this.rowSpanXl=e.rowSpanXl?e.rowSpanXl:"1",this.colSpanXl=e.colSpanXl?e.colSpanXl:"1",this.customCard=!!e.customCard&&e.customCard,this.customPopup=!!e.customPopup&&e.customPopup}async _saveButton(e){be(e),e.stopPropagation();try{await this.hass.callWS({type:"dwains_dashboard/edit_entity",entity:this.entity,friendlyName:this.friendlyName,disableEntity:this.disableEntity,hideEntity:this.hideEntity,excludeEntity:this.excludeEntity,rowSpan:this.rowSpan,colSpan:this.colSpan,rowSpanLg:this.rowSpanLg,colSpanLg:this.colSpanLg,rowSpanXl:this.rowSpanXl,colSpanXl:this.colSpanXl,customCard:this.customCard,customPopup:this.customPopup}),await this.hass.callWS({type:"dwains_dashboard/edit_entity_bool_value",entityId:this.entity,key:"hidden_in_area",value:this.hideEntityInArea}),(0,I.fs)()}catch(e){console.error("Failed to save entity settings:",e)}}_friendlyNameChanged(e){this.friendlyName=e.target.value}_disableValueChanged(e){this.disableEntity=e.target.checked}_hideValueChanged(e){this.hideEntity=e.target.checked}_hideInAreaValueChanged(e){this.hideEntityInArea=e.target.checked}_excludeValueChanged(e){this.excludeEntity=e.target.checked}_customCardValueChanged(e){this.customCard=e.target.checked}_customPopupValueChanged(e){this.customPopup=e.target.checked}_haSelectChanged(e){be(e),e.stopPropagation();const t=e.currentTarget||e.target,i=t.name||t.type||t.getAttribute?.("type"),s=e.detail?.value??e.detail?.item?.value??t.selectedItem?.value??t.value;i&&void 0!==s&&(this[i]=s),this.requestUpdate()}_stopPropagation(e){e.stopPropagation()}render(){return p.qy`
         <div class="edit-element">
             <h1 style="font-size: 15px; font-weight: bold;">${(0,u.A)(this.hass,"entity.edit_entity")} "${this.entity}"</h1>
 
@@ -1574,42 +1574,42 @@
               </select>
             </div>
 
-            <label class="dd-check" @click=${j.H}>
+            <label class="dd-check" @click=${T.H}>
               <ha-checkbox
                 @change=${this._disableValueChanged}
                 .checked=${this.disableEntity}
               ></ha-checkbox>
               <span>${(0,u.A)(this.hass,"entity.disable")}</span>
             </label>
-            <label class="dd-check" @click=${j.H}>
+            <label class="dd-check" @click=${T.H}>
               <ha-checkbox
                 @change=${this._hideValueChanged}
                 .checked=${this.hideEntity}
               ></ha-checkbox>
               <span>${(0,u.A)(this.hass,"entity.hide")}</span>
             </label>
-            <label class="dd-check" @click=${j.H}>
+            <label class="dd-check" @click=${T.H}>
               <ha-checkbox
                 @change=${this._hideInAreaValueChanged}
                 .checked=${this.hideEntityInArea}
               ></ha-checkbox>
               <span>${(0,u.A)(this.hass,"entity.hide_in_area")}</span>
             </label>
-            <label class="dd-check" @click=${j.H}>
+            <label class="dd-check" @click=${T.H}>
               <ha-checkbox
                 @change=${this._excludeValueChanged}
                 .checked=${this.excludeEntity}
               ></ha-checkbox>
               <span>${(0,u.A)(this.hass,"entity.exclude")}</span>
             </label>
-            <label class="dd-check" @click=${j.H}>
+            <label class="dd-check" @click=${T.H}>
               <ha-checkbox
                 @change=${this._customCardValueChanged}
                 .checked=${this.customCard}
               ></ha-checkbox>
               <span>${(0,u.A)(this.hass,"entity.use_entity_card")}</span>
             </label>
-            <label class="dd-check" @click=${j.H}>
+            <label class="dd-check" @click=${T.H}>
               <ha-checkbox
                 @change=${this._customPopupValueChanged}
                 .checked=${this.customPopup}
@@ -1618,7 +1618,7 @@
             </label>
 
             <div class="card-footer">
-              <ha-button slot="secondaryAction" @click=${e=>(0,L.fs)()}>
+              <ha-button slot="secondaryAction" @click=${e=>(0,I.fs)()}>
                 ${this.hass.localize("ui.common.cancel")}
               </ha-button>
               <ha-button slot="primaryAction" @click=${this._saveButton}>
@@ -1626,7 +1626,7 @@
               </ha-button>
             </div>
         </div>
-      `}}fe("dwains-edit-entity-card",_e);const{websocketReadStore:we}=h(),{ConnectedLoadOwner:ve}=a(),{hassConnectionIdentity:xe,hasHassConnectionChanged:$e}=o(),{prepareEntityEditorCardConfig:Ce,renderBlueprintSelection:ke}=s(),{defineDwainsElement:Se}=r();class Ae extends p.WF{constructor(){super(),this._connectedLoadOwner=new ve(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load entity-popup editor data"}),this._configReady=!1}set hass(e){const t=$e(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}get hass(){return this._hass}static get styles(){return[p.AH`
+      `}}ye("dwains-edit-entity-card",fe);const{websocketReadStore:_e}=h(),{ConnectedLoadOwner:we}=a(),{hassConnectionIdentity:ve,hasHassConnectionChanged:xe}=o(),{prepareEntityEditorCardConfig:$e,renderBlueprintSelection:Ce}=s(),{defineDwainsElement:ke}=r();class Se extends p.WF{constructor(){super(),this._connectedLoadOwner=new we(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load entity-popup editor data"}),this._configReady=!1}set hass(e){const t=xe(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}get hass(){return this._hass}static get styles(){return[p.AH`
         .edit-element {
           padding: 20px;
         }
@@ -1782,7 +1782,7 @@
           padding: 8px;
           border-top: 1px solid var(--divider-color);
         }
-        `]}static get properties(){return{mode:{},blueprints:{}}}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();this._editorSessionInitialized=!0,this.hass||(this.hass=(0,I.mo)()),this.mode=e.mode?e.mode:"pre-select",this.entity_id=e.entity_id,e.cardConfig?this.cardConfig=Ce(e.cardConfig,this.entity_id):this.cardConfig="",this.existingCardEdit=!!e.existingCardEdit&&e.existingCardEdit,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=xe(t),s=await we.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&xe(this._hass)===i&&(this.blueprints=s)}_loadBlueprints(){return this._connectedLoadOwner.reload()}magicStuff(e){const t=structuredClone(e.detail.config),i=t.type;de.SG.includes(i)?(t.entity||(t.entity=this.entity_id),this.cardConfig=t):this.cardConfig=t,this.mode="editor-element"}magicStuffSecond(e){}async _sendCard(){const e=this.renderRoot?.querySelector("dwains-card-config-editor"),t=await(e?.commitConfig?.()??e?.getConfig?.());t&&"object"==typeof t&&(this.cardConfig=t);try{await this.hass.callWS({type:"dwains_dashboard/edit_entity_popup",cardData:JSON.stringify(this.cardConfig),entityId:this.entity_id}),we.invalidate(this.hass),(0,L.fs)()}catch(e){console.error("Message failed!",e)}}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_removeCard(){this.hass.callWS({type:"dwains_dashboard/remove_entity_popup",entityId:this.entity_id}).then(e=>{(0,L.fs)()},e=>{console.error("Message failed!",e)})}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this.hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{we.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint;this.mode="editor-element",this.name=this.blueprints.blueprints[t].blueprint.name,this.cardConfig={type:"custom:dwains-blueprint-card",blueprint:t,input_entity:this.entity_id,card:this.blueprints.blueprints[t].card}}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this.hass.localize("ui.common.successfully_saved")),we.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
+        `]}static get properties(){return{mode:{},blueprints:{}}}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();this._editorSessionInitialized=!0,this.mode=e.mode?e.mode:"pre-select",this.entity_id=e.entity_id,e.cardConfig?this.cardConfig=$e(e.cardConfig,this.entity_id):this.cardConfig="",this.existingCardEdit=!!e.existingCardEdit&&e.existingCardEdit,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=ve(t),s=await _e.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&ve(this._hass)===i&&(this.blueprints=s)}_loadBlueprints(){return this._connectedLoadOwner.reload()}magicStuff(e){const t=structuredClone(e.detail.config),i=t.type;oe.SG.includes(i)?(t.entity||(t.entity=this.entity_id),this.cardConfig=t):this.cardConfig=t,this.mode="editor-element"}magicStuffSecond(e){}async _sendCard(){const e=this.renderRoot?.querySelector("dwains-card-config-editor"),t=await(e?.commitConfig?.()??e?.getConfig?.());t&&"object"==typeof t&&(this.cardConfig=t);try{await this.hass.callWS({type:"dwains_dashboard/edit_entity_popup",cardData:JSON.stringify(this.cardConfig),entityId:this.entity_id}),_e.invalidate(this.hass),(0,I.fs)()}catch(e){console.error("Message failed!",e)}}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_removeCard(){this.hass.callWS({type:"dwains_dashboard/remove_entity_popup",entityId:this.entity_id}).then(e=>{(0,I.fs)()},e=>{console.error("Message failed!",e)})}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this.hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{_e.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint;this.mode="editor-element",this.name=this.blueprints.blueprints[t].blueprint.name,this.cardConfig={type:"custom:dwains-blueprint-card",blueprint:t,input_entity:this.entity_id,card:this.blueprints.blueprints[t].card}}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this.hass.localize("ui.common.successfully_saved")),_e.invalidate(this.hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
         <div>
           ${t?p.qy`
             <ha-icon
@@ -1892,14 +1892,14 @@
               .entityId=${this.entity_id}
             ></dwains-card-picker>
             <div class="card-footer">
-              <ha-button slot="secondaryAction" @click=${e=>(0,L.fs)()}>
+              <ha-button slot="secondaryAction" @click=${e=>(0,I.fs)()}>
                 ${this.hass.localize("ui.common.cancel")}
               </ha-button>
             </div>
           </div>
         `:p.qy`
           <div class="edit-element">
-            ${ke(p.qy,u.A,this.hass,this.cardConfig,this.blueprints)}
+            ${Ce(p.qy,u.A,this.hass,this.cardConfig,this.blueprints)}
             <dwains-card-config-editor
               @save-config=${this.magicStuffSecond}
               @config-changed=${this.magicStuff}
@@ -1919,7 +1919,7 @@
                   </div>
                 `:p.qy`<div></div>`}
               <div>
-                <ha-button slot="secondaryAction" @click=${e=>(0,L.fs)()}>
+                <ha-button slot="secondaryAction" @click=${e=>(0,I.fs)()}>
                   ${this.hass.localize("ui.common.cancel")}
                 </ha-button>
                 <ha-button slot="primaryAction" @click=${this._sendCard}>
@@ -1928,7 +1928,7 @@
               </div>
             </div>
           </div>
-        `}}Se("dwains-edit-entity-popup-card",Ae);var Ee=i(3475);const{websocketReadStore:qe}=h(),{ConnectedLoadOwner:Be}=a(),{hassConnectionIdentity:ze,hasHassConnectionChanged:Ie}=o(),{defineDwainsElement:Le}=r(),{refreshLovelaceConfig:Oe}=d(),{dispatchMorePageSaved:Re}=i(6392);class Me extends p.WF{constructor(){super(),this._connectedLoadOwner=new Be(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load more-page editor data"}),this._configReady=!1,this.blueprints={blueprints:{}},this._blueprintsLoading=!0}static get styles(){return[(0,j.F)(p.AH),p.AH`
+        `}}ke("dwains-edit-entity-popup-card",Se);var Ae=i(3475);const{websocketReadStore:Ee}=h(),{ConnectedLoadOwner:qe}=a(),{hassConnectionIdentity:Be,hasHassConnectionChanged:ze}=o(),{defineDwainsElement:Ie}=r(),{refreshLovelaceConfig:Le}=d(),{dispatchMorePageSaved:Oe}=i(6392);class Re extends p.WF{constructor(){super(),this._connectedLoadOwner=new qe(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load more-page editor data"}),this._configReady=!1,this.blueprints={blueprints:{}},this._blueprintsLoading=!0}static get styles(){return[(0,T.F)(p.AH),p.AH`
         .edit-element {
           box-sizing: border-box;
           width: min(100%, 560px);
@@ -2164,7 +2164,7 @@
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
         }
-        `]}static get properties(){return{mode:{},blueprints:{},_hass:{},_saving:{state:!0},_saveError:{state:!0}}}set hass(e){const t=Ie(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();if(this._editorSessionInitialized=!0,this.mode=e.mode?e.mode:"pre-select",this.foldername=e.foldername?e.foldername:"",e.cardConfig){const t=structuredClone(e.cardConfig);delete t.input_entity,delete t.input_name,this.cardConfig=t}else this.cardConfig="";this.name=e.name?e.name:"",this._nameTouched=!!this.name,this._nameAutoGenerated=!1,this.icon=e.icon?e.icon:"",this.showInNavbar=!!e.showInNavbar&&e.showInNavbar,this._saving=!1,this._saveError=void 0,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=ze(t),s=await qe.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&ze(this._hass)===i&&(this.blueprints=s?.blueprints?s:{blueprints:{}},this._blueprintsLoading=!1)}_loadBlueprints(){return this._connectedLoadOwner.reload()}magicStuff(e){this.cardConfig=structuredClone(e.detail.config),this._applyDefaultMorePageName(),this.mode="editor-element"}magicStuffSecond(e){}async _sendCard(){if(this._saving)return;this._syncMorePageSettingsFromDom();const e=this.renderRoot?.querySelector("dwains-card-config-editor"),t=await(e?.commitConfig?.()??e?.getConfig?.());if(t&&"object"==typeof t&&(this.cardConfig=t),this._applyDefaultMorePageName(),!this.name)return void alert((0,u.A)(this._hass,"more.name_required"));if(this.showInNavbar&&!this.icon)return void alert((0,u.A)(this._hass,"more.icon_required"));if(!this.cardConfig||"object"!=typeof this.cardConfig)return void(this._saveError=new Error("No valid Lovelace card is configured."));const i=!this.foldername;this._saving=!0,this._saveError=void 0;try{const e=await this._hass.callWS({type:"dwains_dashboard/edit_more_page",card_data:JSON.stringify(this.cardConfig),foldername:this.foldername,name:this.name,icon:this.icon,showInNavbar:this.showInNavbar});if(!e?.foldername)throw new Error("The backend did not return the saved page name.");this.foldername=e.foldername,qe.invalidate(this._hass);const t=e.view_path||`more_page_${e.foldername}`,s=e.page||{foldername:e.foldername,name:this.name,icon:this.icon,show_in_navbar:this.showInNavbar,card:structuredClone(this.cardConfig)};Re(window,s),i?(await Oe({viewPath:t}),(0,L.fs)(),(0,Ee.oo)(window,`/dwains-dashboard/${t}`)):(0,L.fs)()}catch(e){this._saveError=e,console.error("Failed to save and refresh more page:",e)}finally{this._saving=!1}}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_deriveDefaultMorePageName(e=this.cardConfig){if(!e||"object"!=typeof e)return"";const t=[e.title,e.name,e.heading,e.card&&e.card.title,e.card&&e.card.name].find(e=>"string"==typeof e&&e.trim());return t?t.trim():""}_applyDefaultMorePageName(){if(this._nameTouched&&!this._nameAutoGenerated)return;const e=this._deriveDefaultMorePageName();e&&e!==this.name&&(this.name=e,this._nameAutoGenerated=!0)}_syncMorePageSettingsFromDom(){const e=this.shadowRoot?.querySelector("#more-page-name");e&&(this.name=e.value.trim());const t=this.shadowRoot?.querySelector(".more-page-settings ha-icon-picker");t&&void 0!==t.value&&(this.icon=t.value);const i=this.shadowRoot?.querySelector(".more-page-settings ha-checkbox");i&&(this.showInNavbar=i.checked)}_iconPickerChange(e){this.icon=e.detail.value}_showInMainNavbarValueChanged(e){this.showInNavbar=e.target.checked}_nameChanged(e){this.name=e.target.value,this._nameTouched=!0,this._nameAutoGenerated=!1}async _removeMorePage(){if(!this._saving){this._saving=!0,this._saveError=void 0;try{await this._hass.callWS({type:"dwains_dashboard/remove_more_page",foldername:this.foldername}),qe.invalidate(this._hass),await Oe(),(0,L.fs)(),(0,Ee.oo)(window,"/dwains-dashboard/more_page")}catch(e){this._saveError=e,console.error("Failed to remove and refresh more page:",e)}finally{this._saving=!1}}}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this._hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{qe.invalidate(this._hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint;this.mode="editor-element",this.name=this.blueprints.blueprints[t].blueprint.name,this.cardConfig={type:"custom:dwains-blueprint-card",blueprint:t,card:this.blueprints.blueprints[t].card}}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.installBlueprintYaml||alert((0,u.A)(this._hass,"blueprint.yaml_required")),this._hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this._hass.localize("ui.common.successfully_saved")),qe.invalidate(this._hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
+        `]}static get properties(){return{mode:{},blueprints:{},_hass:{},_saving:{state:!0},_saveError:{state:!0}}}set hass(e){const t=ze(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();if(this._editorSessionInitialized=!0,this.mode=e.mode?e.mode:"pre-select",this.foldername=e.foldername?e.foldername:"",e.cardConfig){const t=structuredClone(e.cardConfig);delete t.input_entity,delete t.input_name,this.cardConfig=t}else this.cardConfig="";this.name=e.name?e.name:"",this._nameTouched=!!this.name,this._nameAutoGenerated=!1,this.icon=e.icon?e.icon:"",this.showInNavbar=!!e.showInNavbar&&e.showInNavbar,this._saving=!1,this._saveError=void 0,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=Be(t),s=await Ee.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&Be(this._hass)===i&&(this.blueprints=s?.blueprints?s:{blueprints:{}},this._blueprintsLoading=!1)}_loadBlueprints(){return this._connectedLoadOwner.reload()}magicStuff(e){this.cardConfig=structuredClone(e.detail.config),this._applyDefaultMorePageName(),this.mode="editor-element"}magicStuffSecond(e){}async _sendCard(){if(this._saving)return;this._syncMorePageSettingsFromDom();const e=this.renderRoot?.querySelector("dwains-card-config-editor"),t=await(e?.commitConfig?.()??e?.getConfig?.());if(t&&"object"==typeof t&&(this.cardConfig=t),this._applyDefaultMorePageName(),!this.name)return void alert((0,u.A)(this._hass,"more.name_required"));if(this.showInNavbar&&!this.icon)return void alert((0,u.A)(this._hass,"more.icon_required"));if(!this.cardConfig||"object"!=typeof this.cardConfig)return void(this._saveError=new Error("No valid Lovelace card is configured."));const i=!this.foldername;this._saving=!0,this._saveError=void 0;try{const e=await this._hass.callWS({type:"dwains_dashboard/edit_more_page",card_data:JSON.stringify(this.cardConfig),foldername:this.foldername,name:this.name,icon:this.icon,showInNavbar:this.showInNavbar});if(!e?.foldername)throw new Error("The backend did not return the saved page name.");this.foldername=e.foldername,Ee.invalidate(this._hass);const t=e.view_path||`more_page_${e.foldername}`,s=e.page||{foldername:e.foldername,name:this.name,icon:this.icon,show_in_navbar:this.showInNavbar,card:structuredClone(this.cardConfig)};Oe(window,s),i?(await Le({viewPath:t}),(0,I.fs)(),(0,Ae.oo)(window,`/dwains-dashboard/${t}`)):(0,I.fs)()}catch(e){this._saveError=e,console.error("Failed to save and refresh more page:",e)}finally{this._saving=!1}}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_deriveDefaultMorePageName(e=this.cardConfig){if(!e||"object"!=typeof e)return"";const t=[e.title,e.name,e.heading,e.card&&e.card.title,e.card&&e.card.name].find(e=>"string"==typeof e&&e.trim());return t?t.trim():""}_applyDefaultMorePageName(){if(this._nameTouched&&!this._nameAutoGenerated)return;const e=this._deriveDefaultMorePageName();e&&e!==this.name&&(this.name=e,this._nameAutoGenerated=!0)}_syncMorePageSettingsFromDom(){const e=this.shadowRoot?.querySelector("#more-page-name");e&&(this.name=e.value.trim());const t=this.shadowRoot?.querySelector(".more-page-settings ha-icon-picker");t&&void 0!==t.value&&(this.icon=t.value);const i=this.shadowRoot?.querySelector(".more-page-settings ha-checkbox");i&&(this.showInNavbar=i.checked)}_iconPickerChange(e){this.icon=e.detail.value}_showInMainNavbarValueChanged(e){this.showInNavbar=e.target.checked}_nameChanged(e){this.name=e.target.value,this._nameTouched=!0,this._nameAutoGenerated=!1}async _removeMorePage(){if(!this._saving){this._saving=!0,this._saveError=void 0;try{await this._hass.callWS({type:"dwains_dashboard/remove_more_page",foldername:this.foldername}),Ee.invalidate(this._hass),await Le(),(0,I.fs)(),(0,Ae.oo)(window,"/dwains-dashboard/more_page")}catch(e){this._saveError=e,console.error("Failed to remove and refresh more page:",e)}finally{this._saving=!1}}}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;this._hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{Ee.invalidate(this._hass),this._loadBlueprints(),this.requestUpdate()},e=>{console.error("Message failed!",e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint;this.mode="editor-element",this.name=this.blueprints.blueprints[t].blueprint.name,this.cardConfig={type:"custom:dwains-blueprint-card",blueprint:t,card:this.blueprints.blueprints[t].card}}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){this.installBlueprintYaml||alert((0,u.A)(this._hass,"blueprint.yaml_required")),this._hass.callWS({type:"dwains_dashboard/install_blueprint",yamlCode:JSON.stringify(this.installBlueprintYaml)}).then(e=>{e.succesfull?(alert(this._hass.localize("ui.common.successfully_saved")),Ee.invalidate(this._hass),this._loadBlueprints(),this.requestUpdate()):alert(e.error)},e=>{console.error("Message failed!",e)})}_checkCustomCard(e){const t=customElements.get(e);return p.qy`
         <div>
         ${t?p.qy`
             <ha-icon
@@ -2293,7 +2293,7 @@
                 .value=${this.icon}
                 @value-changed=${this._iconPickerChange}
             ></ha-icon-picker>
-            <label class="dd-check" @click=${j.H}>
+            <label class="dd-check" @click=${T.H}>
               <ha-checkbox
                 @change=${this._showInMainNavbarValueChanged}
                 .checked=${this.showInNavbar}
@@ -2321,4 +2321,4 @@
             </ha-button>
             </div>
         </div>
-        `:void 0}}Le("dwains-edit-more-page-card",Me)}}]);
+        `:void 0}}Ie("dwains-edit-more-page-card",Re)}}]);

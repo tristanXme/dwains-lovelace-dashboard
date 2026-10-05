@@ -1,4 +1,3 @@
-import { hass } from "./hass-compat";
 import { css, html, LitElement } from 'lit';
 import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import translateEngine from './translate-engine';
@@ -52,7 +51,6 @@ class DwainsEditDeviceButtonCard extends LitElement {
         ]
       }
       setConfig(config) {
-        if (!this.hass) this.hass = hass();
         this.device = config.device;
         this.icon = config.icon ? config.icon : "";
         this.showInNavbar = config.showInNavbar ? config.showInNavbar : false;

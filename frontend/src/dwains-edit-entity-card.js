@@ -1,4 +1,3 @@
-import { hass } from "./hass-compat";
 import { css, html, LitElement } from 'lit';
 import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import translateEngine from './translate-engine';
@@ -59,7 +58,6 @@ class DwainsEditEntityCard extends LitElement {
       ]
     }
     setConfig(config) {
-      if (!this.hass) this.hass = hass();
       this.entity = config.entity;
       this.friendlyName = config.friendlyName ? config.friendlyName : "";
 

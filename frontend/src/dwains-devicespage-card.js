@@ -140,8 +140,6 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           this.timeout = false;
           this._pendingHassUpdate = false;
 
-	          if (!this._hass) this._hass = getDwainsHass();
-
           this.selectedDevice = window.location.hash.substring(1);
           this.deviceEditMode = false;
           this.deviceViewEditMode = false;

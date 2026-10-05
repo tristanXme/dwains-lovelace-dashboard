@@ -1,4 +1,3 @@
-import { hass } from "./hass-compat";
 import {
   navigate
 } from './frontend-helpers';
@@ -74,8 +73,8 @@ class MorePagesCard extends LitElement {
         }
 
         setConfig(config) {
-          if (!this._hass) this._hass = hass();
-          const scope = morePagesEditModeScope(this._hass);
+          // The hass setter restores the edit mode when hass arrives later.
+          const scope = this._hass && morePagesEditModeScope(this._hass);
           this.editMode = scope ? (morePagesEditModes.get(scope) ?? false) : false;
           this._configReady = true;
           void this._startIfReady();
