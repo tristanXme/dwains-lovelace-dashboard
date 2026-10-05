@@ -1,0 +1,235 @@
+{
+  "title": "Dwains Dashboard",
+  "config": {
+    "step": {
+      "init": {
+        "title": "Inställningar för Dwains Dashboard",
+        "description": "",
+        "data": {
+          "sidepanel_icon": "Ikon i sidopanelen",
+          "sidepanel_title": "Titel i sidopanelen"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Endast en konfiguration av Dwains Dashboard är tillåten."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dwains Dashboard",
+        "description": "Välj vad du vill göra. Hittade föräldralösa dashboardinställningar: {orphans}.",
+        "menu_options": {
+          "settings": "Inställningar",
+          "cleanup": "Rensa föräldralösa inställningar",
+          "export_settings": "Exportera inställningar",
+          "import_settings": "Importera inställningar"
+        }
+      },
+      "settings": {
+        "title": "Inställningar för Dwains Dashboard",
+        "description": "Dessa inställningar sparas i dwains-dashboard/configs/settings.yaml.",
+        "data": {
+          "sidepanel_title": "Titel i sidopanelen",
+          "sidepanel_icon": "Ikon i sidopanelen",
+          "disable_clock": "Inaktivera klockan",
+          "am_pm_clock": "12-timmarsklocka (AM/PM)",
+          "disable_welcome_message": "Inaktivera välkomstmeddelandet",
+          "v2_mode": "Aktivera v2-läge (layout)",
+          "disable_sensor_graph": "Inaktivera sensordiagram",
+          "invert_cover": "Invertera status för rullgardiner",
+          "weather_entity": "Väderentitet",
+          "alarm_entity": "Larmentitet",
+          "hide_unavailable_entities": "Dölj otillgängliga entiteter",
+          "area_sensor_device_classes": "Sensorvärden under områdesnamnet",
+          "area_binary_sensor_device_classes": "Binära sensorvärden under områdesnamnet",
+          "area_view_grouping_mode": "Gruppera entiteter",
+          "area_floor_grouping_mode": "Gruppera områden efter våning",
+          "disable_masonry": "Kort i rader med samma höjd (ingen masonry)",
+          "house_information_entries": "Poster i statusfältet"
+        },
+        "data_description": {
+          "area_sensor_device_classes": "Välj de enhetsklasser för sensorer som ska visas på områdesrutorna under områdesnamnet. Välj ingenting för att inte visa något.",
+          "area_binary_sensor_device_classes": "Välj de enhetsklasser för binära sensorer som ska visas som statussammanfattning efter de vanliga sensorvärdena. Välj ingenting för att inte visa något.",
+          "area_view_grouping_mode": "Per klient behåller den aktuella inställningen i webbläsaren eller enheten. Aktiverad eller inaktiverad tvingar grupperingen globalt från servern.",
+          "area_floor_grouping_mode": "Per klient behåller den aktuella inställningen i webbläsaren eller enheten. Aktiverad eller inaktiverad tvingar gruppering av områden efter våning globalt från servern.",
+          "disable_masonry": "Favoriter och områdesvyn placerar normalt varje kort i dess naturliga höjd utan luckor (masonry). Slå på detta för rader där alla kort har samma höjd, som i tidigare versioner.",
+          "house_information_entries": "Välj vad statusfältet högst upp på startsidan får visa. En post visas bara medan något av dess slag är på, öppet eller upptäckt."
+        }
+      },
+      "cleanup": {
+        "title": "Rensa föräldralösa inställningar",
+        "description": "Dessa {count} poster pekar på entiteter eller områden som inte längre finns i Home Assistant, oftast efter att en enhet eller integration har tagits bort:\n\n- Entitetsinställningar: {entities}\n- Egna kort och popup-fönster: {cards}\n- Områdesinställningar och områdeskort: {areas}\n- Sensorer under områdesnamnet, områdesdiagram, väder- och larmentitet: {settings}\n\n{items}\n\nEntiteter som bara är inaktiverade, otillgängliga eller tillhör en integration som inte är laddad påverkas **inte**. Omdöpta entiteter tar automatiskt med sig sina inställningar och visas aldrig här.\n\nAlla berörda filer kopieras till `dwains-dashboard/backups/` innan något tas bort.",
+        "data": {
+          "confirm": "Säkerhetskopiera och ta bort dessa poster"
+        }
+      },
+      "import_settings": {
+        "title": "Importera inställningar",
+        "description": "Ersätter **alla** inställningar för Dwains Dashboard (områden, entiteter, kort, extrasidor, blueprints och dashboardinställningarna) med innehållet i en fil som skapats med *Exportera inställningar*.\n\nDe nuvarande inställningarna flyttas först till `dwains-dashboard/backups/`, så inget går förlorat.",
+        "data": {
+          "file": "Exportfil (.zip)",
+          "confirm": "Ersätt de nuvarande inställningarna"
+        }
+      }
+    },
+    "error": {
+      "confirm_required": "Slå på reglaget för att bekräfta rensningen.",
+      "confirm_required_import": "Slå på reglaget för att bekräfta importen.",
+      "invalid_archive": "Den här filen är ingen export från Dwains Dashboard eller så är den skadad. Inget har ändrats.",
+      "upload_failed": "Uppladdningen kom inte fram. Välj filen igen."
+    },
+    "abort": {
+      "nothing_to_clean": "Inga föräldralösa inställningar hittades. Allt är rent.",
+      "cleanup_done": "Tog bort {removed} poster. En säkerhetskopia av alla berörda filer finns i `{backup}`.",
+      "export_done": "Exporterade {files} filer.\n\nNedladdning: **{download}**\n\nLänken gäller i 10 minuter. Arkivet finns också kvar i `{folder}` (de fem senaste exporterna sparas).",
+      "export_failed": "Inställningarna kan inte exporteras: {error}. Inget har skrivits.",
+      "import_done": "Importerade {files} filer. Dashboarden laddas om med de importerade inställningarna. De tidigare inställningarna finns i `{backup}`."
+    }
+  },
+  "selector": {
+    "area_grouping_mode": {
+      "options": {
+        "client": "Per klient",
+        "enabled": "Aktiverad",
+        "disabled": "Inaktiverad"
+      }
+    },
+    "area_sensor_device_class": {
+      "options": {
+        "apparent_power": "Skenbar effekt",
+        "aqi": "Luftkvalitetsindex",
+        "atmospheric_pressure": "Lufttryck",
+        "battery": "Batteri",
+        "carbon_dioxide": "Koldioxid",
+        "carbon_monoxide": "Kolmonoxid",
+        "current": "Ström",
+        "data_rate": "Datahastighet",
+        "data_size": "Datastorlek",
+        "date": "Datum",
+        "distance": "Avstånd",
+        "duration": "Varaktighet",
+        "energy": "Energi",
+        "energy_storage": "Lagrad energi",
+        "enum": "Sensor",
+        "frequency": "Frekvens",
+        "gas": "Gas",
+        "humidity": "Luftfuktighet",
+        "illuminance": "Belysningsstyrka",
+        "irradiance": "Instrålning",
+        "moisture": "Fukt",
+        "monetary": "Saldo",
+        "nitrogen_dioxide": "Kvävedioxid",
+        "nitrogen_monoxide": "Kväveoxid",
+        "nitrous_oxide": "Lustgas",
+        "ozone": "Ozon",
+        "pm1": "PM1",
+        "pm10": "PM10",
+        "pm25": "PM2,5",
+        "power": "Effekt",
+        "power_factor": "Effektfaktor",
+        "precipitation": "Nederbörd",
+        "precipitation_intensity": "Nederbördsintensitet",
+        "pressure": "Tryck",
+        "reactive_power": "Reaktiv effekt",
+        "signal_strength": "Signalstyrka",
+        "sound_pressure": "Ljudtryck",
+        "speed": "Hastighet",
+        "sulphur_dioxide": "Svaveldioxid",
+        "temperature": "Temperatur",
+        "timestamp": "Tidsstämpel",
+        "volatile_organic_compounds": "Flyktiga organiska föreningar (VOC)",
+        "volatile_organic_compounds_parts": "Delar av flyktiga organiska föreningar (VOC)",
+        "voltage": "Spänning",
+        "volume": "Volym",
+        "volume_flow_rate": "Flödeshastighet",
+        "volume_storage": "Lagrad volym",
+        "water": "Vatten",
+        "weight": "Vikt",
+        "wind_speed": "Vindhastighet"
+      }
+    },
+    "area_binary_sensor_device_class": {
+      "options": {
+        "battery": "Batteri",
+        "battery_charging": "Laddning",
+        "carbon_monoxide": "Kolmonoxid",
+        "cold": "Kyla",
+        "connectivity": "Anslutning",
+        "door": "Dörr",
+        "garage_door": "Garageport",
+        "gas": "Gas",
+        "heat": "Värme",
+        "light": "Ljus",
+        "lock": "Lås",
+        "moisture": "Fukt",
+        "motion": "Rörelse",
+        "moving": "Förflyttning",
+        "occupancy": "Beläggning",
+        "opening": "Öppning",
+        "plug": "Kontakt",
+        "power": "Ström",
+        "presence": "Närvaro",
+        "problem": "Problem",
+        "running": "Igång",
+        "safety": "Säkerhet",
+        "smoke": "Rök",
+        "sound": "Ljud",
+        "tamper": "Sabotage",
+        "update": "Uppdatering",
+        "vibration": "Vibration",
+        "window": "Fönster"
+      }
+    },
+    "house_information_entries": {
+      "options": {
+        "person": "Personer",
+        "light": "Lampor",
+        "switch": "Brytare",
+        "fan": "Fläktar",
+        "climate": "Klimat",
+        "cover": "Rullgardiner",
+        "smoke": "Rök",
+        "carbon_monoxide": "Kolmonoxid",
+        "gas": "Gas",
+        "moisture": "Fukt",
+        "problem": "Problem",
+        "safety": "Säkerhet",
+        "door": "Dörrar",
+        "window": "Fönster",
+        "opening": "Öppningar (kontakter)",
+        "garage_door": "Garageportar",
+        "lock": "Lås",
+        "motion": "Rörelse",
+        "occupancy": "Närvaro i rum",
+        "presence": "Närvaro",
+        "vibration": "Vibration",
+        "running": "I drift",
+        "vacuum": "Dammsugare",
+        "media_player": "Mediaspelare",
+        "valve": "Ventiler",
+        "humidifier": "Luftfuktare",
+        "lawn_mower": "Gräsklippare",
+        "siren": "Sirener"
+      }
+    }
+  },
+  "issues": {
+    "restart_required": {
+      "title": "Omstart krävs för att slutföra inaktiveringen av Dwains Dashboard",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Starta om Home Assistant",
+            "description": "Dwains Dashboard registrerar en dashboard i sidofältet och frontendresurser som bara kan tas bort helt genom att starta om Home Assistant.\n\nVälj **Skicka** för att starta om nu."
+          }
+        }
+      }
+    },
+    "broken_configuration_files": {
+      "title": "Vissa filer i Dwains Dashboard kan inte läsas",
+      "description": "Dessa filer i `dwains-dashboard/configs/` är skadade eller är inte giltig YAML. Dashboarden fungerar utan dem tills de har rättats eller tagits bort:\n\n{files}\n\nDet här meddelandet försvinner så snart filerna kan läsas igen."
+    }
+  }
+}

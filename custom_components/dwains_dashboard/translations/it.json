@@ -1,0 +1,235 @@
+{
+  "title": "Dwains Dashboard",
+  "config": {
+    "step": {
+      "init": {
+        "title": "Impostazioni di Dwains Dashboard",
+        "description": "",
+        "data": {
+          "sidepanel_icon": "Icona del pannello laterale",
+          "sidepanel_title": "Titolo del pannello laterale"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "È consentita una sola configurazione di Dwains Dashboard."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dwains Dashboard",
+        "description": "Scegli cosa vuoi fare. Impostazioni orfane della dashboard trovate: {orphans}.",
+        "menu_options": {
+          "settings": "Impostazioni",
+          "cleanup": "Pulisci le impostazioni orfane",
+          "export_settings": "Esporta impostazioni",
+          "import_settings": "Importa impostazioni"
+        }
+      },
+      "settings": {
+        "title": "Impostazioni di Dwains Dashboard",
+        "description": "Queste impostazioni sono salvate in dwains-dashboard/configs/settings.yaml.",
+        "data": {
+          "sidepanel_title": "Titolo del pannello laterale",
+          "sidepanel_icon": "Icona del pannello laterale",
+          "disable_clock": "Disattiva orologio",
+          "am_pm_clock": "Orologio a 12 ore (AM/PM)",
+          "disable_welcome_message": "Disattiva messaggio di benvenuto",
+          "v2_mode": "Attiva modalità v2 (layout)",
+          "disable_sensor_graph": "Disattiva grafico dei sensori",
+          "invert_cover": "Inverti stato delle tapparelle",
+          "weather_entity": "Entità meteo",
+          "alarm_entity": "Entità allarme",
+          "hide_unavailable_entities": "Nascondi entità non disponibili",
+          "area_sensor_device_classes": "Valori dei sensori sotto il nome dell'area",
+          "area_binary_sensor_device_classes": "Valori dei sensori binari sotto il nome dell'area",
+          "area_view_grouping_mode": "Raggruppa entità",
+          "area_floor_grouping_mode": "Raggruppa aree per piano",
+          "disable_masonry": "Schede in righe di uguale altezza (senza mosaico)",
+          "house_information_entries": "Voci della barra di stato"
+        },
+        "data_description": {
+          "area_sensor_device_classes": "Seleziona le classi di dispositivo dei sensori da mostrare nei riquadri delle aree, sotto il nome dell'area. Non selezionare nulla per non mostrare nulla.",
+          "area_binary_sensor_device_classes": "Seleziona le classi di dispositivo dei sensori binari da mostrare come riepilogo di stato dopo i normali valori dei sensori. Non selezionare nulla per non mostrare nulla.",
+          "area_view_grouping_mode": "Per client mantiene l'impostazione attuale del browser o del dispositivo. Attivato o disattivato impone il raggruppamento a livello globale dal server.",
+          "area_floor_grouping_mode": "Per client mantiene l'impostazione attuale del browser o del dispositivo. Attivato o disattivato impone il raggruppamento delle aree per piano a livello globale dal server.",
+          "disable_masonry": "I preferiti e la vista dell'area normalmente posizionano ogni scheda alla sua altezza naturale, senza spazi vuoti (mosaico). Attivalo per righe in cui tutte le schede hanno la stessa altezza, come nelle versioni precedenti.",
+          "house_information_entries": "Scegli cosa può mostrare la barra di stato in cima alla pagina iniziale. Una voce compare solo mentre qualcosa del suo tipo è acceso, aperto o rilevato."
+        }
+      },
+      "cleanup": {
+        "title": "Pulisci le impostazioni orfane",
+        "description": "Queste {count} voci rimandano a entità o aree che non esistono più in Home Assistant, di solito dopo la rimozione di un dispositivo o di un'integrazione:\n\n- Impostazioni delle entità: {entities}\n- Schede e popup personalizzati: {cards}\n- Impostazioni e schede delle aree: {areas}\n- Sensori sotto il nome dell'area, grafici delle aree, entità meteo e allarme: {settings}\n\n{items}\n\nLe entità solo disattivate, non disponibili o appartenenti a un'integrazione non caricata **non** sono interessate. Le entità rinominate portano con sé automaticamente le loro impostazioni e non compaiono mai qui.\n\nTutti i file interessati vengono copiati in `dwains-dashboard/backups/` prima di rimuovere qualsiasi cosa.",
+        "data": {
+          "confirm": "Esegui il backup e rimuovi queste voci"
+        }
+      },
+      "import_settings": {
+        "title": "Importa impostazioni",
+        "description": "Sostituisce **tutte** le impostazioni di Dwains Dashboard (aree, entità, schede, pagine aggiuntive, blueprint e impostazioni della dashboard) con il contenuto di un file creato con *Esporta impostazioni*.\n\nLe impostazioni attuali vengono prima spostate in `dwains-dashboard/backups/`, quindi non si perde nulla.",
+        "data": {
+          "file": "File di esportazione (.zip)",
+          "confirm": "Sostituisci le impostazioni attuali"
+        }
+      }
+    },
+    "error": {
+      "confirm_required": "Attiva l'interruttore per confermare la pulizia.",
+      "confirm_required_import": "Attiva l'interruttore per confermare l'importazione.",
+      "invalid_archive": "Questo file non è un'esportazione di Dwains Dashboard oppure è danneggiato. Non è stato modificato nulla.",
+      "upload_failed": "Il caricamento non è arrivato. Seleziona di nuovo il file."
+    },
+    "abort": {
+      "nothing_to_clean": "Nessuna impostazione orfana trovata. È tutto in ordine.",
+      "cleanup_done": "Rimosse {removed} voci. Un backup di tutti i file interessati si trova in `{backup}`.",
+      "export_done": "Esportati {files} file.\n\nDownload: **{download}**\n\nIl link è valido per 10 minuti. L'archivio resta anche in `{folder}` (vengono conservate le cinque esportazioni più recenti).",
+      "export_failed": "Impossibile esportare le impostazioni: {error}. Non è stato scritto nulla.",
+      "import_done": "Importati {files} file. La dashboard si ricarica con le impostazioni importate. Le impostazioni precedenti si trovano in `{backup}`."
+    }
+  },
+  "selector": {
+    "area_grouping_mode": {
+      "options": {
+        "client": "Per client",
+        "enabled": "Attivato",
+        "disabled": "Disattivato"
+      }
+    },
+    "area_sensor_device_class": {
+      "options": {
+        "apparent_power": "Potenza apparente",
+        "aqi": "Indice di qualità dell'aria",
+        "atmospheric_pressure": "Pressione atmosferica",
+        "battery": "Batteria",
+        "carbon_dioxide": "Anidride carbonica",
+        "carbon_monoxide": "Monossido di carbonio",
+        "current": "Corrente",
+        "data_rate": "Velocità dei dati",
+        "data_size": "Dimensione dei dati",
+        "date": "Data",
+        "distance": "Distanza",
+        "duration": "Durata",
+        "energy": "Energia",
+        "energy_storage": "Energia immagazzinata",
+        "enum": "Sensore",
+        "frequency": "Frequenza",
+        "gas": "Gas",
+        "humidity": "Umidità",
+        "illuminance": "Illuminamento",
+        "irradiance": "Irraggiamento",
+        "moisture": "Umidità",
+        "monetary": "Bilancio monetario",
+        "nitrogen_dioxide": "Anidride nitrosa",
+        "nitrogen_monoxide": "Monossido di azoto",
+        "nitrous_oxide": "Ossido nitroso",
+        "ozone": "Ozono",
+        "pm1": "PM1",
+        "pm10": "PM10",
+        "pm25": "PM2.5",
+        "power": "Potenza",
+        "power_factor": "Fattore di potenza",
+        "precipitation": "Precipitazione",
+        "precipitation_intensity": "Intensità della precipitazione",
+        "pressure": "Pressione",
+        "reactive_power": "Potenza reattiva",
+        "signal_strength": "Intensità del segnale",
+        "sound_pressure": "Pressione sonora",
+        "speed": "Velocità",
+        "sulphur_dioxide": "Anidride solforosa",
+        "temperature": "Temperatura",
+        "timestamp": "Marca temporale",
+        "volatile_organic_compounds": "Composti organici volatili",
+        "volatile_organic_compounds_parts": "Parti di COV",
+        "voltage": "Tensione",
+        "volume": "Volume",
+        "volume_flow_rate": "Portata volumetrica",
+        "volume_storage": "Volume memorizzato",
+        "water": "Acqua",
+        "weight": "Peso",
+        "wind_speed": "Velocità del vento"
+      }
+    },
+    "area_binary_sensor_device_class": {
+      "options": {
+        "battery": "Batteria",
+        "battery_charging": "In ricarica",
+        "carbon_monoxide": "Monossido di carbonio",
+        "cold": "Freddo",
+        "connectivity": "Connettività",
+        "door": "Porta",
+        "garage_door": "Porta del box auto",
+        "gas": "Gas",
+        "heat": "Calore",
+        "light": "Luce",
+        "lock": "Serratura",
+        "moisture": "Umidità",
+        "motion": "Movimento",
+        "moving": "In movimento",
+        "occupancy": "Occupazione",
+        "opening": "Apertura",
+        "plug": "Spina",
+        "power": "Potenza",
+        "presence": "Presenza",
+        "problem": "Problema",
+        "running": "In esecuzione",
+        "safety": "Sicurezza",
+        "smoke": "Fumo",
+        "sound": "Suono",
+        "tamper": "Manomissione",
+        "update": "Aggiorna",
+        "vibration": "Vibrazione",
+        "window": "Finestra"
+      }
+    },
+    "house_information_entries": {
+      "options": {
+        "person": "Persone",
+        "light": "Luci",
+        "switch": "Interruttori",
+        "fan": "Ventilatori",
+        "climate": "Clima",
+        "cover": "Tapparelle",
+        "smoke": "Fumo",
+        "carbon_monoxide": "Monossido di carbonio",
+        "gas": "Gas",
+        "moisture": "Umidità",
+        "problem": "Problema",
+        "safety": "Sicurezza",
+        "door": "Porte",
+        "window": "Finestre",
+        "opening": "Aperture (contatti)",
+        "garage_door": "Porte del garage",
+        "lock": "Serrature",
+        "motion": "Movimento",
+        "occupancy": "Occupazione",
+        "presence": "Presenza",
+        "vibration": "Vibrazione",
+        "running": "In funzione",
+        "vacuum": "Aspirapolvere",
+        "media_player": "Lettori multimediali",
+        "valve": "Valvole",
+        "humidifier": "Umidificatori",
+        "lawn_mower": "Tosaerba",
+        "siren": "Sirene"
+      }
+    }
+  },
+  "issues": {
+    "restart_required": {
+      "title": "Riavvio necessario per completare la disattivazione di Dwains Dashboard",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Riavvia Home Assistant",
+            "description": "Dwains Dashboard registra una dashboard nella barra laterale e risorse del frontend che possono essere rimosse completamente solo riavviando Home Assistant.\n\nSeleziona **Invia** per riavviare ora."
+          }
+        }
+      }
+    },
+    "broken_configuration_files": {
+      "title": "Alcuni file di Dwains Dashboard non possono essere letti",
+      "description": "Questi file in `dwains-dashboard/configs/` sono danneggiati o non sono YAML valido. La dashboard funziona senza di essi finché non vengono corretti o rimossi:\n\n{files}\n\nQuesto messaggio scompare non appena i file possono essere letti di nuovo."
+    }
+  }
+}
