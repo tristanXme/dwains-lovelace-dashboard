@@ -131,29 +131,17 @@ class DwainsHouseInformationCard extends LitElement {
       .dd-header-tabs::-webkit-scrollbar {
         display: none;
       }
+      /* Entries keep their width (at least 88px, more for long names) and
+         the bar scrolls sideways when they do not fit, also on desktop;
+         shrinking them made the names run into each other. */
       .dd-header-tab {
         display: flex;
-        flex: 1 1 0;
+        flex: 0 0 auto;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-width: 60px;
-        max-width: 220px;
+        min-width: 88px;
         padding: 0 4px;
-        position: relative;
-      }
-      /* Refresh: spread the status over the full width with quiet dividers */
-      .dd-header-tabs {
-        justify-content: space-around;
-      }
-      .dd-header-tab + .dd-header-tab::before {
-        content: "";
-        position: absolute;
-        left: -4px;
-        top: 18px;
-        bottom: 18px;
-        width: 1px;
-        background: var(--divider-color, rgba(127, 127, 127, 0.15));
       }
       .dd-header-tabs h3 {
         max-width: 100%;
@@ -170,22 +158,6 @@ class DwainsHouseInformationCard extends LitElement {
         line-height: 1.25;
         white-space: nowrap;
       }
-      /* Many active entries (all sensors of a room at once): wrap into a
-         second row instead of squeezing the labels into each other. */
-      @media (min-width: 601px) {
-        .dd-header-tabs {
-          flex-wrap: wrap;
-          height: auto;
-          min-height: 110px;
-          row-gap: 4px;
-          overflow-x: visible;
-        }
-        .dd-header-tab {
-          flex: 1 0 104px;
-          min-width: 0;
-          min-height: 102px;
-        }
-      }
       @media (max-width: 600px) {
         .dd-header-tabs {
           gap: 6px;
@@ -194,9 +166,6 @@ class DwainsHouseInformationCard extends LitElement {
         .dd-header-tab {
           flex: 0 0 auto;
           min-width: 68px;
-        }
-        .dd-header-tab + .dd-header-tab::before {
-          display: none;
         }
       }
 
@@ -492,6 +461,7 @@ class DwainsHouseInformationCard extends LitElement {
 
         if (TOGGLE_DOMAINS.includes(domain.domain)) {
             //If domain is in toggle domains (light, fan, switch)
+            if (!this._showsEntry(domain.domain)) return;
             const on = this._isOn(entitiesByDomain, domain);
             if (on) {
                 return this._renderDomainBadgeCard(domain.domain, translateEngine(this._hass, 'device.' + domain.domain), DOMAIN_STATE_ICONS[domain.domain][on ? "on" : "off"], on, '');
@@ -499,12 +469,14 @@ class DwainsHouseInformationCard extends LitElement {
         } else if (ALERT_DOMAINS.includes(domain.domain)) {
             //If domain is alert domain binary_sensor (check device_classes ("motion", "door", "window"))
             return DEVICE_CLASSES[domain.domain].map((deviceClass) => {
+                if (!this._showsEntry(deviceClass)) return;
                 const on = this._isOn(entitiesByDomain, domain.domain, deviceClass);
                 if (on) {
                     return this._renderDomainBadgeCard(domain.domain, translateEngine(this._hass, 'device.' + deviceClass), DOMAIN_STATE_ICONS[domain.domain][deviceClass], on, deviceClass);
                 }
             });
         } else if (COVER_DOMAINS.includes(domain.domain)) {
+            if (!this._showsEntry('cover')) return;
             //If domain is cover domain binary_sensor (check device_classes ("garage","shutter"))
             return DEVICE_CLASSES[domain.domain].map((deviceClass) => {
                 const on = this._isOnCover(entitiesByDomain, domain.domain, deviceClass);
@@ -517,12 +489,14 @@ class DwainsHouseInformationCard extends LitElement {
                 }
             });
         } else if (CLIMATE_DOMAINS.includes(domain.domain)) {
+            if (!this._showsEntry('climate')) return;
             //Its climate domain
             const on = this._isOnClimate(entitiesByDomain, domain.domain);
             if (on) {
                 return this._renderDomainBadgeCard(domain.domain, translateEngine(this._hass, 'device.' + domain.domain), DOMAIN_STATE_ICONS[domain.domain][on ? "on" : "off"], on, '');
             }
         } else if (OTHER_DOMAINS.includes(domain.domain)) {
+            if (!this._showsEntry(domain.domain)) return;
             //Its other domain
             const on = this._isOn(entitiesByDomain, domain);
             if (on) {
@@ -530,6 +504,23 @@ class DwainsHouseInformationCard extends LitElement {
             }
         }
     }
+    // Entries chosen in the integration options (all when never chosen).
+    _showsEntry(key) {
+        const entries = this.configuration?.homepage_header?.house_information_entries;
+        return !Array.isArray(entries) || entries.includes(key);
+    }
+
+    // The status bar scrolls sideways; with a mouse wheel that only works
+    // with shift. Turn the wheel into sideways scrolling until the end of
+    // the bar, then let the page scroll on.
+    _scrollTabsWithWheel(ev) {
+        const tabs = ev.currentTarget;
+        if (tabs.scrollWidth <= tabs.clientWidth || Math.abs(ev.deltaX) >= Math.abs(ev.deltaY)) return;
+        const before = tabs.scrollLeft;
+        tabs.scrollLeft += ev.deltaY;
+        if (tabs.scrollLeft !== before) ev.preventDefault();
+    }
+
     _renderDomainBadgeCard(domain, name, icon, count, deviceClass) {
         let translatedStatus;
         const opened = OPEN_DEVICE_CLASSES.includes(deviceClass) || ['cover', 'lock', 'valve'].includes(domain);
@@ -610,8 +601,8 @@ class DwainsHouseInformationCard extends LitElement {
         } else {
             return html`
                 <ha-card>
-                <div class="dd-header-tabs">
-                    ${this.persons.map((entity) => this._renderPersonCard(entity))}
+                <div class="dd-header-tabs" @wheel=${this._scrollTabsWithWheel}>
+                    ${this._showsEntry('person') ? this.persons.map((entity) => this._renderPersonCard(entity)) : ''}
                     ${Object.values(this.domains).map((domain) => this._renderDomain(domain))}
                 </div>
                 </ha-card>

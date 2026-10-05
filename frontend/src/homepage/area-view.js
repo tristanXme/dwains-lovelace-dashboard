@@ -44,6 +44,13 @@ export const AreaViewMixin = (Base) => class extends Base {
       `;
     }
 
+	    // Masonry (natural card heights) or, with the option off, rows of equal
+	    // height in which the cards fill their cell as in earlier versions.
+	    _areaViewGridLayout(){
+	      if(this.areaViewEditMode) return "";
+	      return this._masonryEnabled() ? "dd-masonry" : "dd-uniform";
+	    }
+
 	    _hideUnavailableEntitiesEnabled(){
 	      return !!(this.configuration && this.configuration.homepage_header && this.configuration.homepage_header.hide_unavailable_entities);
 	    }
@@ -68,7 +75,7 @@ export const AreaViewMixin = (Base) => class extends Base {
 	        });
 
 	        return html`
-	        <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable ${this.areaViewEditMode ? "" : "dd-masonry"}">
+	        <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable ${this._areaViewGridLayout()}">
 	          ${cards.map((i) =>
 	            html`${this._renderAreaViewCard(i)}`
 	          )}
@@ -105,7 +112,7 @@ export const AreaViewMixin = (Base) => class extends Base {
           html`
             <div class="mb-5">
               <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'device.'+key)}</h3>
-              <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable ${this.areaViewEditMode ? "" : "dd-masonry"}">
+              <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable ${this._areaViewGridLayout()}">
                 ${Object.entries(group[key]).map(([k,v]) => html`${this._renderAreaViewCard(v)}`)}
               </div>
             </div>

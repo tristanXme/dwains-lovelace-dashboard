@@ -44,6 +44,41 @@ SETTINGS_BOOLS = (
     "disable_sensor_graph",
     "invert_cover",
     "hide_unavailable_entities",
+    "disable_masonry",
+)
+# Entries of the house status bar at the top of the homepage. Missing in
+# settings.yaml means all of them (as before this option existed). Binary
+# sensor device classes use their class name; "lock" covers lock entities and
+# lock sensors.
+HOUSE_INFORMATION_ENTRIES = (
+    "person",
+    "light",
+    "switch",
+    "fan",
+    "climate",
+    "cover",
+    "smoke",
+    "carbon_monoxide",
+    "gas",
+    "moisture",
+    "problem",
+    "safety",
+    "door",
+    "window",
+    "opening",
+    "garage_door",
+    "lock",
+    "motion",
+    "occupancy",
+    "presence",
+    "vibration",
+    "running",
+    "vacuum",
+    "media_player",
+    "valve",
+    "humidifier",
+    "lawn_mower",
+    "siren",
 )
 SETTINGS_FILE = "dwains-dashboard/configs/settings.yaml"
 DEFAULT_AREA_SENSOR_DEVICE_CLASSES = ["temperature", "humidity"]
@@ -290,6 +325,27 @@ def _binary_sensor_device_class_options(translations):
     ]
 
 
+def _house_information_entries_to_input(settings):
+    value = settings.get("house_information_entries")
+    if not isinstance(value, list):
+        return list(HOUSE_INFORMATION_ENTRIES)
+    return [entry for entry in value if entry in HOUSE_INFORMATION_ENTRIES]
+
+
+def _house_information_entry_options(translations):
+    return [
+        {
+            "value": entry,
+            "label": _translation(
+                translations,
+                f"selector.house_information_entries.options.{entry}",
+                entry.replace("_", " ").title(),
+            ),
+        }
+        for entry in HOUSE_INFORMATION_ENTRIES
+    ]
+
+
 def _area_view_grouping_mode(value):
     return value if value in AREA_VIEW_GROUPING_MODES else AREA_VIEW_GROUPING_MODE_CLIENT
 
@@ -461,6 +517,13 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             header["area_binary_sensor_entities"] = _entity_list_from_input(
                 user_input.get("area_binary_sensor_entities", [])
             )
+            header["house_information_entries"] = [
+                entry
+                for entry in _entity_list_from_input(
+                    user_input.get("house_information_entries", list(HOUSE_INFORMATION_ENTRIES))
+                )
+                if entry in HOUSE_INFORMATION_ENTRIES
+            ]
             header["area_view_grouping_mode"] = _area_view_grouping_mode(
                 user_input.get("area_view_grouping_mode", AREA_VIEW_GROUPING_MODE_CLIENT)
             )
@@ -512,6 +575,14 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             vol.Optional("disable_sensor_graph", default=bool(cur.get("disable_sensor_graph", False))): selector.BooleanSelector(),
             vol.Optional("invert_cover", default=bool(cur.get("invert_cover", False))): selector.BooleanSelector(),
             vol.Optional("hide_unavailable_entities", default=bool(cur.get("hide_unavailable_entities", False))): selector.BooleanSelector(),
+            vol.Optional("disable_masonry", default=bool(cur.get("disable_masonry", False))): selector.BooleanSelector(),
+            vol.Optional("house_information_entries", default=_house_information_entries_to_input(cur)): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=_house_information_entry_options(translations),
+                    multiple=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
             vol.Optional("area_sensor_device_classes", default=_sensor_device_classes_to_input(cur)): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=_sensor_device_class_options(translations),

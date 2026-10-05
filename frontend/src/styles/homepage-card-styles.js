@@ -318,6 +318,11 @@ export const homepageCardStyles = (css) => css`
           row-gap: 0 !important;
           align-items: start;
         }
+        .dd-uniform > div > div,
+        .dd-uniform > div > div > dd-lazy-card {
+          display: block;
+          height: 100%;
+        }
         /* Each cell includes the 16px gap below its card; the last row's
            gap would add to the spacing of the next group. */
         .dd-masonry {

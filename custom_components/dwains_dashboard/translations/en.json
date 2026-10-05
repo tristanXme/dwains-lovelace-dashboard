@@ -47,7 +47,9 @@
           "area_binary_sensor_device_classes": "Binary sensor values below area name",
           "area_binary_sensor_entities": "Explicit binary sensors below area name",
           "area_view_grouping_mode": "Group entities",
-          "area_floor_grouping_mode": "Group areas by floor"
+          "area_floor_grouping_mode": "Group areas by floor",
+          "disable_masonry": "Cards in rows of equal height (no masonry)",
+          "house_information_entries": "Entries of the status bar"
         },
         "data_description": {
           "area_sensor_device_classes": "Select the sensor device classes that should be shown on area tiles below the area name. Select nothing to show nothing.",
@@ -55,7 +57,9 @@
           "area_binary_sensor_device_classes": "Select binary sensor device classes that should be shown as status summaries after the normal sensor values. Select nothing to show nothing.",
           "area_binary_sensor_entities": "Select individual binary sensor entities. They are only shown on an area tile when they belong to that area and are active.",
           "area_view_grouping_mode": "Per client keeps the current browser/device setting. Enabled or disabled enforces the grouping globally from the server.",
-          "area_floor_grouping_mode": "Per client keeps the current browser/device setting. Enabled or disabled enforces area grouping by floor globally from the server."
+          "area_floor_grouping_mode": "Per client keeps the current browser/device setting. Enabled or disabled enforces area grouping by floor globally from the server.",
+          "disable_masonry": "Favorites and the area view normally place each card at its natural height without gaps (masonry). Turn this on for rows in which all cards have the same height, as in earlier versions.",
+          "house_information_entries": "Choose what the status bar at the top of the homepage may show. An entry only appears while something of its kind is on, open or detected."
         }
       },
       "cleanup": {
@@ -179,6 +183,38 @@
         "update": "Update",
         "vibration": "Vibration",
         "window": "Window"
+      }
+    },
+    "house_information_entries": {
+      "options": {
+        "person": "Persons",
+        "light": "Lights",
+        "switch": "Switches",
+        "fan": "Fans",
+        "climate": "Climate",
+        "cover": "Covers",
+        "smoke": "Smoke",
+        "carbon_monoxide": "Carbon monoxide",
+        "gas": "Gas",
+        "moisture": "Moisture",
+        "problem": "Problem",
+        "safety": "Safety",
+        "door": "Doors",
+        "window": "Windows",
+        "opening": "Openings (contacts)",
+        "garage_door": "Garage doors",
+        "lock": "Locks",
+        "motion": "Motion",
+        "occupancy": "Occupancy",
+        "presence": "Presence",
+        "vibration": "Vibration",
+        "running": "Running",
+        "vacuum": "Vacuums",
+        "media_player": "Media players",
+        "valve": "Valves",
+        "humidifier": "Humidifiers",
+        "lawn_mower": "Lawn mowers",
+        "siren": "Sirens"
       }
     }
   },

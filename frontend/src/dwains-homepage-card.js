@@ -279,6 +279,11 @@ function getDwainsHass() {
 	      this._scheduleMasonryLayout();
 	    }
 
+	    // Integration option "Cards in rows of equal height (no masonry)".
+	    _masonryEnabled(){
+	      return !this.configuration?.homepage_header?.disable_masonry;
+	    }
+
 	    _scheduleMasonryLayout(){
 	      if(this.__masonryLayoutRaf) return;
 	      this.__masonryLayoutRaf = requestAnimationFrame(() => {
@@ -408,13 +413,11 @@ function getDwainsHass() {
 	            item.style.gridRow = row;
 	          }
 	        });
-	        // Edit mode uses the plain grid again (no masonry class): drop the
-	        // spans written above.
-	        if(this.areaViewEditMode || this.favoriteEditMode){
-	          this.shadowRoot.querySelectorAll(".area-view-entity-sortable:not(.dd-masonry) > *, .sortable:not(.dd-fav-masonry):not(.dd-masonry) > *").forEach((item) => {
-	            if(item.style.gridRow) item.style.gridRow = "";
-	          });
-	        }
+	        // Edit mode and the "no masonry" option use the plain grid again
+	        // (no masonry class): drop spans written before.
+	        this.shadowRoot.querySelectorAll(".area-view-entity-sortable:not(.dd-masonry) > *, .sortable:not(.dd-fav-masonry):not(.dd-masonry) > *").forEach((item) => {
+	          if(item.style.gridRow) item.style.gridRow = "";
+	        });
 	      } catch (error) {
 	        console.error("Failed to apply homepage masonry spans", error);
 	      }
@@ -1717,7 +1720,7 @@ function getDwainsHass() {
               `: ""}
             </div>
           </div>
-          <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4 sortable ${this.favoriteEditMode ? "" : "dd-fav-masonry"}">
+          <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4 sortable ${this.favoriteEditMode || !this._masonryEnabled() ? "" : "dd-fav-masonry"}">
             ${this.favorites.map((i) =>
               html`${this._renderFavoriteViewCard(i)}`
             )}

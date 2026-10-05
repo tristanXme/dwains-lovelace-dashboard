@@ -48,6 +48,11 @@ Security, stability and performance release of DD3.
   blueprints, sidebar title and icon) into a zip that is downloaded right from
   the dialog. The import replaces the settings with such a file; the previous
   settings are moved to `dwains-dashboard/backups/` first.
+- **New:** choose the entries of the house status bar (persons, lights,
+  climate, smoke, doors, …) in the dashboard settings. The bar stays one row
+  and scrolls sideways when it is full, also with the mouse wheel.
+- **New:** *Cards in rows of equal height (no masonry)* in the dashboard
+  settings for favorites and the area view, as in earlier versions.
 - **New:** diagnostics download (Settings → Devices & services → Dwains
   Dashboard → ⋮ → Download diagnostics), including the orphaned entries.
 - **New:** optional history graph at the bottom of an area tile. Pick a
@@ -58,7 +63,7 @@ Security, stability and performance release of DD3.
   history). A click on the graph opens the sensor's history.
 - **Refresh:** values below the area name follow the Home Assistant language
   (`24,1 °C · 48 %` in German) and are separated by `·`; area badges are
-  rounder; the house status bar uses the full width with quiet dividers.
+  rounder.
 - **Area badges:** more sensor types get a badge on the area tile and in the
   house status bar: gas, carbon monoxide, problem, safety, opening (plain
   door/window contacts), garage door and lock. Open valves, running
