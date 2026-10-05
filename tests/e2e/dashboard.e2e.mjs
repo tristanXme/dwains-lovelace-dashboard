@@ -88,6 +88,11 @@ for (const colorScheme of ["light", "dark"]) {
     }, 5);
   }, token);
   const page = await context.newPage();
+  const registryLists = [];
+  page.on("websocket", (socket) => socket.on("framesent", (frame) => {
+    const type = /"type":"(config\/[a-z_]+_registry\/list)"/.exec(String(frame.payload))?.[1];
+    if (type) registryLists.push(type);
+  }));
   const requests = [];
   page.on("request", (request) => {
     const path = new URL(request.url()).pathname;
@@ -223,6 +228,26 @@ for (const colorScheme of ["light", "dark"]) {
         const card = all.find((el) => el.localName === "devices-card");
         return card.deviceEditMode === true && card._sortable?.length === 1;
       }), "device edit mode with drag sorting");
+    });
+
+    await step("registries are read from Home Assistant, changes show up live", async () => {
+      // HA requests the device, area and floor lists itself to fill hass;
+      // the full entity list is what the dashboard used to download.
+      assert.ok(!registryLists.includes("config/entity_registry/list"), registryLists.join(", "));
+      await page.goto(BASE + "/dwains-dashboard/home");
+      await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("°C"))), "homepage");
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const moveLamp = (areaId) => ws({ type: "config/entity_registry/update", entity_id: "input_boolean.e2e_lamp", area_id: areaId });
+      // Areas without entities are not shown, so move one into the new area.
+      const area = await ws({ type: "config/area_registry/create", name: "E2E Werkstatt" });
+      try {
+        await moveLamp(area.area_id);
+        await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("E2E Werkstatt"))), "new area on the homepage", 15000);
+      } finally {
+        await moveLamp(token.areaId);
+        await ws({ type: "config/area_registry/delete", area_id: area.area_id });
+      }
+      await poll(() => deep(page, (all) => !all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("E2E Werkstatt"))), "removed area gone", 15000);
     });
 
     await step("more pages: the create dialog opens", async () => {

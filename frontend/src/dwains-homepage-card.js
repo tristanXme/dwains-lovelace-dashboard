@@ -19,6 +19,7 @@ const { loadDashboardRegistrySnapshot } = require('./dashboard-registry-snapshot
 const { resolveHass } = require('./hass-provider');
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { loadSortable } = require('./lazy-modules');
+const { RegistryChangeWatcher } = require('./registry-change-watcher');
 const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
 const { attachDeferredCard } = require('./deferred-card');
@@ -50,6 +51,9 @@ function getDwainsHass() {
 
     constructor() {
       super();
+      this._registryChanges = new RegistryChangeWatcher(() => {
+        this._reloadCard().catch((error) => console.error('Error reloading homepage card:', error));
+      });
       this._subscriptions = new EventSubscriptionOwner();
       this._timers = new TimerOwner();
       this._popupOpens = new PopupOpenScheduler(this._timers);
@@ -83,6 +87,7 @@ function getDwainsHass() {
       this._hass = hass;
       propagateHomepageHass(this, hass);
       if(this.startedUp){
+        this._registryChanges.update(hass);
         this._update_hass(hass);
       }
       if (connectionChanged && this.isConnected) {
@@ -237,6 +242,7 @@ function getDwainsHass() {
 	      super.disconnectedCallback();
 	      this._subscriptions.disconnect();
 	      this._timers.disconnect();
+	      this._registryChanges.reset();
 	      this._startedHass = undefined;
 	      this._loads.invalidate();
 	      this.timeout = false;

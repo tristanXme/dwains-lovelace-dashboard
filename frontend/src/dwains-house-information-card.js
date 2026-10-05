@@ -23,6 +23,7 @@ import translateEngine from './translate-engine';
 import { myComputeStateDisplay, resolveEntityName } from "./helpers";
 import { subtleHouseInformationStyles } from './styles/dwains-subtle-style';
 const { loadDashboardRegistrySnapshot } = require('./dashboard-registry-snapshot');
+const { RegistryChangeWatcher } = require('./registry-change-watcher');
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { TimerOwner } = require('./timer-owner');
 const { PopupOpenScheduler } = require('./popup-open-scheduler');
@@ -33,6 +34,9 @@ const { isEntityHiddenInArea } = require('./entity-aggregation');
 class DwainsHouseInformationCard extends LitElement {
     constructor() {
         super();
+        this._registryChanges = new RegistryChangeWatcher(() => {
+            this._reloadCard().catch((error) => console.error('Error reloading house information card:', error));
+        });
         this._timers = new TimerOwner();
         this._popupOpens = new PopupOpenScheduler(this._timers);
         this._loads = new ReloadableLoadOwner((context) => this._loadConfiguration(context));
@@ -191,6 +195,7 @@ class DwainsHouseInformationCard extends LitElement {
     set hass(hass) {
       const connectionChanged = hasHassConnectionChanged(this._hass, hass);
       this._hass = hass;
+      if (this._startedHass) this._registryChanges.update(hass);
       this.requestUpdate();
       void this._startIfReady(connectionChanged);
     }
@@ -234,6 +239,7 @@ class DwainsHouseInformationCard extends LitElement {
         this._startedHass = undefined;
         this._loads.invalidate();
         this._timers.disconnect();
+        this._registryChanges.reset();
     }
 
     async _reloadCard() {

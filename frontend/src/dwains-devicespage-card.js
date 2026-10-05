@@ -22,6 +22,7 @@ const { registryOrderedEntityUnion } = require('./registry-indexes');
 const { resolveHass } = require('./hass-provider');
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { defineDwainsElement } = require('./custom-element-registration');
+const { RegistryChangeWatcher } = require('./registry-change-watcher');
 const { attachDeferredCard } = require('./deferred-card');
 
 function getDwainsHass() {
@@ -47,6 +48,9 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 
         constructor() {
           super();
+          this._registryChanges = new RegistryChangeWatcher(() => {
+            this._reloadCard().catch((error) => console.error('Error reloading devices page card:', error));
+          });
           this._subscriptions = new EventSubscriptionOwner();
           this._listeners = new EventListenerOwner();
           this._timers = new TimerOwner();
@@ -87,6 +91,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           const connectionChanged = hasHassConnectionChanged(this._hass, hass);
           this._hass = hass;
           if(this.startedUp){
+            this._registryChanges.update(hass);
             this._update_hass(hass);
           }
           if (connectionChanged && this.isConnected) {
@@ -207,6 +212,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 	          this._subscriptions.disconnect();
 	          this._timers.disconnect();
 	          this._listeners.disconnect();
+	          this._registryChanges.reset();
 	          this._startedHass = undefined;
               this._loads.invalidate();
 	          this.timeout = false;
