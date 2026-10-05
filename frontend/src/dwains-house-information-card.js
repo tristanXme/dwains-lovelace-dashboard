@@ -168,6 +168,23 @@ class DwainsHouseInformationCard extends LitElement {
       .dd-header-tabs span {
         font-size: .92rem;
         line-height: 1.25;
+        white-space: nowrap;
+      }
+      /* Many active entries (all sensors of a room at once): wrap into a
+         second row instead of squeezing the labels into each other. */
+      @media (min-width: 601px) {
+        .dd-header-tabs {
+          flex-wrap: wrap;
+          height: auto;
+          min-height: 110px;
+          row-gap: 4px;
+          overflow-x: visible;
+        }
+        .dd-header-tab {
+          flex: 1 0 104px;
+          min-width: 0;
+          min-height: 102px;
+        }
       }
       @media (max-width: 600px) {
         .dd-header-tabs {

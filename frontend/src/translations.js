@@ -1173,7 +1173,7 @@ const translations = {
             weather: 'Wetter',
             moisture: 'Feuchtigkeit',
             input_select: 'Input Select',
-            carbon_monoxide: 'Kohlenstoffmonoxid',
+            carbon_monoxide: 'Kohlenmonoxid',
             gas: 'Gas',
             problem: 'Problem',
             safety: 'Sicherheit',

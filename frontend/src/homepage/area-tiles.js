@@ -1,10 +1,13 @@
 import { html } from 'lit';
-import { STATES_OFF, UNAVAILABLE_STATES, SENSOR_DOMAINS, ALERT_DOMAINS, COVER_DOMAINS, TOGGLE_DOMAINS, OTHER_DOMAINS, DEVICE_CLASSES, DOMAIN_STATE_ICONS } from '../variables';
+import { STATES_OFF, UNAVAILABLE_STATES, SENSOR_DOMAINS, ALERT_DOMAINS, COVER_DOMAINS, TOGGLE_DOMAINS, OTHER_DOMAINS, DEVICE_CLASSES, DOMAIN_STATE_ICONS, DETECTED_DEVICE_CLASSES } from '../variables';
 import translateEngine from '../translate-engine';
 const { areaBinarySensorDeviceClasses, areaBinarySensorEntities, areaSensorDeviceClasses, areaSensorEntities } = require('../homepage-preferences');
 const { collectAreaBinarySensorValues, entityBelongsToArea, summaryTranslationKey } = require('../area-binary-sensors');
 const { collectAreaSensorValues } = require('../area-sensors');
 require('../dwains-area-graph');
+
+// Badges that fit next to the area icon without covering the name.
+const MAX_AREA_BADGES = 3;
 
 // Area tiles on the homepage: values, badges, graph and grouping by floor.
 export const AreaTilesMixin = (Base) => class extends Base {
@@ -145,6 +148,85 @@ export const AreaTilesMixin = (Base) => class extends Base {
         .map((entity) => entity.entity_id);
     }
 
+    // Status badges in the top right corner of an area tile, most important
+    // first: safety alerts, the toggles, other sensors, covers, devices. At
+    // most MAX_AREA_BADGES fit next to the area icon; the rest is summed up
+    // in a "+N" badge whose tooltip names them.
+    _renderAreaBadges(data, entitiesByDomain) {
+      const badges = [];
+      const add = (priority, icon, count, title, toggle) => badges.push({ priority, icon, count, title, toggle });
+      for (const domain of ALERT_DOMAINS) {
+        if (!(domain in entitiesByDomain)) continue;
+        for (const deviceClass of DEVICE_CLASSES[domain]) {
+          const count = this._isOn(entitiesByDomain, domain, deviceClass);
+          const icon = DOMAIN_STATE_ICONS[domain][deviceClass];
+          if (count && icon) {
+            add(DETECTED_DEVICE_CLASSES.includes(deviceClass) ? 0 : 2, icon, count, this._badgeTitle(deviceClass, count));
+          }
+        }
+      }
+      for (const domain of TOGGLE_DOMAINS) {
+        if (!(domain in entitiesByDomain)) continue;
+        const count = this._isOn(entitiesByDomain, domain);
+        if (domain == 'light' || count) {
+          add(1, DOMAIN_STATE_ICONS[domain][count ? "on" : "off"], count, this._badgeTitle(domain, count), domain);
+        }
+      }
+      for (const domain of COVER_DOMAINS) {
+        if (!(domain in entitiesByDomain)) continue;
+        for (const deviceClass of DEVICE_CLASSES[domain]) {
+          const count = this._coverOpenCount(entitiesByDomain, deviceClass);
+          const icon = DOMAIN_STATE_ICONS[domain][deviceClass];
+          if (count && icon) add(3, icon, count, this._badgeTitle(deviceClass, count));
+        }
+      }
+      for (const domain of OTHER_DOMAINS) {
+        if (!(domain in entitiesByDomain)) continue;
+        const count = this._isOn(entitiesByDomain, domain);
+        if (count) add(4, DOMAIN_STATE_ICONS[domain].on, count, this._badgeTitle(domain, count));
+      }
+      // Stable sort: within a priority the order of DEVICE_CLASSES and the
+      // domain lists is kept.
+      badges.sort((a, b) => a.priority - b.priority);
+      let visible = badges;
+      let hidden = [];
+      if (badges.length > MAX_AREA_BADGES) {
+        // The light badge is a switch, not only a status: it always stays.
+        const light = badges.find((badge) => badge.toggle === 'light');
+        const others = badges.filter((badge) => badge !== light);
+        const slots = MAX_AREA_BADGES - 1 - (light ? 1 : 0);
+        visible = badges.filter((badge) => badge === light || others.indexOf(badge) < slots);
+        hidden = badges.filter((badge) => !visible.includes(badge));
+      }
+      return html`
+        <div class="row-span-2 text-right space-y-0.5 info">
+          ${visible.map((badge) => badge.toggle ? html`
+            <span
+              class="info-badge toggle-badge badge-${badge.toggle} inline-flex items-center px-1 py-0.5 rounded text-xs font-medium"
+              title=${translateEngine(this._hass, badge.count ? 'area.toggle_all_off' : 'area.toggle_all_on').replace('{domain}', translateEngine(this._hass, 'device.' + badge.toggle))}
+              role="button"
+              .domain=${badge.toggle}
+              .area_id=${data.area.area_id}
+              .state=${badge.count}
+              @click=${this._toggle}
+            >
+              <ha-icon class="${badge.count ? 'on' : 'off'} w-6 h-6 mr-0.5" .icon=${badge.icon}></ha-icon>
+              ${badge.count}
+            </span>
+          ` : html`
+            <span class="info-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium" title=${badge.title}>
+              <ha-icon class="w-6 h-6 mr-0.5" .icon=${badge.icon}></ha-icon> ${badge.count}
+            </span>
+          `)}
+          ${hidden.length ? html`
+            <span class="info-badge more-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium" title=${hidden.map((badge) => badge.title).join(" · ")}>
+              +${hidden.length}
+            </span>
+          ` : ""}
+        </div>
+      `;
+    }
+
     // Tooltip of a status badge: "2 windows open", "Vacuum: active".
     _badgeTitle(type, count) {
       return translateEngine(this._hass, summaryTranslationKey(type, count))
@@ -273,104 +355,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
                 <span class="text-gray text-sm capitalize">${this._climateState(entitiesByDomain, 'climate')}</span>
               </div>
             </div>
-            <div class="row-span-2 text-right space-y-0.5 info">
-              ${TOGGLE_DOMAINS.map((domain) => {
-                if (!(domain in entitiesByDomain)) {
-                  return "";
-                }
-                const on = this._isOn(entitiesByDomain, domain);
-                if(domain == 'light' || domain != 'light' && on){
-                  return TOGGLE_DOMAINS.includes(domain)
-                    ? html`
-                      <span
-                        class="info-badge toggle-badge badge-${domain} inline-flex items-center px-1 py-0.5 rounded text-xs font-medium"
-                        title=${translateEngine(this._hass, on ? 'area.toggle_all_off' : 'area.toggle_all_on').replace('{domain}', translateEngine(this._hass, 'device.'+domain))}
-                        role="button"
-                        .domain=${domain}
-                        .area_id=${data.area.area_id}
-                        .state=${on}
-                        @click=${this._toggle}
-                      >
-                        <ha-icon
-                          class="${on ? 'on' : 'off'} w-6 h-6 mr-0.5"
-                          .icon=${DOMAIN_STATE_ICONS[domain][on ? "on" : "off"]}
-                        >
-                        </ha-icon>
-                        ${on}
-                      </span><br>
-                      `
-                    : "";
-                }
-              })}
-              ${ALERT_DOMAINS.map((domain) => {
-                if (!(domain in entitiesByDomain)) {
-                  return "";
-                }
-                return DEVICE_CLASSES[domain].map((deviceClass) => {
-                  const isOn = this._isOn(entitiesByDomain, domain, deviceClass);
-                  if(isOn){
-                    return html`
-                      ${DOMAIN_STATE_ICONS[domain][deviceClass]
-                        ? html`
-                          <span
-                            class="info-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium"
-                            title=${this._badgeTitle(deviceClass, isOn)}
-                          >
-                            <ha-icon
-                              class="w-6 h-6 mr-0.5"
-                              .icon=${DOMAIN_STATE_ICONS[domain][deviceClass]}
-                            ></ha-icon> ${isOn}
-                          </span><br>`
-                        : ""}
-                    `
-                  }
-                });
-              })}
-              ${COVER_DOMAINS.map((domain) => {
-                if (!(domain in entitiesByDomain)) {
-                  return "";
-                }
-                return DEVICE_CLASSES[domain].map((deviceClass) => {
-                  const isOn = this._coverOpenCount(entitiesByDomain, deviceClass);
-                  if(isOn){
-                    return html`
-                      ${DOMAIN_STATE_ICONS[domain][deviceClass]
-                        ? html`
-                          <span class="info-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium">
-                            <ha-icon
-                              class="w-6 h-6 mr-0.5"
-                              .icon=${DOMAIN_STATE_ICONS[domain][deviceClass]}
-                            ></ha-icon> ${isOn}
-                          </span><br>`
-                        : ""}
-                    `
-                  }
-                });
-              })}
-              ${OTHER_DOMAINS.map((domain) => {
-                if (!(domain in entitiesByDomain)) {
-                  return "";
-                }
-                const isOn = this._isOn(entitiesByDomain, domain);
-                if(isOn){
-                  return OTHER_DOMAINS.includes(domain)
-                    ? html`
-                      <span
-                        class="info-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium"
-                        title=${this._badgeTitle(domain, isOn)}
-                      >
-                        <ha-icon
-                          class="${isOn ? 'on' : 'off'} w-6 h-6 mr-0.5"
-                          .icon=${DOMAIN_STATE_ICONS[domain][isOn ? "on" : "off"]}
-                        >
-                        </ha-icon>
-                        ${isOn}
-                      </span><br>
-                      `
-                    : "";
-                }
-              })}
-            </div>
+            ${this._renderAreaBadges(data, entitiesByDomain)}
           </div>
           ${this.areaEditMode ? html`
             <ha-card>
