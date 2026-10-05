@@ -1,5 +1,6 @@
 import { hass } from "./hass-compat";
 import { css, html, LitElement } from 'lit';
+import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import { createCardElementSafe, resolveEntityName } from './helpers';
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { websocketReadStore } = require('./websocket-read-store');
@@ -88,8 +89,8 @@ class DwainsBlueprintCard extends LitElement {
         }
 
         static get styles() {
-          return css`
-          `
+          return [checkRowStyles(css), css`
+          `]
         }
       }
       defineDwainsElement("dwains-blueprint-card", DwainsBlueprintCard);
@@ -97,8 +98,9 @@ class DwainsBlueprintCard extends LitElement {
       class DwainsBlueprintCardEditor extends LitElement {
         static get styles() {
           return [
+            checkRowStyles(css),
             css`
-            ha-formfield, ha-input,.formfield {
+            .dd-check, ha-input,.formfield {
               width: 100%;
             }
             .formfield {
@@ -224,17 +226,15 @@ class DwainsBlueprintCard extends LitElement {
               value = false;
             }
             card = html`
-            <ha-formfield
-                  style="display: block;"
-                  label=${v["name"]}
-                >
-                <ha-checkbox
+            <label class="dd-check" @click=${toggleCheckRow}>
+              <ha-checkbox
                     @change=${this._checkboxChanged}
                     .checked=${value}
                     .key=${k}
                     .name=${v["name"]}
                   ></ha-checkbox>
-            </ha-formfield>
+              <span>${v["name"]}</span>
+            </label>
             `;
           } else {
             card = html`

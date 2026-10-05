@@ -1,5 +1,6 @@
 import { hass } from "./hass-compat";
 import { css, html, LitElement } from 'lit';
+import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import translateEngine from './translate-engine';
 import { closePopup } from "./helpers";
 const { closeParentDropdown } = require('./dropdown-controller');
@@ -8,6 +9,7 @@ const { defineDwainsElement } = require('./custom-element-registration');
 class DwainsEditDeviceButtonCard extends LitElement {
       static get styles() {
         return [
+        checkRowStyles(css),
           css`
         .edit-element {
           padding: 20px;
@@ -19,7 +21,7 @@ class DwainsEditDeviceButtonCard extends LitElement {
           display: block;
           margin: .8rem 0;
         }
-        .edit-element ha-formfield {
+        .edit-element .dd-check {
           display: flex;
           align-items: center;
           gap: .6rem;
@@ -43,7 +45,7 @@ class DwainsEditDeviceButtonCard extends LitElement {
             padding: 8px;
             border-top: 1px solid var(--divider-color);
           }
-          ha-formfield {
+          .dd-check {
             padding: 16px 6px;
           }
           `
@@ -97,13 +99,13 @@ class DwainsEditDeviceButtonCard extends LitElement {
               @value-changed=${this._iconPickerChange}
             ></ha-icon-picker>
 
-          <ha-formfield>
+          <label class="dd-check" @click=${toggleCheckRow}>
               <ha-switch
                 @change=${this._showInMainNavbarValueChanged}
                 .checked=${this.showInNavbar}
               ></ha-switch>
-            <span slot="label">${translateEngine(this.hass,'device.show_in_navbar')}</span>
-          </ha-formfield>
+              <span>${translateEngine(this.hass,'device.show_in_navbar')}</span>
+            </label>
 
             <div class="card-footer">
               <ha-button slot="secondaryAction" @click=${(e) => closePopup()}>

@@ -305,23 +305,19 @@ class MorePageCard extends LitElement {
                 ${this._hass?.user?.is_admin ? html`
                 <ha-dropdown
                   class="ha-icon-overflow-menu-overflow"
-                  corner="BOTTOM_END"
-                  absolute
+                  placement="bottom-end"
                 >
                   <ha-icon-button
                     label=${this._hass.localize("ui.common.overflow_menu")}
                     .path=${mdiDotsVertical}
                     slot="trigger"
                   ></ha-icon-button>
-                  <ha-list-item
-                    graphic="icon"
+                  <ha-dropdown-item
                     @click=${this._handleEditMorePageClicked}
                   >
-                    <div slot="graphic">
-                      <ha-svg-icon .path=${mdiPencil}></ha-svg-icon>
-                    </div>
+                    <ha-svg-icon slot="icon" .path=${mdiPencil}></ha-svg-icon>
                     ${this._hass.localize("ui.components.entity.entity-picker.edit")}
-                  </ha-list-item>
+                  </ha-dropdown-item>
                 </ha-dropdown>
                 `: ""}
               </div>

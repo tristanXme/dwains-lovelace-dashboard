@@ -1023,7 +1023,7 @@ function getDwainsHass() {
       const areaId = ev.currentTarget.area;
       const data = this.data.find((data) => data.area.area_id == areaId);
       const key = ev.currentTarget.key;
-      const value = ev.currentTarget.value;
+      const value = ev.currentTarget.ddValue;
 
       this._hass.callWS({
         type: 'dwains_dashboard/edit_entities_bool_value',
@@ -1231,7 +1231,7 @@ function getDwainsHass() {
       this._saveEntityBoolValue(
         ev.currentTarget.entity,
         ev.currentTarget.key,
-        ev.currentTarget.value,
+        ev.currentTarget.ddValue,
       );
     }
     _handleEntityAreaVisibilityClick(ev, entityId, value) {
@@ -1244,7 +1244,7 @@ function getDwainsHass() {
       ev.stopPropagation();
       const areaId = ev.currentTarget.areaId;
       const key = ev.currentTarget.key;
-      const value = ev.currentTarget.value;
+      const value = ev.currentTarget.ddValue;
 
       this._hass.callWS({
         type: 'dwains_dashboard/edit_area_bool_value',
@@ -1356,7 +1356,7 @@ function getDwainsHass() {
       closeParentDropdown(ev);
       ev.stopPropagation();
 
-      const value = ev.currentTarget.value;
+      const value = ev.currentTarget.ddValue;
       const mode = this._areaViewGroupingMode();
       if(mode != 'client'){
         this.areaViewDisplayGrouped = mode == 'enabled';
@@ -1376,7 +1376,7 @@ function getDwainsHass() {
       closeParentDropdown(ev);
       ev.stopPropagation();
 
-      const value = ev.currentTarget.value;
+      const value = ev.currentTarget.ddValue;
       const mode = this._areaFloorGroupingMode();
       if(mode != 'client'){
         this.areaDisplayGrouped = mode == 'enabled';
@@ -1389,7 +1389,7 @@ function getDwainsHass() {
     _handleFavoriteEditModeClicked(ev){
       closeParentDropdown(ev);
       ev.stopPropagation();
-      const value = ev.currentTarget.value;
+      const value = ev.currentTarget.ddValue;
 
       if(value){
         this._sortable = [];
@@ -1428,7 +1428,7 @@ function getDwainsHass() {
     _handleAreaEditModeClicked(ev){
       closeParentDropdown(ev);
       ev.stopPropagation();
-      const value = ev.currentTarget.value;
+      const value = ev.currentTarget.ddValue;
 
       if(value){
         this._sortable = [];
@@ -1513,7 +1513,7 @@ function getDwainsHass() {
     _handleAreaViewEditModeClicked(ev){
       closeParentDropdown(ev);
       ev.stopPropagation();
-      const value = ev.currentTarget.value;
+      const value = ev.currentTarget.ddValue;
       this.areaViewEditMode = value;
 
       if(value){
@@ -1592,16 +1592,14 @@ function getDwainsHass() {
             </div>
             <ha-dropdown
               class="ha-icon-overflow-menu-overflow"
-              corner="BOTTOM_START"
-              absolute
+              placement="bottom-end"
             >
               <ha-icon-button
                 label=${this._hass.localize("ui.common.overflow_menu")}
                 .path=${mdiDotsVertical}
                 slot="trigger"
               ></ha-icon-button>
-                <ha-list-item
-                  graphic="icon"
+                <ha-dropdown-item
                   .entity="${data.entity}"
                   .friendlyName="${data.friendlyName}"
                   .disableEntity=${data.disableEntity}
@@ -1617,45 +1615,34 @@ function getDwainsHass() {
                   .customPopup=${data.customPopup}
                   @click=${this._handleEntityEditClick}
                 >
-                  <div slot="graphic">
-                    <ha-icon .icon=${"mdi:cog"}></ha-icon>
-                  </div>
+                  <ha-icon slot="icon" .icon=${"mdi:cog"}></ha-icon>
                   ${translateEngine(this._hass, 'entity.settings')}
-                </ha-list-item>
+                </ha-dropdown-item>
                 ${data.entity != 't' ? html `
-                  <ha-list-item
-                    graphic="icon"
+                  <ha-dropdown-item
                     .entity="${data.entity}"
                     @click="${this._handleEntityEditCardClick}"
                   >
-                    <div slot="graphic">
-                      <ha-icon .icon=${"mdi:pencil"}></ha-icon>
-                    </div>
+                    <ha-icon slot="icon" .icon=${"mdi:pencil"}></ha-icon>
                     ${translateEngine(this._hass, 'entity.entity_card')}
-                  </ha-list-item>` : ""
+                  </ha-dropdown-item>` : ""
                 }
                 ${data.entity != 't' ? html `
-                  <ha-list-item
-                    graphic="icon"
+                  <ha-dropdown-item
                     .entity="${data.entity}"
                     @click="${this._handleEntityEditPopupClick}"
                   >
-                    <div slot="graphic">
-                      <ha-icon .icon=${"mdi:pencil-box-multiple"}></ha-icon>
-                    </div>
+                    <ha-icon slot="icon" .icon=${"mdi:pencil-box-multiple"}></ha-icon>
                     ${translateEngine(this._hass, 'entity.popup_card')}
-                  </ha-list-item>` : ""
+                  </ha-dropdown-item>` : ""
                 }
-                <ha-list-item
-                  graphic="icon"
+                <ha-dropdown-item
                   .entity="${data.entity}"
                   @click="${this._handleEntityRemoveFromFavoritesClick}"
                 >
-                  <div slot="graphic">
-                    <ha-icon .icon=${"mdi:tag-heart"}></ha-icon>
-                  </div>
+                  <ha-icon slot="icon" .icon=${"mdi:tag-heart"}></ha-icon>
                   ${translateEngine(this._hass, 'entity.remove_from_favorites')}
-                </ha-list-item>
+                </ha-dropdown-item>
                 ${this._renderEntityAreaVisibilityAction(data.entity)}
             </ha-dropdown>
           </div>
@@ -1687,8 +1674,7 @@ function getDwainsHass() {
               ${this._hass.user.is_admin ? html`
               <ha-dropdown
                 class="ha-icon-overflow-menu-overflow"
-                corner="BOTTOM_END"
-                absolute
+                placement="bottom-end"
               >
                 <ha-icon-button
                   label=${this._hass.localize("ui.common.overflow_menu")}
@@ -1696,26 +1682,20 @@ function getDwainsHass() {
                   slot="trigger"
                 ></ha-icon-button>
                   ${this.favoriteEditMode ? html `
-                    <ha-list-item
-                      graphic="icon"
-                      .value=${false}
+                    <ha-dropdown-item
+                      .ddValue=${false}
                       @click=${this._handleFavoriteEditModeClicked}
                     >
-                      <div slot="graphic">
-                        <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                      </div>
+                      <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                       ${translateEngine(this._hass, 'global.disable_edit_mode')}
-                    </ha-list-item>` : html `
-                    <ha-list-item
-                      graphic="icon"
-                      .value=${true}
+                    </ha-dropdown-item>` : html `
+                    <ha-dropdown-item
+                      .ddValue=${true}
                       @click=${this._handleFavoriteEditModeClicked}
                     >
-                      <div slot="graphic">
-                        <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                      </div>
+                      <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                       ${translateEngine(this._hass, 'global.enable_edit_mode')}
-                    </ha-list-item>
+                    </ha-dropdown-item>
                     `
                   }
               </ha-dropdown>
@@ -1860,8 +1840,7 @@ function getDwainsHass() {
                     <div>
                       <ha-dropdown
                         class="ha-icon-overflow-menu-overflow"
-                        corner="BOTTOM_END"
-                        absolute
+                        placement="bottom-end"
                       >
                         <ha-icon-button
                           label=${this._hass.localize("ui.common.overflow_menu")}
@@ -1870,51 +1849,39 @@ function getDwainsHass() {
                         ></ha-icon-button>
                           ${this._areaFloorGroupingMode() == 'client' ? html`
                             ${!this.areaDisplayGrouped ? html `
-                              <ha-list-item
-                                graphic="icon"
-                                .value=${true}
+                              <ha-dropdown-item
+                                .ddValue=${true}
                                 @click=${this._handleAreaDisplayGroupedClicked}
                               >
-                                <div slot="graphic">
-                                  <ha-icon .icon=${"mdi:format-list-group"}></ha-icon>
-                                </div>
+                                <ha-icon slot="icon" .icon=${"mdi:format-list-group"}></ha-icon>
                                 ${translateEngine(this._hass, 'area.group_by_floor')}
-                              </ha-list-item>` : html `
-                              <ha-list-item
-                                graphic="icon"
-                                .value=${false}
+                              </ha-dropdown-item>` : html `
+                              <ha-dropdown-item
+                                .ddValue=${false}
                                 @click=${this._handleAreaDisplayGroupedClicked}
                               >
-                                <div slot="graphic">
-                                <ha-icon .icon=${"mdi:grid"}></ha-icon>
-                                </div>
+                                <ha-icon slot="icon" .icon=${"mdi:grid"}></ha-icon>
                                 ${translateEngine(this._hass, 'area.ungroup_by_floor')}
-                              </ha-list-item>
+                              </ha-dropdown-item>
                               `
                             }
                           ` : ""}
                           ${this._hass.user.is_admin ? html`
                             ${!this.areaEditMode ? html `
-                              <ha-list-item
-                                graphic="icon"
-                                .value=${true}
+                              <ha-dropdown-item
+                                .ddValue=${true}
                                 @click=${this._handleAreaEditModeClicked}
                               >
-                                <div slot="graphic">
-                                  <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                                </div>
+                                <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                                 ${translateEngine(this._hass, 'global.enable_edit_mode')}
-                              </ha-list-item>` : html `
-                              <ha-list-item
-                                graphic="icon"
-                                .value=${false}
+                              </ha-dropdown-item>` : html `
+                              <ha-dropdown-item
+                                .ddValue=${false}
                                 @click=${this._handleAreaEditModeClicked}
                               >
-                                <div slot="graphic">
-                                  <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                                </div>
+                                <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                                 ${translateEngine(this._hass, 'global.disable_edit_mode')}
-                              </ha-list-item>
+                              </ha-dropdown-item>
                               `
                             }
                           ` : ""}

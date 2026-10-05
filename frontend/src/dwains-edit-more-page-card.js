@@ -1,5 +1,6 @@
 import { navigate } from './frontend-helpers';
 import { css, html, LitElement } from 'lit';
+import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import translateEngine from './translate-engine';
 import { closePopup } from "./helpers";
 const { websocketReadStore } = require('./websocket-read-store');
@@ -26,6 +27,7 @@ class DwainsEditMorePageCard extends LitElement {
 
     static get styles() {
     return [
+        checkRowStyles(css),
         css`
         .edit-element {
           box-sizing: border-box;
@@ -46,7 +48,7 @@ class DwainsEditMorePageCard extends LitElement {
           max-width: 100%;
           margin: .8rem 0;
         }
-        .edit-element ha-formfield {
+        .edit-element .dd-check {
         display: flex;
         align-items: center;
         gap: .6rem;
@@ -591,20 +593,16 @@ class DwainsEditMorePageCard extends LitElement {
     if(this.mode == 'pre-select') {
         return html`
         <ha-md-list>
-            <ha-list-item twoline .mode=${"hui-card-picker"} @click=${this._switchMode}>
-            ${translateEngine(this._hass, 'editor.lovelace_card')}
-            <span slot="secondary">
-                ${translateEngine(this._hass, 'editor.create_lovelace_card')}
-            </span>
-            </ha-list-item>
+            <ha-md-list-item type="button" .mode=${"hui-card-picker"} @click=${this._switchMode}>
+              <span slot="headline">${translateEngine(this._hass, 'editor.lovelace_card')}</span>
+              <span slot="supporting-text">${translateEngine(this._hass, 'editor.create_lovelace_card')}</span>
+            </ha-md-list-item>
             <li divider role="separator"></li>
-            <ha-list-item hasmeta twoline .mode=${"dwains-dashboard-blueprint-select"} @click=${this._switchMode}>
-            ${translateEngine(this._hass, 'editor.dwains_dashboard_blueprint')}
-            <span slot="secondary">
-                ${translateEngine(this._hass, 'editor.use_dwains_dashboard_blueprint')}
-            </span>
-            <ha-icon-next slot="meta"></ha-icon-next
-            ></ha-list-item>
+            <ha-md-list-item type="button" .mode=${"dwains-dashboard-blueprint-select"} @click=${this._switchMode}>
+              <span slot="headline">${translateEngine(this._hass, 'editor.dwains_dashboard_blueprint')}</span>
+              <span slot="supporting-text">${translateEngine(this._hass, 'editor.use_dwains_dashboard_blueprint')}</span>
+              <ha-icon-next slot="end"></ha-icon-next>
+            </ha-md-list-item>
         </ha-md-list>
         `;
     }
@@ -732,13 +730,13 @@ class DwainsEditMorePageCard extends LitElement {
                 .value=${this.icon}
                 @value-changed=${this._iconPickerChange}
             ></ha-icon-picker>
-            <ha-formfield>
-                <ha-checkbox
+            <label class="dd-check" @click=${toggleCheckRow}>
+              <ha-checkbox
                 @change=${this._showInMainNavbarValueChanged}
                 .checked=${this.showInNavbar}
                 ></ha-checkbox>
-              <span slot="label">${translateEngine(this._hass,'more.add_navbar')}</span>
-            </ha-formfield>
+              <span>${translateEngine(this._hass,'more.add_navbar')}</span>
+            </label>
             </div>
 
             <dwains-card-config-editor

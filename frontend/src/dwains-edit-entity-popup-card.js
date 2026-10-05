@@ -396,20 +396,16 @@ class DwainsEditEntityPopupCard extends LitElement {
       if(this.mode == 'pre-select') {
         return html`
           <ha-md-list>
-            <ha-list-item twoline .mode=${"hui-card-picker"} @click=${this._switchMode}>
-              ${translateEngine(this.hass, 'editor.lovelace_card')}
-              <span slot="secondary">
-                ${translateEngine(this.hass, 'editor.create_lovelace_card')}
-              </span>
-            </ha-list-item>
+            <ha-md-list-item type="button" .mode=${"hui-card-picker"} @click=${this._switchMode}>
+              <span slot="headline">${translateEngine(this.hass, 'editor.lovelace_card')}</span>
+              <span slot="supporting-text">${translateEngine(this.hass, 'editor.create_lovelace_card')}</span>
+            </ha-md-list-item>
             <li divider role="separator"></li>
-            <ha-list-item hasmeta twoline .mode=${"dwains-dashboard-blueprint-select"} @click=${this._switchMode}>
-              ${translateEngine(this.hass, 'editor.dwains_dashboard_blueprint')}
-              <span slot="secondary">
-                ${translateEngine(this.hass, 'editor.use_dwains_dashboard_blueprint')}
-              </span>
-              <ha-icon-next slot="meta"></ha-icon-next
-            ></ha-list-item>
+            <ha-md-list-item type="button" .mode=${"dwains-dashboard-blueprint-select"} @click=${this._switchMode}>
+              <span slot="headline">${translateEngine(this.hass, 'editor.dwains_dashboard_blueprint')}</span>
+              <span slot="supporting-text">${translateEngine(this.hass, 'editor.use_dwains_dashboard_blueprint')}</span>
+              <ha-icon-next slot="end"></ha-icon-next>
+            </ha-md-list-item>
           </ha-md-list>
         `;
       }

@@ -125,22 +125,19 @@ export const AreaViewMixin = (Base) => class extends Base {
     _renderEntityAreaVisibilityAction(entity) {
       const hiddenInArea = this.configuration?.entities?.[entity]?.hidden_in_area === true;
       return html`
-        <ha-list-item
-          graphic="icon"
+        <ha-dropdown-item
           @click=${(ev) => this._handleEntityAreaVisibilityClick(
             ev,
             entity,
             !hiddenInArea,
           )}
         >
-          <div slot="graphic">
-            <ha-icon .icon=${hiddenInArea ? "mdi:eye" : "mdi:eye-off"}></ha-icon>
-          </div>
+          <ha-icon slot="icon" .icon=${hiddenInArea ? "mdi:eye" : "mdi:eye-off"}></ha-icon>
           ${translateEngine(
             this._hass,
             hiddenInArea ? 'entity.unhide_in_area' : 'entity.hide_in_area',
           )}
-        </ha-list-item>
+        </ha-dropdown-item>
       `;
     }
 
@@ -164,16 +161,14 @@ export const AreaViewMixin = (Base) => class extends Base {
             </div>
             <ha-dropdown
               class="ha-icon-overflow-menu-overflow"
-              corner="BOTTOM_START"
-              absolute
+              placement="bottom-end"
             >
               <ha-icon-button
                 label=${this._hass.localize("ui.common.overflow_menu")}
                 .path=${mdiDotsVertical}
                 slot="trigger"
               ></ha-icon-button>
-                <ha-list-item
-                  graphic="icon"
+                <ha-dropdown-item
                   .entity="${data.entity}"
                   .friendlyName="${data.friendlyName}"
                   .disableEntity=${data.disableEntity}
@@ -189,84 +184,64 @@ export const AreaViewMixin = (Base) => class extends Base {
                   .customPopup=${data.customPopup}
                   @click=${this._handleEntityEditClick}
                 >
-                  <div slot="graphic">
-                    <ha-icon .icon=${"mdi:cog"}></ha-icon>
-                  </div>
+                  <ha-icon slot="icon" .icon=${"mdi:cog"}></ha-icon>
                   ${translateEngine(this._hass, 'entity.settings')}
-                </ha-list-item>
+                </ha-dropdown-item>
                 ${data.entity != 't' ? html `
-                  <ha-list-item
-                    graphic="icon"
+                  <ha-dropdown-item
                     .entity="${data.entity}"
                     @click="${this._handleEntityEditCardClick}"
                   >
-                    <div slot="graphic">
-                      <ha-icon .icon=${"mdi:pencil"}></ha-icon>
-                    </div>
+                    <ha-icon slot="icon" .icon=${"mdi:pencil"}></ha-icon>
                     ${translateEngine(this._hass, 'entity.entity_card')}
-                  </ha-list-item>` : ""
+                  </ha-dropdown-item>` : ""
                 }
                 ${data.entity != 't' ? html `
-                  <ha-list-item
-                    graphic="icon"
+                  <ha-dropdown-item
                     .entity="${data.entity}"
                     @click="${this._handleEntityEditPopupClick}"
                   >
-                    <div slot="graphic">
-                      <ha-icon .icon=${"mdi:pencil-box-multiple"}></ha-icon>
-                    </div>
+                    <ha-icon slot="icon" .icon=${"mdi:pencil-box-multiple"}></ha-icon>
                     ${translateEngine(this._hass, 'entity.popup_card')}
-                  </ha-list-item>` : ""
+                  </ha-dropdown-item>` : ""
                 }
                 ${!data.isFavorite ? html `
-                  <ha-list-item
-                    graphic="icon"
+                  <ha-dropdown-item
                     .entity="${data.entity}"
                     @click="${this._handleEntityAddToFavoritesClick}"
                   >
-                    <div slot="graphic">
-                      <ha-icon .icon=${"mdi:tag-heart"}></ha-icon>
-                    </div>
+                    <ha-icon slot="icon" .icon=${"mdi:tag-heart"}></ha-icon>
                     ${translateEngine(this._hass, 'entity.add_to_favorites')}
-                  </ha-list-item>` : ""
+                  </ha-dropdown-item>` : ""
                 }
-                <ha-list-item
-                  graphic="icon"
+                <ha-dropdown-item
                   .entity="${data.entity}"
                   .key=${"excluded"}
-                  .value=${true}
+                  .ddValue=${true}
                   @click=${this._handleEntityEditBoolValueClick}
                 >
-                  <div slot="graphic">
-                    <ha-icon .icon=${"mdi:table-eye-off"}></ha-icon>
-                  </div>
+                  <ha-icon slot="icon" .icon=${"mdi:table-eye-off"}></ha-icon>
                   ${translateEngine(this._hass, 'entity.exclude')}
-                </ha-list-item>
-                <ha-list-item
-                  graphic="icon"
+                </ha-dropdown-item>
+                <ha-dropdown-item
                   .entity="${data.entity}"
                   .key=${"hidden"}
-                  .value=${true}
+                  .ddValue=${true}
                   @click=${this._handleEntityEditBoolValueClick}
                 >
-                  <div slot="graphic">
-                    <ha-icon .icon=${"mdi:eye-off"}></ha-icon>
-                  </div>
+                  <ha-icon slot="icon" .icon=${"mdi:eye-off"}></ha-icon>
                   ${translateEngine(this._hass, 'entity.hide')}
-                </ha-list-item>
+                </ha-dropdown-item>
                 ${this._renderEntityAreaVisibilityAction(data.entity)}
-                <ha-list-item
-                  graphic="icon"
+                <ha-dropdown-item
                   .entity="${data.entity}"
                   .key=${"disabled"}
-                  .value=${true}
+                  .ddValue=${true}
                   @click=${this._handleEntityEditBoolValueClick}
                 >
-                  <div slot="graphic">
-                    <ha-icon .icon=${"mdi:tray-remove"}></ha-icon>
-                  </div>
+                  <ha-icon slot="icon" .icon=${"mdi:tray-remove"}></ha-icon>
                   ${translateEngine(this._hass, 'entity.disable')}
-                </ha-list-item>
+                </ha-dropdown-item>
             </ha-dropdown>
           </div>
         </ha-card>` : ""}
@@ -293,7 +268,7 @@ export const AreaViewMixin = (Base) => class extends Base {
                 <ha-button
                   .entity="${entity}"
                   .key=${action.key}
-                  .value=${false}
+                  .ddValue=${false}
                   @click=${this._handleEntityEditBoolValueClick}
                 >
                   ${translateEngine(this._hass, action.translationKey)}
@@ -367,8 +342,7 @@ export const AreaViewMixin = (Base) => class extends Base {
               <div>
                 <ha-dropdown
                   class="ha-icon-overflow-menu-overflow"
-                  corner="BOTTOM_START"
-                  absolute
+                  placement="bottom-end"
                 >
                   <ha-icon-button
                     label=${this._hass.localize("ui.common.overflow_menu")}
@@ -377,51 +351,39 @@ export const AreaViewMixin = (Base) => class extends Base {
                   ></ha-icon-button>
                     ${this._areaViewGroupingMode() == 'client' ? html`
                       ${!this.areaViewDisplayGrouped ? html `
-                        <ha-list-item
-                          graphic="icon"
-                          .value=${true}
+                        <ha-dropdown-item
+                          .ddValue=${true}
                           @click=${this._handleAreaViewDisplayGroupedClicked}
                         >
-                          <div slot="graphic">
-                            <ha-icon .icon=${"mdi:format-list-group"}></ha-icon>
-                          </div>
+                          <ha-icon slot="icon" .icon=${"mdi:format-list-group"}></ha-icon>
                           ${translateEngine(this._hass, 'entity.group')}
-                        </ha-list-item>` : html `
-                        <ha-list-item
-                          graphic="icon"
-                          .value=${false}
+                        </ha-dropdown-item>` : html `
+                        <ha-dropdown-item
+                          .ddValue=${false}
                           @click=${this._handleAreaViewDisplayGroupedClicked}
                         >
-                          <div slot="graphic">
-                          <ha-icon .icon=${"mdi:grid"}></ha-icon>
-                          </div>
+                          <ha-icon slot="icon" .icon=${"mdi:grid"}></ha-icon>
                           ${translateEngine(this._hass, 'entity.ungroup')}
-                        </ha-list-item>
+                        </ha-dropdown-item>
                         `
                       }
                     ` : ""}
                     ${this._hass.user.is_admin ? html`
                       ${this.areaViewEditMode ? html `
-                        <ha-list-item
-                          graphic="icon"
-                          .value=${false}
+                        <ha-dropdown-item
+                          .ddValue=${false}
                           @click=${this._handleAreaViewEditModeClicked}
                         >
-                          <div slot="graphic">
-                            <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                          </div>
+                          <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                           ${translateEngine(this._hass, 'global.disable_edit_mode')}
-                        </ha-list-item>` : html `
-                        <ha-list-item
-                          graphic="icon"
-                          .value=${true}
+                        </ha-dropdown-item>` : html `
+                        <ha-dropdown-item
+                          .ddValue=${true}
                           @click=${this._handleAreaViewEditModeClicked}
                         >
-                          <div slot="graphic">
-                            <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                          </div>
+                          <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                           ${translateEngine(this._hass, 'global.enable_edit_mode')}
-                        </ha-list-item>
+                        </ha-dropdown-item>
                         `
                       }
                     ` : ""}
@@ -434,7 +396,7 @@ export const AreaViewMixin = (Base) => class extends Base {
               <ha-button
                 .area=${data.area.area_id}
                 .key=${"disabled"}
-                .value=${true}
+                .ddValue=${true}
                 @click=${this._handleAreaDisableAllEntitiesClicked}
               >
                 ${translateEngine(this._hass, 'entity.disable_all')}
@@ -442,7 +404,7 @@ export const AreaViewMixin = (Base) => class extends Base {
               <ha-button
                 .area=${data.area.area_id}
                 .key=${"hidden"}
-                .value=${true}
+                .ddValue=${true}
                 @click=${this._handleAreaDisableAllEntitiesClicked}
               >
                 ${translateEngine(this._hass, 'entity.hide_all')}

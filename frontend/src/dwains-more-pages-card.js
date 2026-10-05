@@ -338,7 +338,7 @@ class MorePagesCard extends LitElement {
         _handleEditModeClicked(ev){
           closeParentDropdown(ev);
           ev.stopPropagation();
-          const value = ev.currentTarget.value === true;
+          const value = ev.currentTarget.ddValue === true;
           this.editMode = value;
           const scope = morePagesEditModeScope(this._hass);
           if (scope) morePagesEditModes.set(scope, value);
@@ -477,50 +477,40 @@ class MorePagesCard extends LitElement {
                   </div>
                   <ha-dropdown
                     class="ha-icon-overflow-menu-overflow"
-                    corner="BOTTOM_START"
-                    absolute
+                    placement="bottom-end"
                   >
                     <ha-icon-button
                       label=${this._hass.localize("ui.common.overflow_menu")}
                       .path=${mdiDotsVertical}
                       slot="trigger"
                     ></ha-icon-button>
-                      <ha-list-item
-                        graphic="icon"
+                      <ha-dropdown-item
                         .more_page=${key}
                         @click=${this._handleEditMorePageClicked}
                       >
-                        <div slot="graphic">
-                          <ha-svg-icon .path=${mdiPencil}></ha-svg-icon>
-                        </div>
+                        <ha-svg-icon slot="icon" .path=${mdiPencil}></ha-svg-icon>
                         ${this._hass.localize("ui.components.entity.entity-picker.edit")}
-                      </ha-list-item>
-                      <ha-list-item
-                        graphic="icon"
+                      </ha-dropdown-item>
+                      <ha-dropdown-item
                         .more_page=${key}
                         @click=${this._handleRemoveMorePageClicked}
                       >
-                        <div slot="graphic">
-                          <ha-icon .icon=${"mdi:trash-can"}></ha-icon>
-                        </div>
+                        <ha-icon slot="icon" .icon=${"mdi:trash-can"}></ha-icon>
                         ${this._hass.localize("ui.common.remove")}
-                      </ha-list-item>
-                      <ha-list-item
-                        graphic="icon"
+                      </ha-dropdown-item>
+                      <ha-dropdown-item
                         .more_page=${key}
                         .show_in_navbar=${!data.show_in_navbar}
                         @click=${this._handleNavbarVisibilityClick}
                       >
-                        <div slot="graphic">
-                          <ha-icon .icon=${data.show_in_navbar ? "mdi:tag-minus" : "mdi:tag-plus"}></ha-icon>
-                        </div>
+                        <ha-icon slot="icon" .icon=${data.show_in_navbar ? "mdi:tag-minus" : "mdi:tag-plus"}></ha-icon>
                         ${translateEngine(
                           this._hass,
                           data.show_in_navbar
                             ? 'more.remove_navbar'
                             : 'more.add_navbar',
                         )}
-                      </ha-list-item>
+                      </ha-dropdown-item>
                   </ha-dropdown>
                 </div>
               </ha-card>` : ""}
@@ -563,44 +553,34 @@ class MorePagesCard extends LitElement {
                       ${this._hass.user.is_admin ? html`
                         <ha-dropdown
                         class="ha-icon-overflow-menu-overflow"
-                        corner="BOTTOM_END"
-                        absolute
+                        placement="bottom-end"
                         >
                           <ha-icon-button
                               label=${this._hass.localize("ui.common.overflow_menu")}
                               .path=${mdiDotsVertical}
                               slot="trigger"
                           ></ha-icon-button>
-                            <ha-list-item
-                                graphic="icon"
+                            <ha-dropdown-item
                                 @click=${this._handleCreateMorePageClicked}
                             >
-                                <div slot="graphic">
-                                  <ha-svg-icon .path=${mdiNotePlus}></ha-svg-icon>
-                                </div>
+                                <ha-svg-icon slot="icon" .path=${mdiNotePlus}></ha-svg-icon>
                                 ${translateEngine(this._hass, 'more.create')}
-                            </ha-list-item>
+                            </ha-dropdown-item>
                             ${this.editMode ? html `
-                            <ha-list-item
-                              graphic="icon"
-                              .value=${false}
+                            <ha-dropdown-item
+                              .ddValue=${false}
                               @click=${this._handleEditModeClicked}
                             >
-                              <div slot="graphic">
-                                <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                              </div>
+                              <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                               ${translateEngine(this._hass, 'global.disable_edit_mode')}
-                            </ha-list-item>` : html `
-                            <ha-list-item
-                              graphic="icon"
-                              .value=${true}
+                            </ha-dropdown-item>` : html `
+                            <ha-dropdown-item
+                              .ddValue=${true}
                               @click=${this._handleEditModeClicked}
                             >
-                              <div slot="graphic">
-                                <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                              </div>
+                              <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                               ${translateEngine(this._hass, 'global.enable_edit_mode')}
-                            </ha-list-item>
+                            </ha-dropdown-item>
                             `
                           }
                         </ha-dropdown>

@@ -77,7 +77,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
               <ha-button
                 .areaId="${area.area_id}"
                 .key=${"disabled"}
-                .value=${false}
+                .ddValue=${false}
                 @click=${this._handleAreaEditBoolValueClick}
               >
                 ${translateEngine(this._hass, 'area.enable')}

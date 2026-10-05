@@ -1,5 +1,6 @@
 import { hass } from "./hass-compat";
 import { css, html, LitElement } from 'lit';
+import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import translateEngine from './translate-engine';
 import { closePopup } from "./helpers";
 const { closeParentDropdown } = require('./dropdown-controller');
@@ -8,6 +9,7 @@ const { defineDwainsElement } = require('./custom-element-registration');
 class DwainsEditEntityCard extends LitElement {
     static get styles() {
       return [
+        checkRowStyles(css),
         css`
         h2 {
           margin: 0;
@@ -38,7 +40,7 @@ class DwainsEditEntityCard extends LitElement {
           grid-template-columns: repeat(2,minmax(0,1fr));
           gap: 1rem;
         }
-        ha-select, select, ha-input, ha-formfield {
+        ha-select, select, ha-input, .dd-check {
           width: 100%;
         }
         select {
@@ -195,42 +197,48 @@ class DwainsEditEntityCard extends LitElement {
               </select>
             </div>
 
-            <ha-formfield label=${translateEngine(this.hass, 'entity.disable')}>
+            <label class="dd-check" @click=${toggleCheckRow}>
               <ha-checkbox
                 @change=${this._disableValueChanged}
                 .checked=${this.disableEntity}
               ></ha-checkbox>
-            </ha-formfield>
-            <ha-formfield label=${translateEngine(this.hass, 'entity.hide')}>
+              <span>${translateEngine(this.hass, 'entity.disable')}</span>
+            </label>
+            <label class="dd-check" @click=${toggleCheckRow}>
               <ha-checkbox
                 @change=${this._hideValueChanged}
                 .checked=${this.hideEntity}
               ></ha-checkbox>
-            </ha-formfield>
-            <ha-formfield label=${translateEngine(this.hass, 'entity.hide_in_area')}>
+              <span>${translateEngine(this.hass, 'entity.hide')}</span>
+            </label>
+            <label class="dd-check" @click=${toggleCheckRow}>
               <ha-checkbox
                 @change=${this._hideInAreaValueChanged}
                 .checked=${this.hideEntityInArea}
               ></ha-checkbox>
-            </ha-formfield>
-            <ha-formfield label=${translateEngine(this.hass, 'entity.exclude')}>
+              <span>${translateEngine(this.hass, 'entity.hide_in_area')}</span>
+            </label>
+            <label class="dd-check" @click=${toggleCheckRow}>
               <ha-checkbox
                 @change=${this._excludeValueChanged}
                 .checked=${this.excludeEntity}
               ></ha-checkbox>
-            </ha-formfield>
-            <ha-formfield label=${translateEngine(this.hass, 'entity.use_entity_card')}>
+              <span>${translateEngine(this.hass, 'entity.exclude')}</span>
+            </label>
+            <label class="dd-check" @click=${toggleCheckRow}>
               <ha-checkbox
                 @change=${this._customCardValueChanged}
                 .checked=${this.customCard}
               ></ha-checkbox>
-            </ha-formfield>
-            <ha-formfield label=${translateEngine(this.hass, 'entity.use_popup_card')}>
+              <span>${translateEngine(this.hass, 'entity.use_entity_card')}</span>
+            </label>
+            <label class="dd-check" @click=${toggleCheckRow}>
               <ha-checkbox
                 @change=${this._customPopupValueChanged}
                 .checked=${this.customPopup}
               ></ha-checkbox>
-            </ha-formfield>
+              <span>${translateEngine(this.hass, 'entity.use_popup_card')}</span>
+            </label>
 
             <div class="card-footer">
               <ha-button slot="secondaryAction" @click=${(e) => closePopup()}>

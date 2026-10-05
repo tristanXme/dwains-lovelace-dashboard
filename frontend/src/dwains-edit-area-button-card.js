@@ -1,5 +1,6 @@
 import { hass } from "./hass-compat";
 import { css, html, LitElement } from 'lit';
+import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import translateEngine from './translate-engine';
 import { closePopup } from "./helpers";
 const { closeParentDropdown } = require('./dropdown-controller');
@@ -9,6 +10,7 @@ const { AREA_GRAPH_HOURS, normalizeGraphHours } = require('./area-graph');
 class DwainsEditAreaButtonCard extends LitElement {
     static get styles() {
       return [
+        checkRowStyles(css),
         css`
         .edit-element {
           padding: 20px;
@@ -20,7 +22,7 @@ class DwainsEditAreaButtonCard extends LitElement {
           display: block;
           margin: .8rem 0;
         }
-        .edit-element ha-formfield {
+        .edit-element .dd-check {
           display: flex;
           align-items: center;
           gap: .6rem;
@@ -150,13 +152,13 @@ class DwainsEditAreaButtonCard extends LitElement {
             .disabled=${this.hideIcon}
             @value-changed=${this._iconPickerChange}
           ></ha-icon-picker>
-          <ha-formfield>
-            <ha-checkbox
+          <label class="dd-check" @click=${toggleCheckRow}>
+              <ha-checkbox
               @change=${this._hideIconValueChanged}
               .checked=${this.hideIcon}
             ></ha-checkbox>
-            <span slot="label">${translateEngine(this.hass, 'area.hide_icon')}</span>
-          </ha-formfield>
+              <span>${translateEngine(this.hass, 'area.hide_icon')}</span>
+            </label>
           <ha-entity-picker
             .hass=${this.hass}
             .label=${translateEngine(this.hass, 'area.graph_entity')}
@@ -194,13 +196,13 @@ class DwainsEditAreaButtonCard extends LitElement {
             translateEngine(this.hass, 'area.binary_sensor_entities'),
             translateEngine(this.hass, 'area.binary_sensor_entities_helper'),
           )}
-          <ha-formfield>
-            <ha-checkbox
+          <label class="dd-check" @click=${toggleCheckRow}>
+              <ha-checkbox
               @change=${this._disableValueChanged}
               .checked=${this.disableArea}
             ></ha-checkbox>
-            <span slot="label">${translateEngine(this.hass, 'area.disable')}</span>
-          </ha-formfield>
+              <span>${translateEngine(this.hass, 'area.disable')}</span>
+            </label>
           <div class="card-footer">
             <ha-button slot="secondaryAction" @click=${(e) => closePopup()}>
               ${this.hass.localize("ui.common.cancel")}

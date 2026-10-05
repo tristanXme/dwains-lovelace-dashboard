@@ -856,7 +856,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           this._saveEntityBoolValue(
             ev.currentTarget.entity,
             ev.currentTarget.key,
-            ev.currentTarget.value,
+            ev.currentTarget.ddValue,
           );
         }
         _handleEntityAreaVisibilityClick(ev, entityId, value) {
@@ -870,7 +870,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           ev.stopPropagation();
           const device = ev.currentTarget.device;
           const key = ev.currentTarget.key;
-          const value = ev.currentTarget.value;
+          const value = ev.currentTarget.ddValue;
 
           this._hass.callWS({
             type: 'dwains_dashboard/edit_device_bool_value',
@@ -954,7 +954,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
         _handleDeviceEditModeClicked(ev){
           closeParentDropdown(ev);
           ev.stopPropagation();
-          const value = ev.currentTarget.value;
+          const value = ev.currentTarget.ddValue;
 
           if(value){
             if(this.shadowRoot.getElementById("sortable")){
@@ -976,7 +976,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
         _handleDeviceViewEditModeClicked(ev){
           closeParentDropdown(ev);
           ev.stopPropagation();
-          const value = ev.currentTarget.value;
+          const value = ev.currentTarget.ddValue;
 
           if(value){
             this._sortable = [];
@@ -1025,7 +1025,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                   <ha-button
                     .device="${domain}"
                     .key=${"hidden"}
-                    .value=${false}
+                    .ddValue=${false}
                     @click=${this._handleDeviceEditBoolValueClick}
                   >
                     ${translateEngine(this._hass, 'device.unhide')}
@@ -1077,59 +1077,46 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                     </div>
                     <ha-dropdown
                       class="ha-icon-overflow-menu-overflow"
-                      corner="BOTTOM_START"
-                      absolute
+                      placement="bottom-end"
                     >
                       <ha-icon-button
                         label=${this._hass.localize("ui.common.overflow_menu")}
                         .path=${mdiDotsVertical}
                         slot="trigger"
                       ></ha-icon-button>
-                        <ha-list-item
-                          graphic="icon"
+                        <ha-dropdown-item
                       .device=${deviceDomain}
                       .device_icon=${deviceIcon}
                       .showInNavbar=${this.configuration['devices'][deviceDomain] && this.configuration['devices'][deviceDomain]['show_in_navbar'] ? this.configuration['devices'][deviceDomain]['show_in_navbar'] : ""}
                       @click=${this._handleDeviceEditClick}
                         >
-                          <div slot="graphic">
-                            <ha-icon .icon=${"mdi:cog"}></ha-icon>
-                          </div>
+                          <ha-icon slot="icon" .icon=${"mdi:cog"}></ha-icon>
                           ${this._hass.localize("ui.components.entity.entity-picker.edit")}
-                        </ha-list-item>
+                        </ha-dropdown-item>
 
-                        <ha-list-item
-                          graphic="icon"
+                        <ha-dropdown-item
                       .domain=${deviceDomain}
                       @click="${this._handleDeviceEditCardClick}"
                         >
-                          <div slot="graphic">
-                            <ha-icon .icon=${"mdi:pencil"}></ha-icon>
-                          </div>
+                          <ha-icon slot="icon" .icon=${"mdi:pencil"}></ha-icon>
                           ${translateEngine(this._hass, 'entity.entity_card')}
-                        </ha-list-item>
-                        <ha-list-item
-                          graphic="icon"
+                        </ha-dropdown-item>
+                        <ha-dropdown-item
                       .domain=${deviceDomain}
                       @click="${this._handleDeviceEditPopupClick}"
                         >
-                          <div slot="graphic">
-                            <ha-icon .icon=${"mdi:pencil-box-multiple"}></ha-icon>
-                          </div>
+                          <ha-icon slot="icon" .icon=${"mdi:pencil-box-multiple"}></ha-icon>
                           ${translateEngine(this._hass, 'entity.popup_card')}
-                        </ha-list-item>
-                        <ha-list-item
-                          graphic="icon"
+                        </ha-dropdown-item>
+                        <ha-dropdown-item
                       .device=${deviceDomain}
                       .key=${"hidden"}
-                          .value=${true}
+                          .ddValue=${true}
                           @click=${this._handleDeviceEditBoolValueClick}
                         >
-                          <div slot="graphic">
-                            <ha-icon .icon=${"mdi:eye-off"}></ha-icon>
-                          </div>
+                          <ha-icon slot="icon" .icon=${"mdi:eye-off"}></ha-icon>
                           ${translateEngine(this._hass, 'device.hide')}
-                        </ha-list-item>
+                        </ha-dropdown-item>
                     </ha-dropdown>
                   </div>
                 </ha-card>
@@ -1222,22 +1209,19 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
         _renderEntityAreaVisibilityAction(entity) {
           const hiddenInArea = this.configuration?.entities?.[entity]?.hidden_in_area === true;
           return html`
-            <ha-list-item
-              graphic="icon"
+            <ha-dropdown-item
               @click=${(ev) => this._handleEntityAreaVisibilityClick(
                 ev,
                 entity,
                 !hiddenInArea,
               )}
             >
-              <div slot="graphic">
-                <ha-icon .icon=${hiddenInArea ? "mdi:eye" : "mdi:eye-off"}></ha-icon>
-              </div>
+              <ha-icon slot="icon" .icon=${hiddenInArea ? "mdi:eye" : "mdi:eye-off"}></ha-icon>
               ${translateEngine(
                 this._hass,
                 hiddenInArea ? 'entity.unhide_in_area' : 'entity.hide_in_area',
               )}
-            </ha-list-item>
+            </ha-dropdown-item>
           `;
         }
 
@@ -1262,16 +1246,14 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                 </div>
                 <ha-dropdown
                   class="ha-icon-overflow-menu-overflow"
-                  corner="BOTTOM_START"
-                  absolute
+                  placement="bottom-end"
                 >
                   <ha-icon-button
                     label=${this._hass.localize("ui.common.overflow_menu")}
                     .path=${mdiDotsVertical}
                     slot="trigger"
                   ></ha-icon-button>
-                    <ha-list-item
-                      graphic="icon"
+                    <ha-dropdown-item
                       .entity="${data.entity}"
                       .friendlyName="${data.friendlyName}"
                       .disableEntity=${data.disableEntity}
@@ -1287,72 +1269,55 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                       .customPopup=${data.customPopup}
                       @click=${this._handleEntityEditClick}
                     >
-                      <div slot="graphic">
-                        <ha-icon .icon=${"mdi:cog"}></ha-icon>
-                      </div>
+                      <ha-icon slot="icon" .icon=${"mdi:cog"}></ha-icon>
                       ${translateEngine(this._hass, 'entity.settings')}
-                    </ha-list-item>
+                    </ha-dropdown-item>
                     ${data.entity != 't' ? html `
-                      <ha-list-item
-                        graphic="icon"
+                      <ha-dropdown-item
                         .entity="${data.entity}"
                         @click="${this._handleEntityEditCardClick}"
                       >
-                        <div slot="graphic">
-                          <ha-icon .icon=${"mdi:pencil"}></ha-icon>
-                        </div>
+                        <ha-icon slot="icon" .icon=${"mdi:pencil"}></ha-icon>
                         ${translateEngine(this._hass, 'entity.entity_card')}
-                      </ha-list-item>` : ""
+                      </ha-dropdown-item>` : ""
                     }
                     ${data.entity != 't' ? html `
-                      <ha-list-item
-                        graphic="icon"
+                      <ha-dropdown-item
                         .entity="${data.entity}"
                         @click="${this._handleEntityEditPopupClick}"
                       >
-                        <div slot="graphic">
-                          <ha-icon .icon=${"mdi:pencil-box-multiple"}></ha-icon>
-                        </div>
+                        <ha-icon slot="icon" .icon=${"mdi:pencil-box-multiple"}></ha-icon>
                         ${translateEngine(this._hass, 'entity.popup_card')}
-                      </ha-list-item>` : ""
+                      </ha-dropdown-item>` : ""
                     }
-                    <ha-list-item
-                      graphic="icon"
+                    <ha-dropdown-item
                       .entity="${data.entity}"
                       .key=${"excluded"}
-                      .value=${true}
+                      .ddValue=${true}
                       @click=${this._handleEntityEditBoolValueClick}
                     >
-                      <div slot="graphic">
-                        <ha-icon .icon=${"mdi:table-eye-off"}></ha-icon>
-                      </div>
+                      <ha-icon slot="icon" .icon=${"mdi:table-eye-off"}></ha-icon>
                       ${translateEngine(this._hass, 'entity.exclude')}
-                    </ha-list-item>
-                    <ha-list-item
-                      graphic="icon"
+                    </ha-dropdown-item>
+                    <ha-dropdown-item
                       .entity="${data.entity}"
                       .key=${"hidden"}
-                      .value=${true}
+                      .ddValue=${true}
                       @click=${this._handleEntityEditBoolValueClick}
                     >
-                      <div slot="graphic">
-                        <ha-icon .icon=${"mdi:eye-off"}></ha-icon>
-                      </div>
+                      <ha-icon slot="icon" .icon=${"mdi:eye-off"}></ha-icon>
                       ${translateEngine(this._hass, 'entity.hide')}
-                    </ha-list-item>
+                    </ha-dropdown-item>
                     ${this._renderEntityAreaVisibilityAction(data.entity)}
-                    <ha-list-item
-                      graphic="icon"
+                    <ha-dropdown-item
                       .entity="${data.entity}"
                       .key=${"disabled"}
-                      .value=${true}
+                      .ddValue=${true}
                       @click=${this._handleEntityEditBoolValueClick}
                     >
-                      <div slot="graphic">
-                        <ha-icon .icon=${"mdi:tray-remove"}></ha-icon>
-                      </div>
+                      <ha-icon slot="icon" .icon=${"mdi:tray-remove"}></ha-icon>
                       ${translateEngine(this._hass, 'entity.disable')}
-                    </ha-list-item>
+                    </ha-dropdown-item>
                 </ha-dropdown>
               </div>
             </ha-card>` : ""}
@@ -1404,7 +1369,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           closeParentDropdown(ev);
           ev.stopPropagation();
 
-          const value = ev.currentTarget.value;
+          const value = ev.currentTarget.ddValue;
           this.deviceViewDisplayGrouped = value;
           clientPreferences.set('dwains_dashboard_deviceViewDisplayGrouped', value);
         }
@@ -1428,7 +1393,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                     <ha-button
                       .entity="${entity}"
                       .key=${action.key}
-                      .value=${false}
+                      .ddValue=${false}
                       @click=${this._handleEntityEditBoolValueClick}
                     >
                       ${translateEngine(this._hass, action.translationKey)}
@@ -1469,8 +1434,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                   <div>
                     <ha-dropdown
                       class="ha-icon-overflow-menu-overflow"
-                      corner="BOTTOM_START"
-                      absolute
+                      placement="bottom-end"
                     >
                       <ha-icon-button
                         label=${this._hass.localize("ui.common.overflow_menu")}
@@ -1478,52 +1442,40 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                         slot="trigger"
                       ></ha-icon-button>
                         ${!this.deviceViewDisplayGrouped ? html `
-                          <ha-list-item
-                            graphic="icon"
-                            .value=${true}
+                          <ha-dropdown-item
+                            .ddValue=${true}
                             .key=${"deviceViewDisplayGrouped"}
                             @click="${this._handleDeviceViewDisplayGroupedClicked}"
                           >
-                            <div slot="graphic">
-                              <ha-icon .icon=${"mdi:format-list-group"}></ha-icon>
-                            </div>
+                            <ha-icon slot="icon" .icon=${"mdi:format-list-group"}></ha-icon>
                             ${translateEngine(this._hass, 'device.group')}
-                          </ha-list-item>` : html `
-                          <ha-list-item
-                            graphic="icon"
-                            .value=${false}
+                          </ha-dropdown-item>` : html `
+                          <ha-dropdown-item
+                            .ddValue=${false}
                             .key=${"deviceViewDisplayGrouped"}
                             @click="${this._handleDeviceViewDisplayGroupedClicked}"
                           >
-                            <div slot="graphic">
-                            <ha-icon .icon=${"mdi:grid"}></ha-icon>
-                            </div>
+                            <ha-icon slot="icon" .icon=${"mdi:grid"}></ha-icon>
                             ${translateEngine(this._hass, 'device.ungroup')}
-                          </ha-list-item>
+                          </ha-dropdown-item>
                           `
                         }
                         ${this._hass.user.is_admin ? html`
                           ${this.deviceViewEditMode ? html `
-                            <ha-list-item
-                              graphic="icon"
-                              .value=${false}
+                            <ha-dropdown-item
+                              .ddValue=${false}
                               @click=${this._handleDeviceViewEditModeClicked}
                             >
-                              <div slot="graphic">
-                                <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                              </div>
+                              <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                               ${translateEngine(this._hass, 'global.disable_edit_mode')}
-                            </ha-list-item>` : html `
-                            <ha-list-item
-                              graphic="icon"
-                              .value=${true}
+                            </ha-dropdown-item>` : html `
+                            <ha-dropdown-item
+                              .ddValue=${true}
                               @click=${this._handleDeviceViewEditModeClicked}
                             >
-                              <div slot="graphic">
-                                <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                              </div>
+                              <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                               ${translateEngine(this._hass, 'global.enable_edit_mode')}
-                            </ha-list-item>
+                            </ha-dropdown-item>
                             `
                           }
                         ` : ""}
@@ -1625,8 +1577,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                           ${this._hass.user.is_admin ? html`
                           <ha-dropdown
                             class="ha-icon-overflow-menu-overflow"
-                            corner="BOTTOM_END"
-                            absolute
+                            placement="bottom-end"
                           >
                             <ha-icon-button
                               label=${this._hass.localize("ui.common.overflow_menu")}
@@ -1634,26 +1585,20 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                               slot="trigger"
                             ></ha-icon-button>
                               ${this.deviceEditMode ? html `
-                                <ha-list-item
-                                  graphic="icon"
-                                  .value=${false}
+                                <ha-dropdown-item
+                                  .ddValue=${false}
                                   @click=${this._handleDeviceEditModeClicked}
                                 >
-                                  <div slot="graphic">
-                                    <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                                  </div>
+                                  <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                                   ${translateEngine(this._hass, 'global.disable_edit_mode')}
-                                </ha-list-item>` : html `
-                                <ha-list-item
-                                  graphic="icon"
-                                  .value=${true}
+                                </ha-dropdown-item>` : html `
+                                <ha-dropdown-item
+                                  .ddValue=${true}
                                   @click=${this._handleDeviceEditModeClicked}
                                 >
-                                  <div slot="graphic">
-                                    <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                                  </div>
+                                  <ha-svg-icon slot="icon" .path=${mdiCog}></ha-svg-icon>
                                   ${translateEngine(this._hass, 'global.enable_edit_mode')}
-                                </ha-list-item>
+                                </ha-dropdown-item>
                                 `
                               }
                           </ha-dropdown>
