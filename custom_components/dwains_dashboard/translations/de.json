@@ -22,7 +22,9 @@
         "description": "Was möchtest du tun? Gefundene verwaiste Dashboard-Einstellungen: {orphans}.",
         "menu_options": {
           "settings": "Einstellungen",
-          "cleanup": "Verwaiste Einstellungen aufräumen"
+          "cleanup": "Verwaiste Einstellungen aufräumen",
+          "export_settings": "Einstellungen exportieren",
+          "import_settings": "Einstellungen importieren"
         }
       },
       "settings": {
@@ -62,14 +64,27 @@
         "data": {
           "confirm": "Diese Einträge sichern und entfernen"
         }
+      },
+      "import_settings": {
+        "title": "Einstellungen importieren",
+        "description": "Ersetzt **alle** Einstellungen von Dwains Dashboard (Bereiche, Entitäten, Karten, weitere Seiten, Blueprints und die Dashboard-Einstellungen) durch den Inhalt einer Exportdatei aus *Einstellungen exportieren*.\n\nDie aktuellen Einstellungen werden vorher nach `dwains-dashboard/backups/` verschoben, es geht also nichts verloren.",
+        "data": {
+          "file": "Exportdatei (.zip)",
+          "confirm": "Aktuelle Einstellungen ersetzen"
+        }
       }
     },
     "error": {
-      "confirm_required": "Aktiviere den Schalter, um das Aufräumen zu bestätigen."
+      "confirm_required": "Aktiviere den Schalter, um das Aufräumen zu bestätigen.",
+      "confirm_required_import": "Schalte den Schalter ein, um den Import zu bestätigen.",
+      "invalid_archive": "Diese Datei ist kein Export von Dwains Dashboard oder sie ist beschädigt. Es wurde nichts geändert.",
+      "upload_failed": "Der Upload ist nicht angekommen. Bitte wähle die Datei erneut aus."
     },
     "abort": {
       "nothing_to_clean": "Keine verwaisten Dashboard-Einstellungen gefunden. Alles sauber.",
-      "cleanup_done": "{removed} Einträge entfernt. Eine Sicherung aller betroffenen Dateien liegt in `{backup}`."
+      "cleanup_done": "{removed} Einträge entfernt. Eine Sicherung aller betroffenen Dateien liegt in `{backup}`.",
+      "export_done": "{files} Dateien exportiert.\n\nHerunterladen: **{download}**\n\nDer Link ist 10 Minuten gültig. Das Archiv liegt außerdem in `{folder}` (die fünf neuesten Exporte bleiben erhalten).",
+      "import_done": "{files} Dateien importiert. Das Dashboard lädt mit den importierten Einstellungen neu. Die bisherigen Einstellungen liegen in `{backup}`."
     }
   },
   "selector": {

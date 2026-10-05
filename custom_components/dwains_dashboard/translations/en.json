@@ -22,7 +22,9 @@
         "description": "Choose what you want to do. Orphaned dashboard settings found: {orphans}.",
         "menu_options": {
           "settings": "Settings",
-          "cleanup": "Clean up orphaned settings"
+          "cleanup": "Clean up orphaned settings",
+          "export_settings": "Export settings",
+          "import_settings": "Import settings"
         }
       },
       "settings": {
@@ -62,14 +64,27 @@
         "data": {
           "confirm": "Back up and remove these entries"
         }
+      },
+      "import_settings": {
+        "title": "Import settings",
+        "description": "Replaces **all** Dwains Dashboard settings (areas, entities, cards, more pages, blueprints and the dashboard settings) with the content of an export file made with *Export settings*.\n\nThe current settings are moved to `dwains-dashboard/backups/` first, so nothing is lost.",
+        "data": {
+          "file": "Export file (.zip)",
+          "confirm": "Replace the current settings"
+        }
       }
     },
     "error": {
-      "confirm_required": "Turn on the switch to confirm the cleanup."
+      "confirm_required": "Turn on the switch to confirm the cleanup.",
+      "confirm_required_import": "Turn on the switch to confirm the import.",
+      "invalid_archive": "This file is not a Dwains Dashboard export or it is damaged. Nothing was changed.",
+      "upload_failed": "The upload did not arrive. Please select the file again."
     },
     "abort": {
       "nothing_to_clean": "No orphaned dashboard settings found. Everything is clean.",
-      "cleanup_done": "Removed {removed} entries. A backup of all touched files is in `{backup}`."
+      "cleanup_done": "Removed {removed} entries. A backup of all touched files is in `{backup}`.",
+      "export_done": "Exported {files} files.\n\nDownload: **{download}**\n\nThe link is valid for 10 minutes. The archive also stays in `{folder}` (the five newest exports are kept).",
+      "import_done": "Imported {files} files. The dashboard reloads with the imported settings. The previous settings are in `{backup}`."
     }
   },
   "selector": {

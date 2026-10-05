@@ -6,9 +6,10 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "lovelace",
+    "file_upload",
+    "frontend",
     "http",
-    "frontend"
+    "lovelace"
   ],
   "documentation": "https://dwainscheeren.github.io/dwains-lovelace-dashboard/",
   "iot_class": "cloud_polling",

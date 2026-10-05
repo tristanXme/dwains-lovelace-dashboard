@@ -12,6 +12,8 @@ from .maintenance import (
     orphan_description_placeholders,
 )
 from .runtime_data import get_domain_data
+from .settings_export import EXPORTED_OPTIONS, async_export, async_import
+from .settings_transfer import InvalidArchive
 from .yaml_files import dump_yaml_file, load_yaml_file
 
 from homeassistant import config_entries
@@ -343,7 +345,7 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
         report = await async_find_orphans(self.hass)
         return self.async_show_menu(
             step_id="init",
-            menu_options=["settings", "cleanup"],
+            menu_options=["settings", "cleanup", "export_settings", "import_settings"],
             description_placeholders={"orphans": str(report.total)},
         )
 
@@ -372,6 +374,70 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             ),
             errors=errors,
             description_placeholders=orphan_description_placeholders(report),
+        )
+
+    async def async_step_export_settings(self, user_input=None):
+        """Pack all dashboard settings into a zip and offer it for download."""
+        filename, files, link = await async_export(self.hass, self.config_entry.options)
+        return self.async_abort(
+            reason="export_done",
+            description_placeholders={
+                "filename": filename,
+                "files": str(files),
+                "link": link,
+                # A plain markdown link would be routed inside the Home
+                # Assistant app; a new tab lets the browser download it.
+                "download": f'<a href="{link}" target="_blank">{filename}</a>',
+                "folder": "dwains-dashboard/backups/exports",
+            },
+        )
+
+    async def async_step_import_settings(self, user_input=None):
+        """Replace all dashboard settings with an uploaded export."""
+        errors = {}
+        if user_input is not None:
+            if not user_input.get("confirm"):
+                errors["base"] = "confirm_required_import"
+            else:
+                try:
+                    result = await async_import(self.hass, user_input["file"])
+                except InvalidArchive as err:
+                    _LOGGER.warning("Rejected dashboard settings import: %s", err)
+                    errors["base"] = "invalid_archive"
+                except ValueError:
+                    errors["base"] = "upload_failed"
+                else:
+                    options = {
+                        **self.config_entry.options,
+                        **{
+                            key: value
+                            for key, value in result.options.items()
+                            if key in EXPORTED_OPTIONS and isinstance(value, str)
+                        },
+                    }
+                    if options != dict(self.config_entry.options):
+                        self.hass.config_entries.async_update_entry(
+                            self.config_entry, options=options
+                        )
+                    return self.async_abort(
+                        reason="import_done",
+                        description_placeholders={
+                            "files": str(result.files),
+                            "backup": f"dwains-dashboard/backups/{result.backup}",
+                        },
+                    )
+
+        return self.async_show_form(
+            step_id="import_settings",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("file"): selector.FileSelector(
+                        selector.FileSelectorConfig(accept=".zip")
+                    ),
+                    vol.Required("confirm", default=False): selector.BooleanSelector(),
+                }
+            ),
+            errors=errors,
         )
 
     async def async_step_settings(self, user_input=None):

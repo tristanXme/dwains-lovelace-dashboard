@@ -43,6 +43,11 @@ Security, stability and performance release of DD3.
   for entities or areas that no longer exist and removes them on confirmation,
   after copying them to `dwains-dashboard/backups/`. Disabled or unavailable
   entities and entities of integrations that are not loaded are never affected.
+- **New:** *Export settings* and *Import settings* in the same menu. The
+  export packs all dashboard settings (areas, entities, cards, more pages,
+  blueprints, sidebar title and icon) into a zip that is downloaded right from
+  the dialog. The import replaces the settings with such a file; the previous
+  settings are moved to `dwains-dashboard/backups/` first.
 - **New:** diagnostics download (Settings → Devices & services → Dwains
   Dashboard → ⋮ → Download diagnostics), including the orphaned entries.
 - **New:** optional history graph at the bottom of an area tile. Pick a

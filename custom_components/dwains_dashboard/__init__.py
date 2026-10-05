@@ -25,6 +25,7 @@ from .configuration_runtime import (
 from .runtime_data import get_domain_data
 from .legacy_entities import async_remove_legacy_latest_version_sensor
 from .maintenance import async_setup_maintenance
+from .settings_export import async_register_export_view
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config import ConfigType
@@ -80,6 +81,7 @@ async def async_setup_entry(hass, config_entry):
         register_reload_service(hass)
         register_frontend_plugins(hass)
         load_dashboard(hass, config_entry)
+        async_register_export_view(hass)
         notifications(hass, DOMAIN)
         await hass.config_entries.async_forward_entry_setups(config_entry, ["update"])
     except Exception:

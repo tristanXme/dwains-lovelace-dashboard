@@ -14,7 +14,9 @@ async def test_options_flow_saves_area_sensor_entities(
 
     result = await hass.config_entries.options.async_init(setup_dashboard.entry_id)
     assert result["type"] == "menu"
-    assert result["menu_options"] == ["settings", "cleanup"]
+    assert result["menu_options"] == [
+        "settings", "cleanup", "export_settings", "import_settings"
+    ]
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], {"next_step_id": "settings"}
     )
