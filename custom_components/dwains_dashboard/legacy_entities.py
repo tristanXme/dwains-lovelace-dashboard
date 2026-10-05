@@ -13,20 +13,25 @@ _LOGGER = logging.getLogger(__name__)
 
 LATEST_VERSION_ENTITY_ID = "sensor.dwains_dashboard_latest_version"
 LATEST_VERSION_UNIQUE_ID = "dwains-dashboard-latest-version"
+# The update entity checked a server of the original author; HACS reports
+# new versions itself.
+UPDATE_UNIQUE_ID = "dwains-dashboard-update"
+
+RETIRED_ENTITIES = (
+    ("sensor", LATEST_VERSION_UNIQUE_ID),
+    ("update", UPDATE_UNIQUE_ID),
+)
 
 
-async def async_remove_legacy_latest_version_sensor(
-    hass: HomeAssistant,
-) -> None:
-    """Remove the obsolete sensor registry metadata and residual state."""
+async def async_remove_retired_entities(hass: HomeAssistant) -> None:
+    """Remove registry metadata and residual states of retired entities."""
 
     registry = er.async_get(hass)
     entity_ids = {
         entry.entity_id
         for entry in list(registry.entities.values())
-        if entry.domain == "sensor"
-        and entry.unique_id == LATEST_VERSION_UNIQUE_ID
-        and entry.platform == DOMAIN
+        if entry.platform == DOMAIN
+        and (entry.domain, entry.unique_id) in RETIRED_ENTITIES
     }
 
     configured_entry = registry.async_get(LATEST_VERSION_ENTITY_ID)
@@ -47,8 +52,6 @@ async def async_remove_legacy_latest_version_sensor(
 
     if entity_ids:
         _LOGGER.info(
-            "Removed obsolete Dwains Dashboard version sensor "
-            "%s (registry_entries=%d)",
-            LATEST_VERSION_ENTITY_ID,
-            len(entity_ids),
+            "Removed retired Dwains Dashboard entities: %s",
+            ", ".join(sorted(entity_ids)),
         )

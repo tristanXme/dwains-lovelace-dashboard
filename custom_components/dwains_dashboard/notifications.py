@@ -15,6 +15,8 @@ from homeassistant.util import slugify
 from .const import DOMAIN
 from .runtime_data import find_domain_data, get_domain_data
 
+_LOGGER = logging.getLogger(__name__)
+
 ATTR_CREATED_AT = "created_at"
 ATTR_MESSAGE = "message"
 ATTR_NOTIFICATION_ID = "notification_id"

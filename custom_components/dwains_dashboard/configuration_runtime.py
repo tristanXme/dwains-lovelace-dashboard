@@ -7,6 +7,9 @@ import time
 from functools import wraps
 from typing import Any, Awaitable, Callable
 
+from homeassistant.components import websocket_api
+
+from .input_validation import DashboardInputError
 from .runtime_data import get_domain_data
 
 
@@ -106,6 +109,11 @@ def serialize_configuration_mutation(handler):
             runtime.clear_cache()
             try:
                 return await handler(hass, connection, msg)
+            except DashboardInputError as error:
+                connection.send_error(
+                    msg["id"], websocket_api.ERR_INVALID_FORMAT, str(error)
+                )
+                return None
             finally:
                 runtime.clear_cache()
 

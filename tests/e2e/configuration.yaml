@@ -1,0 +1,39 @@
+# Minimal Home Assistant used by the browser tests (tests/e2e).
+homeassistant:
+  name: E2E
+  latitude: 52.5
+  longitude: 13.4
+  elevation: 30
+  unit_system: metric
+  time_zone: Europe/Berlin
+  country: DE
+  language: de
+frontend:
+config:
+lovelace:
+history:
+recorder:
+  commit_interval: 1
+logger:
+  default: warning
+template:
+  - sensor:
+      - name: "Temperatur Wohnzimmer"
+        unique_id: e2e_temp_living
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state_class: measurement
+        state: "{{ (21 + (now().minute % 5) / 2) | round(1) }}"
+      - name: "Luftfeuchte Wohnzimmer"
+        unique_id: e2e_hum_living
+        unit_of_measurement: "%"
+        device_class: humidity
+        state: "48"
+  - binary_sensor:
+      - name: "Fenster Wohnzimmer"
+        unique_id: e2e_window_living
+        device_class: window
+        state: "on"
+input_boolean:
+  e2e_lamp:
+    name: Stehlampe

@@ -47,12 +47,8 @@
       super();
       const sr = this.attachShadow({ mode: "open" });
       const style = document.createElement("style");
-      style.textContent =
-        ':host{display:block;--dd-mobile-navigation-height:2.75rem;--dd-mobile-navigation-content-gap:0.5rem;margin-top:calc(-1 * var(--dd-lovelace-header-offset,0px))}' +
-        '#dwains_navigation{position:sticky;top:0;z-index:8}' +
-        '#dwains_dashboard{margin:0 auto;font-family:"Open Sans",sans-serif;padding-top:10px;padding-bottom:50px}' +
-        ":host([mobile-navigation]) #dwains_navigation{position:fixed;left:0;right:0;top:auto;bottom:0;z-index:30}" +
-        ":host([mobile-navigation]) #dwains_dashboard{padding-top:1px;padding-bottom:calc(var(--dd-mobile-navigation-height) + var(--dd-mobile-navigation-content-gap) + env(safe-area-inset-bottom))}";
+      // Written by scripts/postbuild.mjs from styles/dashboard-layout.css.
+      style.textContent = ":host{display: block;--dd-mobile-navigation-height: 2.75rem;--dd-mobile-navigation-content-gap: 0.5rem;margin-top: calc(-1 * var(--dd-lovelace-header-offset, 0px));padding-top: env(safe-area-inset-top, 0px);}:host::before{content: \"\";position: fixed;top: 0;left: 0;right: 0;height: env(safe-area-inset-top, 0px);background: var(--primary-background-color);z-index: 31;pointer-events: none;}#dwains_dashboard{margin: 0 auto;font-family: \"Open Sans\", sans-serif;padding-top: 10px;padding-bottom: 50px;padding-left: env(safe-area-inset-left, 0px);padding-right: env(safe-area-inset-right, 0px);}#dwains_navigation{position: sticky;top: env(safe-area-inset-top, 0px);z-index: 8;}:host([mobile-navigation]) #dwains_dashboard{padding-top: 1px;padding-bottom: calc( var(--dd-mobile-navigation-height) + var(--dd-mobile-navigation-content-gap) + env(safe-area-inset-bottom) );}:host([mobile-navigation]) #dwains_navigation{position: fixed;left: 0;right: 0;top: auto;bottom: 0;z-index: 30;}";
       sr.appendChild(style);
       this._navigationHost = document.createElement("div");
       this._navigationHost.id = "dwains_navigation";
@@ -154,19 +150,24 @@
     get updateComplete() { return Promise.resolve(true); }
     _render() {
       if (!this._wrap) return;
-      this._wrap.textContent = "";
-      if (this._cards) {
-        for (const c of this._cards) {
-          if (c) this._wrap.appendChild(c);
-        }
+      // HA sets the cards again whenever it rebuilds the view, mostly the
+      // same elements. Re-inserting them all would disconnect every card
+      // (reloading the page cards and their subscriptions); only remove
+      // and insert what changed.
+      const cards = (this._cards || []).filter(Boolean);
+      for (const child of [...this._wrap.children]) {
+        if (!cards.includes(child)) child.remove();
       }
+      cards.forEach((card, index) => {
+        const current = this._wrap.children[index];
+        if (current !== card) this._wrap.insertBefore(card, current || null);
+      });
       this._ensureNavigation();
       this._syncHeader();
     }
   }
   try {
     customElements.define("dwains-dashboard-layout", DwainsDashboardLayout);
-    console.info("[dwains-preload] dwains-dashboard-layout defined");
   } catch (e) {
     reportPreloadError("failed to define the initial layout", e);
   }

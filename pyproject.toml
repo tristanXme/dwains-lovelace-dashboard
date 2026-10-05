@@ -1,0 +1,19 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py313"
+extend-exclude = ["custom_components/dwains_dashboard/js"]
+
+[tool.ruff.lint]
+select = ["F", "E9", "B", "ASYNC", "S"]
+ignore = [
+    "S101",  # assert in tests
+    "S506",  # yaml.load with a SafeLoader subclass is safe
+    "S701",  # Jinja autoescape: templates render YAML, not HTML
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]

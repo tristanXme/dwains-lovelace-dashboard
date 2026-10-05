@@ -23,24 +23,23 @@ from .configuration_runtime import (
     register_configuration_cache_listeners,
 )
 from .runtime_data import get_domain_data
-from .legacy_entities import async_remove_legacy_latest_version_sensor
+from .legacy_entities import async_remove_retired_entities
+from .maintenance import async_migrate_area_sensor_entities, async_setup_maintenance
+from .settings_export import async_register_export_view
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config import ConfigType
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import issue_registry as ir
 
 _LOGGER = logging.getLogger(__name__)
 
+# Configured through the UI only; a leftover `dwains_dashboard:` key from the
+# v1/v2 YAML era is reported instead of silently ignored.
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    #_LOGGER.warning("async_setup")
-
-    #_LOGGER.warning(config)
-    #_LOGGER.warning(hass.data[DOMAIN])
-
-    # if not config.get(DOMAIN):
-    #     _LOGGER.warning("no config")
-
     _LOGGER.info(
         "Dwains Dashboard backend build %s loaded from %s",
         BACKEND_BUILD_REVISION,
@@ -50,14 +49,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     domain_data = get_domain_data(hass)
     domain_data.setdefault("notifications", {})
     domain_data.setdefault("commands", {})
-    await async_remove_legacy_latest_version_sensor(hass)
+    await async_remove_retired_entities(hass)
     if not hass.is_running:
-        async def remove_legacy_sensor_after_start(_event) -> None:
-            await async_remove_legacy_latest_version_sensor(hass)
+        async def remove_retired_entities_after_start(_event) -> None:
+            await async_remove_retired_entities(hass)
 
         hass.bus.async_listen_once(
             EVENT_HOMEASSISTANT_STARTED,
-            remove_legacy_sensor_after_start,
+            remove_retired_entities_after_start,
         )
     configuration_runtime = get_configuration_runtime(hass)
     configuration_runtime.clear_cache()
@@ -75,19 +74,24 @@ async def async_setup_entry(hass, config_entry):
     # Clear any leftover "restart required" banner from a previous disable: we're
     # being (re-)enabled, so it no longer applies.
     ir.async_delete_issue(hass, DOMAIN, "restart_required")
-    await async_remove_legacy_latest_version_sensor(hass)
+    await async_remove_retired_entities(hass)
+    try:
+        await async_migrate_area_sensor_entities(hass)
+    except Exception:
+        _LOGGER.exception("Could not move the explicit area sensors into their areas")
 
     try:
         await process_yaml(hass, config_entry)
         register_reload_service(hass)
         register_frontend_plugins(hass)
         load_dashboard(hass, config_entry)
+        async_register_export_view(hass)
         notifications(hass, DOMAIN)
-        await hass.config_entries.async_forward_entry_setups(config_entry, ["update"])
     except Exception:
         await _rollback_entry_setup(hass, config_entry)
         raise
 
+    config_entry.async_on_unload(async_setup_maintenance(hass))
     config_entry.async_on_unload(lambda: remove_yaml_runtime(hass))
     config_entry.async_on_unload(lambda: remove_frontend_plugins(hass))
     config_entry.async_on_unload(lambda: unload_dashboard(hass))
@@ -99,11 +103,6 @@ async def async_setup_entry(hass, config_entry):
 
 async def _rollback_entry_setup(hass, config_entry) -> None:
     """Best-effort rollback that preserves the original setup exception."""
-    try:
-        await hass.config_entries.async_unload_platforms(config_entry, ["update"])
-    except Exception:
-        _LOGGER.exception("Failed to roll back the Dwains Dashboard update platform")
-
     for cleanup in (
         remove_notifications,
         unload_dashboard,
@@ -120,8 +119,7 @@ async def _rollback_entry_setup(hass, config_entry) -> None:
 async def async_unload_entry(hass, config_entry):
     """Unload the entry.
 
-    We can cleanly unload the per-entry update entity and sidebar panel. The
-    per-entry frontend URLs are removable, while the static path and
+    The sidebar panel and the per-entry frontend URLs are removable, while the static path and
     websocket commands registered in async_setup remain integration-scoped.
     Therefore a real disable still raises the Settings "Restart required"
     repair banner to fully clear that remaining footprint.
@@ -130,11 +128,6 @@ async def async_unload_entry(hass, config_entry):
     (where config_entry.disabled_by is None and async_setup_entry will run again
     on next start anyway).
     """
-    unload_ok = await hass.config_entries.async_unload_platforms(
-        config_entry,
-        ["update"],
-    )
-
     if config_entry.disabled_by is not None:
         ir.async_create_issue(
             hass,
@@ -145,7 +138,7 @@ async def async_unload_entry(hass, config_entry):
             translation_key="restart_required",
         )
 
-    return unload_ok
+    return True
 
 async def async_remove_entry(hass, config_entry):
     _LOGGER.info("Dwains Dashboard is now uninstalled")

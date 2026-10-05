@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from collections import OrderedDict
 
 import voluptuous as vol
@@ -10,21 +9,44 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
 
 from .configuration_runtime import serialize_configuration_mutation
+from .input_validation import parse_json_string_list
 from .yaml_files import dump_yaml_file, load_yaml_file_or_default
 
 
 AREAS_PATH = "dwains-dashboard/configs/areas.yaml"
 SETTINGS_PATH = "dwains-dashboard/configs/settings.yaml"
+AREA_GRAPH_HOURS = (6, 12, 24, 48, 168)
+HOMEPAGE_HEADER_FIELDS = (
+    ("disableClock", "disable_clock"),
+    ("amPmClock", "am_pm_clock"),
+    ("disableWelcomeMessage", "disable_welcome_message"),
+    ("v2Mode", "v2_mode"),
+    ("disableSensorGraph", "disable_sensor_graph"),
+    ("invertCover", "invert_cover"),
+    ("weatherEntity", "weather_entity"),
+    ("alarmEntity", "alarm_entity"),
+)
 
 
 @websocket_api.websocket_command(
     {
         vol.Required("type"): "dwains_dashboard/edit_area_button",
-        vol.Optional("icon"): str,
+        vol.Optional("icon", default=""): vol.Any(str, None),
         vol.Optional("areaId"): str,
         vol.Optional("floor"): str,
-        vol.Optional("disableArea"): bool,
-        vol.Optional("hideIcon"): bool,
+        vol.Optional("disableArea", default=False): bool,
+        vol.Optional("hideIcon", default=False): bool,
+        vol.Optional("graphEntity", default=""): vol.Any(str, None),
+        vol.Optional("graphHours", default=24): vol.All(
+            vol.Coerce(int), vol.In(AREA_GRAPH_HOURS)
+        ),
+        # Sensors shown below the area name; left out: unchanged.
+        vol.Optional("sensorEntities"): vol.All(
+            [vol.All(str, vol.Match(r"^sensor\.[a-z0-9_]+$"))], vol.Length(max=20)
+        ),
+        vol.Optional("binarySensorEntities"): vol.All(
+            [vol.All(str, vol.Match(r"^binary_sensor\.[a-z0-9_]+$"))], vol.Length(max=20)
+        ),
     }
 )
 @websocket_api.require_admin
@@ -34,7 +56,7 @@ async def ws_handle_edit_area_button(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Handle saving an area button."""
-    if msg["areaId"]:
+    if msg.get("areaId"):
         areas = await hass.async_add_executor_job(
             load_yaml_file_or_default,
             hass.config.path(AREAS_PATH),
@@ -44,16 +66,40 @@ async def ws_handle_edit_area_button(
             areas[msg["areaId"]] = OrderedDict()
 
         area = areas[msg["areaId"]]
-        area["disabled"] = msg.get("disableArea", False)
-        if msg.get("hideIcon", False):
+        area["disabled"] = msg["disableArea"]
+        if msg["hideIcon"]:
             area["hide_icon"] = True
         else:
             area.pop("hide_icon", None)
-        icon = msg.get("icon", "")
-        if icon:
-            area["icon"] = icon
+        if msg["icon"]:
+            area["icon"] = msg["icon"]
         else:
             area.pop("icon", None)
+        graph_entity = (msg["graphEntity"] or "").strip()
+        if graph_entity:
+            if not graph_entity.startswith("sensor."):
+                connection.send_error(
+                    msg["id"],
+                    websocket_api.ERR_INVALID_FORMAT,
+                    "The area graph needs a sensor entity",
+                )
+                return
+            area["graph_entity"] = graph_entity
+            area["graph_hours"] = msg["graphHours"]
+        else:
+            area.pop("graph_entity", None)
+            area.pop("graph_hours", None)
+        for msg_key, area_key in (
+            ("sensorEntities", "sensor_entities"),
+            ("binarySensorEntities", "binary_sensor_entities"),
+        ):
+            if msg_key not in msg:
+                continue
+            values = list(dict.fromkeys(msg[msg_key]))
+            if values:
+                area[area_key] = values
+            else:
+                area.pop(area_key, None)
         area.pop("floor", None)
 
         await hass.async_add_executor_job(
@@ -70,8 +116,8 @@ async def ws_handle_edit_area_button(
     {
         vol.Required("type"): "dwains_dashboard/edit_area_bool_value",
         vol.Required("areaId"): str,
-        vol.Optional("key"): str,
-        vol.Optional("value"): bool,
+        vol.Required("key"): str,
+        vol.Required("value"): bool,
     }
 )
 @websocket_api.require_admin
@@ -156,18 +202,13 @@ async def ws_handle_edit_homepage_header(
 
     homepage_header.update(
         {
-            "disable_clock": msg["disableClock"],
-            "am_pm_clock": msg["amPmClock"],
-            "disable_welcome_message": msg["disableWelcomeMessage"],
-            "v2_mode": msg["v2Mode"],
-            "disable_sensor_graph": msg["disableSensorGraph"],
-            "invert_cover": msg["invertCover"],
-            "weather_entity": msg["weatherEntity"],
-            "alarm_entity": msg["alarmEntity"],
-            "hide_unavailable_entities": hide_unavailable,
-            "area_sensor_device_classes": area_sensor_device_classes,
+            yaml_key: msg[msg_key]
+            for msg_key, yaml_key in HOMEPAGE_HEADER_FIELDS
+            if msg_key in msg
         }
     )
+    homepage_header["hide_unavailable_entities"] = hide_unavailable
+    homepage_header["area_sensor_device_classes"] = area_sensor_device_classes
     await hass.async_add_executor_job(
         dump_yaml_file,
         hass.config.path(SETTINGS_PATH),
@@ -181,7 +222,7 @@ async def ws_handle_edit_homepage_header(
     {
         vol.Required("type"): "dwains_dashboard/sort_area_button",
         vol.Required("sortData"): str,
-        vol.Required("sortType"): str,
+        vol.Required("sortType"): vol.All(str, vol.Length(min=1)),
     }
 )
 @websocket_api.require_admin
@@ -191,7 +232,7 @@ async def ws_handle_sort_area_button(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict
 ) -> None:
     """Handle sorting area buttons."""
-    sort_data = json.loads(msg["sortData"])
+    sort_data = parse_json_string_list(msg["sortData"], "sort order")
     sort_type = msg["sortType"]
     areas = await hass.async_add_executor_job(
         load_yaml_file_or_default,

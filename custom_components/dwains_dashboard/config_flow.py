@@ -6,7 +6,14 @@ import voluptuous as vol
 
 from .const import DOMAIN
 from .configuration_runtime import get_configuration_runtime
+from .maintenance import (
+    async_find_orphans,
+    async_remove_orphans,
+    orphan_description_placeholders,
+)
 from .runtime_data import get_domain_data
+from .settings_export import EXPORTED_OPTIONS, async_export, async_import
+from .settings_transfer import InvalidArchive
 from .yaml_files import dump_yaml_file, load_yaml_file
 
 from homeassistant import config_entries
@@ -37,6 +44,41 @@ SETTINGS_BOOLS = (
     "disable_sensor_graph",
     "invert_cover",
     "hide_unavailable_entities",
+    "disable_masonry",
+)
+# Entries of the house status bar at the top of the homepage. Missing in
+# settings.yaml means all of them (as before this option existed). Binary
+# sensor device classes use their class name; "lock" covers lock entities and
+# lock sensors.
+HOUSE_INFORMATION_ENTRIES = (
+    "person",
+    "light",
+    "switch",
+    "fan",
+    "climate",
+    "cover",
+    "smoke",
+    "carbon_monoxide",
+    "gas",
+    "moisture",
+    "problem",
+    "safety",
+    "door",
+    "window",
+    "opening",
+    "garage_door",
+    "lock",
+    "motion",
+    "occupancy",
+    "presence",
+    "vibration",
+    "running",
+    "vacuum",
+    "media_player",
+    "valve",
+    "humidifier",
+    "lawn_mower",
+    "siren",
 )
 SETTINGS_FILE = "dwains-dashboard/configs/settings.yaml"
 DEFAULT_AREA_SENSOR_DEVICE_CLASSES = ["temperature", "humidity"]
@@ -233,7 +275,7 @@ def _binary_sensor_device_classes_to_input(settings):
     return settings.get("area_binary_sensor_device_classes") or []
 
 
-def _area_binary_sensor_entities_from_input(value):
+def _entity_list_from_input(value):
     if value is None:
         return []
     if isinstance(value, str):
@@ -283,6 +325,27 @@ def _binary_sensor_device_class_options(translations):
     ]
 
 
+def _house_information_entries_to_input(settings):
+    value = settings.get("house_information_entries")
+    if not isinstance(value, list):
+        return list(HOUSE_INFORMATION_ENTRIES)
+    return [entry for entry in value if entry in HOUSE_INFORMATION_ENTRIES]
+
+
+def _house_information_entry_options(translations):
+    return [
+        {
+            "value": entry,
+            "label": _translation(
+                translations,
+                f"selector.house_information_entries.options.{entry}",
+                entry.replace("_", " ").title(),
+            ),
+        }
+        for entry in HOUSE_INFORMATION_ENTRIES
+    ]
+
+
 def _area_view_grouping_mode(value):
     return value if value in AREA_VIEW_GROUPING_MODES else AREA_VIEW_GROUPING_MODE_CLIENT
 
@@ -316,12 +379,13 @@ def _area_view_grouping_mode_options(translations):
     ]
 
 
-@config_entries.HANDLERS.register("dwains_dashboard")
-class DwainsDashboardConfigFlow(config_entries.ConfigFlow):
+class DwainsDashboardConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    VERSION = 1
+
     async def async_step_user(self, user_input=None):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
-        return self.async_create_entry(title="", data={})
+        return self.async_create_entry(title="Dwains Dashboard", data={})
 
     @staticmethod
     @callback
@@ -334,6 +398,105 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
     # OptionsFlow.config_entry is a read-only property that HA populates
     # automatically; assigning it raises AttributeError.
     async def async_step_init(self, user_input=None):
+        report = await async_find_orphans(self.hass)
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["settings", "cleanup", "export_settings", "import_settings"],
+            description_placeholders={"orphans": str(report.total)},
+        )
+
+    async def async_step_cleanup(self, user_input=None):
+        """List dashboard settings of entities/areas that no longer exist."""
+        errors = {}
+        if user_input is not None:
+            if user_input.get("confirm"):
+                removed, backup = await async_remove_orphans(self.hass)
+                return self.async_abort(
+                    reason="cleanup_done",
+                    description_placeholders={
+                        "removed": str(removed),
+                        "backup": backup,
+                    },
+                )
+            errors["base"] = "confirm_required"
+
+        report = await async_find_orphans(self.hass)
+        if not report.total:
+            return self.async_abort(reason="nothing_to_clean")
+        return self.async_show_form(
+            step_id="cleanup",
+            data_schema=vol.Schema(
+                {vol.Required("confirm", default=False): selector.BooleanSelector()}
+            ),
+            errors=errors,
+            description_placeholders=orphan_description_placeholders(report),
+        )
+
+    async def async_step_export_settings(self, user_input=None):
+        """Pack all dashboard settings into a zip and offer it for download."""
+        filename, files, link = await async_export(self.hass, self.config_entry.options)
+        return self.async_abort(
+            reason="export_done",
+            description_placeholders={
+                "filename": filename,
+                "files": str(files),
+                "link": link,
+                # A plain markdown link would be routed inside the Home
+                # Assistant app; a new tab lets the browser download it.
+                "download": f'<a href="{link}" target="_blank">{filename}</a>',
+                "folder": "dwains-dashboard/backups/exports",
+            },
+        )
+
+    async def async_step_import_settings(self, user_input=None):
+        """Replace all dashboard settings with an uploaded export."""
+        errors = {}
+        if user_input is not None:
+            if not user_input.get("confirm"):
+                errors["base"] = "confirm_required_import"
+            else:
+                try:
+                    result = await async_import(self.hass, user_input["file"])
+                except InvalidArchive as err:
+                    _LOGGER.warning("Rejected dashboard settings import: %s", err)
+                    errors["base"] = "invalid_archive"
+                except ValueError:
+                    errors["base"] = "upload_failed"
+                else:
+                    options = {
+                        **self.config_entry.options,
+                        **{
+                            key: value
+                            for key, value in result.options.items()
+                            if key in EXPORTED_OPTIONS and isinstance(value, str)
+                        },
+                    }
+                    if options != dict(self.config_entry.options):
+                        self.hass.config_entries.async_update_entry(
+                            self.config_entry, options=options
+                        )
+                    return self.async_abort(
+                        reason="import_done",
+                        description_placeholders={
+                            "files": str(result.files),
+                            "backup": f"dwains-dashboard/backups/{result.backup}",
+                        },
+                    )
+
+        return self.async_show_form(
+            step_id="import_settings",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("file"): selector.FileSelector(
+                        selector.FileSelectorConfig(accept=".zip")
+                    ),
+                    vol.Required("confirm", default=False): selector.BooleanSelector(),
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_settings(self, user_input=None):
         path = self.hass.config.path(SETTINGS_FILE)
 
         if user_input is not None:
@@ -348,9 +511,13 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             header["area_binary_sensor_device_classes"] = _binary_sensor_device_classes_from_input(
                 user_input.get("area_binary_sensor_device_classes", DEFAULT_AREA_BINARY_SENSOR_DEVICE_CLASSES)
             )
-            header["area_binary_sensor_entities"] = _area_binary_sensor_entities_from_input(
-                user_input.get("area_binary_sensor_entities", [])
-            )
+            header["house_information_entries"] = [
+                entry
+                for entry in _entity_list_from_input(
+                    user_input.get("house_information_entries", list(HOUSE_INFORMATION_ENTRIES))
+                )
+                if entry in HOUSE_INFORMATION_ENTRIES
+            ]
             header["area_view_grouping_mode"] = _area_view_grouping_mode(
                 user_input.get("area_view_grouping_mode", AREA_VIEW_GROUPING_MODE_CLIENT)
             )
@@ -361,6 +528,12 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             async with configuration_runtime.mutation_lock:
                 configuration_runtime.clear_cache()
                 try:
+                    # Merge so keys this form does not manage survive a save.
+                    existing = await self.hass.async_add_executor_job(
+                        _read_settings, path
+                    )
+                    if isinstance(existing, dict):
+                        header = {**existing, **header}
                     await self.hass.async_add_executor_job(
                         _write_settings, path, header
                     )
@@ -396,6 +569,14 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             vol.Optional("disable_sensor_graph", default=bool(cur.get("disable_sensor_graph", False))): selector.BooleanSelector(),
             vol.Optional("invert_cover", default=bool(cur.get("invert_cover", False))): selector.BooleanSelector(),
             vol.Optional("hide_unavailable_entities", default=bool(cur.get("hide_unavailable_entities", False))): selector.BooleanSelector(),
+            vol.Optional("disable_masonry", default=bool(cur.get("disable_masonry", False))): selector.BooleanSelector(),
+            vol.Optional("house_information_entries", default=_house_information_entries_to_input(cur)): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=_house_information_entry_options(translations),
+                    multiple=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
             vol.Optional("area_sensor_device_classes", default=_sensor_device_classes_to_input(cur)): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=_sensor_device_class_options(translations),
@@ -409,9 +590,6 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
                     multiple=True,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
-            ),
-            vol.Optional("area_binary_sensor_entities", default=cur.get("area_binary_sensor_entities") or []): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
             ),
             vol.Optional("area_view_grouping_mode", default=_area_view_grouping_mode(cur.get("area_view_grouping_mode"))): selector.SelectSelector(
                 selector.SelectSelectorConfig(
@@ -433,4 +611,4 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             ),
         }
 
-        return self.async_show_form(step_id="init", data_schema=vol.Schema(schema))
+        return self.async_show_form(step_id="settings", data_schema=vol.Schema(schema))

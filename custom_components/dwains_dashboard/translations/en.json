@@ -18,6 +18,16 @@
   "options": {
     "step": {
       "init": {
+        "title": "Dwains Dashboard",
+        "description": "Choose what you want to do. Orphaned dashboard settings found: {orphans}.",
+        "menu_options": {
+          "settings": "Settings",
+          "cleanup": "Clean up orphaned settings",
+          "export_settings": "Export settings",
+          "import_settings": "Import settings"
+        }
+      },
+      "settings": {
         "title": "Dwains Dashboard Settings",
         "description": "These settings are stored in dwains-dashboard/configs/settings.yaml.",
         "data": {
@@ -34,18 +44,47 @@
           "hide_unavailable_entities": "Hide unavailable entities",
           "area_sensor_device_classes": "Sensor values below area name",
           "area_binary_sensor_device_classes": "Binary sensor values below area name",
-          "area_binary_sensor_entities": "Explicit binary sensors below area name",
           "area_view_grouping_mode": "Group entities",
-          "area_floor_grouping_mode": "Group areas by floor"
+          "area_floor_grouping_mode": "Group areas by floor",
+          "disable_masonry": "Cards in rows of equal height (no masonry)",
+          "house_information_entries": "Entries of the status bar"
         },
         "data_description": {
           "area_sensor_device_classes": "Select the sensor device classes that should be shown on area tiles below the area name. Select nothing to show nothing.",
           "area_binary_sensor_device_classes": "Select binary sensor device classes that should be shown as status summaries after the normal sensor values. Select nothing to show nothing.",
-          "area_binary_sensor_entities": "Select individual binary sensor entities. They are only shown on an area tile when they belong to that area and are active.",
           "area_view_grouping_mode": "Per client keeps the current browser/device setting. Enabled or disabled enforces the grouping globally from the server.",
-          "area_floor_grouping_mode": "Per client keeps the current browser/device setting. Enabled or disabled enforces area grouping by floor globally from the server."
+          "area_floor_grouping_mode": "Per client keeps the current browser/device setting. Enabled or disabled enforces area grouping by floor globally from the server.",
+          "disable_masonry": "Favorites and the area view normally place each card at its natural height without gaps (masonry). Turn this on for rows in which all cards have the same height, as in earlier versions.",
+          "house_information_entries": "Choose what the status bar at the top of the homepage may show. An entry only appears while something of its kind is on, open or detected."
+        }
+      },
+      "cleanup": {
+        "title": "Clean up orphaned settings",
+        "description": "These {count} entries point to entities or areas that no longer exist in Home Assistant, usually after a device or integration was removed:\n\n- Entity settings: {entities}\n- Custom cards and popups: {cards}\n- Area settings and area cards: {areas}\n- Sensors below the area name: {settings}\n\n{items}\n\nEntities that are only disabled, unavailable or belong to an integration that is not loaded are **not** affected. Renamed entities take their settings along automatically and never show up here.\n\nAll touched files are copied to `dwains-dashboard/backups/` before anything is removed.",
+        "data": {
+          "confirm": "Back up and remove these entries"
+        }
+      },
+      "import_settings": {
+        "title": "Import settings",
+        "description": "Replaces **all** Dwains Dashboard settings (areas, entities, cards, more pages, blueprints and the dashboard settings) with the content of an export file made with *Export settings*.\n\nThe current settings are moved to `dwains-dashboard/backups/` first, so nothing is lost.",
+        "data": {
+          "file": "Export file (.zip)",
+          "confirm": "Replace the current settings"
         }
       }
+    },
+    "error": {
+      "confirm_required": "Turn on the switch to confirm the cleanup.",
+      "confirm_required_import": "Turn on the switch to confirm the import.",
+      "invalid_archive": "This file is not a Dwains Dashboard export or it is damaged. Nothing was changed.",
+      "upload_failed": "The upload did not arrive. Please select the file again."
+    },
+    "abort": {
+      "nothing_to_clean": "No orphaned dashboard settings found. Everything is clean.",
+      "cleanup_done": "Removed {removed} entries. A backup of all touched files is in `{backup}`.",
+      "export_done": "Exported {files} files.\n\nDownload: **{download}**\n\nThe link is valid for 10 minutes. The archive also stays in `{folder}` (the five newest exports are kept).",
+      "import_done": "Imported {files} files. The dashboard reloads with the imported settings. The previous settings are in `{backup}`."
     }
   },
   "selector": {
@@ -140,6 +179,38 @@
         "update": "Update",
         "vibration": "Vibration",
         "window": "Window"
+      }
+    },
+    "house_information_entries": {
+      "options": {
+        "person": "Persons",
+        "light": "Lights",
+        "switch": "Switches",
+        "fan": "Fans",
+        "climate": "Climate",
+        "cover": "Covers",
+        "smoke": "Smoke",
+        "carbon_monoxide": "Carbon monoxide",
+        "gas": "Gas",
+        "moisture": "Moisture",
+        "problem": "Problem",
+        "safety": "Safety",
+        "door": "Doors",
+        "window": "Windows",
+        "opening": "Openings (contacts)",
+        "garage_door": "Garage doors",
+        "lock": "Locks",
+        "motion": "Motion",
+        "occupancy": "Occupancy",
+        "presence": "Presence",
+        "vibration": "Vibration",
+        "running": "Running",
+        "vacuum": "Vacuums",
+        "media_player": "Media players",
+        "valve": "Valves",
+        "humidifier": "Humidifiers",
+        "lawn_mower": "Lawn mowers",
+        "siren": "Sirens"
       }
     }
   },

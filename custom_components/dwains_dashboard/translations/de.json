@@ -18,6 +18,16 @@
   "options": {
     "step": {
       "init": {
+        "title": "Dwains Dashboard",
+        "description": "Was möchtest du tun? Gefundene verwaiste Dashboard-Einstellungen: {orphans}.",
+        "menu_options": {
+          "settings": "Einstellungen",
+          "cleanup": "Verwaiste Einstellungen aufräumen",
+          "export_settings": "Einstellungen exportieren",
+          "import_settings": "Einstellungen importieren"
+        }
+      },
+      "settings": {
         "title": "Dwains Dashboard Einstellungen",
         "description": "Diese Einstellungen werden in dwains-dashboard/configs/settings.yaml gespeichert.",
         "data": {
@@ -34,18 +44,47 @@
           "hide_unavailable_entities": "Nicht verfügbare Entitäten ausblenden",
           "area_sensor_device_classes": "Sensorwerte unter dem Raumnamen",
           "area_binary_sensor_device_classes": "Binäre Sensorwerte unter dem Raumnamen",
-          "area_binary_sensor_entities": "Explizite binäre Sensoren unter dem Raumnamen",
           "area_view_grouping_mode": "Gruppierung nach Entitäten",
-          "area_floor_grouping_mode": "Gruppierung nach Etagen"
+          "area_floor_grouping_mode": "Gruppierung nach Etagen",
+          "disable_masonry": "Karten in gleich hohen Reihen (kein Masonry)",
+          "house_information_entries": "Einträge der Statusleiste"
         },
         "data_description": {
           "area_sensor_device_classes": "Wähle die Sensor Device Classes aus, die auf Raumkacheln unter dem Raumnamen angezeigt werden sollen. Keine Auswahl bedeutet: nichts anzeigen.",
           "area_binary_sensor_device_classes": "Wähle Binary-Sensor Device Classes aus, die als Status nach den normalen Sensorwerten angezeigt werden sollen. Keine Auswahl bedeutet: nichts anzeigen.",
-          "area_binary_sensor_entities": "Wähle einzelne Binary-Sensor-Entitäten aus. Sie werden nur auf der Raumkachel angezeigt, wenn sie diesem Raum zugeordnet sind und aktiv sind.",
           "area_view_grouping_mode": "Per Client nutzt die bisherige Browser-/Geräte-Einstellung. Aktiv oder Inaktiv erzwingt die Gruppierung global serverseitig.",
-          "area_floor_grouping_mode": "Per Client nutzt die bisherige Browser-/Geräte-Einstellung. Aktiv oder Inaktiv erzwingt die Gruppierung nach Etagen global serverseitig."
+          "area_floor_grouping_mode": "Per Client nutzt die bisherige Browser-/Geräte-Einstellung. Aktiv oder Inaktiv erzwingt die Gruppierung nach Etagen global serverseitig.",
+          "disable_masonry": "Favoriten und Bereichsansicht setzen jede Karte normalerweise in ihrer natürlichen Höhe lückenlos untereinander (Masonry). Einschalten für Reihen, in denen alle Karten gleich hoch sind, wie in früheren Versionen.",
+          "house_information_entries": "Wähle, was die Statusleiste oben auf der Startseite anzeigen darf. Ein Eintrag erscheint nur, solange etwas dieser Art an, offen oder erkannt ist."
+        }
+      },
+      "cleanup": {
+        "title": "Verwaiste Einstellungen aufräumen",
+        "description": "Diese {count} Einträge verweisen auf Entitäten oder Räume, die es in Home Assistant nicht mehr gibt – meist nachdem ein Gerät oder eine Integration entfernt wurde:\n\n- Entitäts-Einstellungen: {entities}\n- Eigene Karten und Popups: {cards}\n- Raum-Einstellungen und Raum-Karten: {areas}\n- Sensoren unter dem Raumnamen: {settings}\n\n{items}\n\nEntitäten, die nur deaktiviert oder nicht verfügbar sind oder zu einer nicht geladenen Integration gehören, sind **nicht** betroffen. Umbenannte Entitäten nehmen ihre Einstellungen automatisch mit und erscheinen hier nie.\n\nAlle betroffenen Dateien werden vor dem Entfernen nach `dwains-dashboard/backups/` kopiert.",
+        "data": {
+          "confirm": "Diese Einträge sichern und entfernen"
+        }
+      },
+      "import_settings": {
+        "title": "Einstellungen importieren",
+        "description": "Ersetzt **alle** Einstellungen von Dwains Dashboard (Bereiche, Entitäten, Karten, weitere Seiten, Blueprints und die Dashboard-Einstellungen) durch den Inhalt einer Exportdatei aus *Einstellungen exportieren*.\n\nDie aktuellen Einstellungen werden vorher nach `dwains-dashboard/backups/` verschoben, es geht also nichts verloren.",
+        "data": {
+          "file": "Exportdatei (.zip)",
+          "confirm": "Aktuelle Einstellungen ersetzen"
         }
       }
+    },
+    "error": {
+      "confirm_required": "Aktiviere den Schalter, um das Aufräumen zu bestätigen.",
+      "confirm_required_import": "Schalte den Schalter ein, um den Import zu bestätigen.",
+      "invalid_archive": "Diese Datei ist kein Export von Dwains Dashboard oder sie ist beschädigt. Es wurde nichts geändert.",
+      "upload_failed": "Der Upload ist nicht angekommen. Bitte wähle die Datei erneut aus."
+    },
+    "abort": {
+      "nothing_to_clean": "Keine verwaisten Dashboard-Einstellungen gefunden. Alles sauber.",
+      "cleanup_done": "{removed} Einträge entfernt. Eine Sicherung aller betroffenen Dateien liegt in `{backup}`.",
+      "export_done": "{files} Dateien exportiert.\n\nHerunterladen: **{download}**\n\nDer Link ist 10 Minuten gültig. Das Archiv liegt außerdem in `{folder}` (die fünf neuesten Exporte bleiben erhalten).",
+      "import_done": "{files} Dateien importiert. Das Dashboard lädt mit den importierten Einstellungen neu. Die bisherigen Einstellungen liegen in `{backup}`."
     }
   },
   "selector": {
@@ -140,6 +179,38 @@
         "update": "Update",
         "vibration": "Vibration",
         "window": "Fenster"
+      }
+    },
+    "house_information_entries": {
+      "options": {
+        "person": "Personen",
+        "light": "Licht",
+        "switch": "Schalter",
+        "fan": "Lüfter",
+        "climate": "Klimageräte",
+        "cover": "Beschattung",
+        "smoke": "Rauch",
+        "carbon_monoxide": "Kohlenmonoxid",
+        "gas": "Gas",
+        "moisture": "Feuchtigkeit",
+        "problem": "Problem",
+        "safety": "Sicherheit",
+        "door": "Türen",
+        "window": "Fenster",
+        "opening": "Öffnungen (Kontakte)",
+        "garage_door": "Garagentore",
+        "lock": "Schlösser",
+        "motion": "Bewegung",
+        "occupancy": "Belegung",
+        "presence": "Anwesenheit",
+        "vibration": "Vibration",
+        "running": "Läuft",
+        "vacuum": "Saugroboter",
+        "media_player": "Medien",
+        "valve": "Ventile",
+        "humidifier": "Luftbefeuchter",
+        "lawn_mower": "Mähroboter",
+        "siren": "Sirenen"
       }
     }
   },

@@ -1,0 +1,128 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "3.0", "claude/**"]
+  pull_request:
+  schedule:
+    # Weekly run against the newest Home Assistant beta catches breaking
+    # core changes before they reach users.
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Lint & tests (HA ${{ matrix.ha }})
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.ha == 'beta' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ha: [stable, beta]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ "${{ matrix.ha }}" = "beta" ]; then
+            pip install --pre pytest-homeassistant-custom-component
+            pip install "$(grep -h home-assistant-frontend \
+              "$(python -c 'import homeassistant, os; print(os.path.dirname(homeassistant.__file__))')/package_constraints.txt")"
+          else
+            pip install -r requirements_test.txt
+          fi
+          pip install ruff
+      - name: Ruff
+        run: ruff check .
+      - name: Pytest
+        run: python -m pytest -q
+
+  frontend:
+    name: Frontend build is reproducible
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Committed bundle matches the sources
+        run: |
+          changes=$(git status --porcelain -- custom_components/dwains_dashboard/js custom_components/dwains_dashboard/const.py)
+          if [ -n "$changes" ]; then
+            echo "$changes"
+            echo "::error::Run 'npm run build' and commit the result."
+            exit 1
+          fi
+
+  e2e:
+    name: Browser tests (HA ${{ matrix.ha }})
+    runs-on: ubuntu-latest
+    # The beta run warns early about frontend changes in the next release
+    # (HA's internal page structure); it does not block a merge.
+    continue-on-error: ${{ matrix.ha == 'beta' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ha: [stable, beta]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install Home Assistant and Playwright
+        run: |
+          python -m pip install --upgrade pip
+          if [ "${{ matrix.ha }}" = "beta" ]; then
+            pip install --pre pytest-homeassistant-custom-component
+            pip install "$(grep -h home-assistant-frontend \
+              "$(python -c 'import homeassistant, os; print(os.path.dirname(homeassistant.__file__))')/package_constraints.txt")"
+          else
+            pip install -r requirements_test.txt
+          fi
+          python -c "import homeassistant.const as c; print('Home Assistant', c.__version__)"
+          # Requirements of the integrations get_services imports; without
+          # them the frontend never loads its card helpers.
+          pip install $(python tests/e2e/base_requirements.py)
+          python -c "from homeassistant.helpers.service import _base_components; _base_components()"
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Start Home Assistant with the dashboard
+        run: python tests/e2e/prepare.py "$RUNNER_TEMP/e2e"
+      - name: Browser tests
+        run: node tests/e2e/dashboard.e2e.mjs "$RUNNER_TEMP/e2e"
+      - name: Home Assistant log
+        if: failure()
+        run: tail -n 200 "$RUNNER_TEMP/e2e/hass.out"
+
+  hassfest:
+    name: hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hacs/action@main
+        with:
+          category: integration
+          # Repository settings of a fork, not code: enable issues, add
+          # topics and an SPDX license on GitHub to validate them as well.
+          ignore: brands issues topics license
