@@ -37,18 +37,66 @@ async function step(name, fn) {
   }
 }
 
+// Opens the "⋮" menu inside the element `host` whose section contains
+// `section` and clicks the menu item whose text matches `item`.
+async function clickMenuItem(page, host, section, item) {
+  const opened = await deep(page, (all, [host, section]) => {
+    const root = all.find((el) => el.localName === host)?.shadowRoot;
+    const dropdown = [...(root?.querySelectorAll("ha-dropdown") || [])].find((candidate) => {
+      let parent = candidate;
+      while (parent && !parent.querySelector?.("h2")) parent = parent.parentElement;
+      return parent?.querySelector("h2")?.textContent.includes(section);
+    });
+    root?.querySelectorAll("ha-dropdown[data-e2e]").forEach((other) => other.removeAttribute("data-e2e"));
+    dropdown?.setAttribute("data-e2e", "");
+    dropdown?.querySelector('[slot="trigger"]').click();
+    return Boolean(dropdown);
+  }, [host, section]);
+  assert.ok(opened, `menu of ${section} in ${host}`);
+  await page.waitForTimeout(400);
+  const clicked = await deep(page, (all, [host, section, item]) => {
+    const root = all.find((el) => el.localName === host)?.shadowRoot;
+    const entry = [...root.querySelectorAll("ha-dropdown[data-e2e] ha-dropdown-item")]
+      .find((candidate) => new RegExp(item).test(candidate.textContent));
+    entry?.click();
+    return Boolean(entry);
+  }, [host, section, item]);
+  assert.ok(clicked, `menu item ${item}`);
+}
+
 const browser = await chromium.launch({ executablePath });
 for (const colorScheme of ["light", "dark"]) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: "de-DE", colorScheme });
   await context.addInitScript((tokens) => {
     localStorage.setItem("hassTokens", JSON.stringify({ ...tokens, expires: Date.now() + tokens.expires_in * 1000 }));
     localStorage.setItem("selectedLanguage", '"de"');
+    // The homepage text as first rendered, before any later re-render.
+    const watch = setInterval(() => {
+      const find = (root) => {
+        for (const el of root.querySelectorAll("*")) {
+          if (el.localName === "homepage-card" && el.shadowRoot?.textContent.trim().length > 50) return el;
+          const found = el.shadowRoot && find(el.shadowRoot);
+          if (found) return found;
+        }
+        return undefined;
+      };
+      const card = find(document);
+      if (card) {
+        window.__ddFirstRender = card.shadowRoot.textContent.replace(/\s+/g, " ");
+        clearInterval(watch);
+      }
+    }, 5);
   }, token);
   const page = await context.newPage();
+  const requests = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith("/dwains_dashboard/js/")) requests.push(path);
+  });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
-    if (message.type() === "error" && /dwains|homepage|area-graph/i.test(message.text())) errors.push(message.text());
+    if (message.type() === "error" && /dwains|homepage|devices|more-page|area-graph/i.test(message.text())) errors.push(message.text());
   });
   await page.goto(BASE + "/dwains-dashboard/home");
 
@@ -91,25 +139,99 @@ for (const colorScheme of ["light", "dark"]) {
       assert.match(header, /°C/);
     });
 
-    await step("area edit dialog offers the graph settings", async () => {
+    await step("the strings load before the first render", async () => {
+      assert.ok(requests.some((path) => /^\/dwains_dashboard\/js\/lang\/de\.[0-9a-f]+\.json$/.test(path)), "German strings requested");
+      assert.ok(!requests.some((path) => path.includes("/lang/") && !path.includes("/lang/de.")), "only German requested");
+      const first = await page.evaluate(() => window.__ddFirstRender);
+      assert.match(first, /Bereiche/);
+      assert.doesNotMatch(first, /\bAreas\b|Favorites|Good (morning|afternoon|evening)/);
+    });
+
+    await step("the areas menu switches edit mode and drag sorting on", async () => {
       await page.goto(BASE + "/dwains-dashboard/home");
       await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("°C"))), "homepage");
-      await deep(page, (all) => {
-        const card = all.find((el) => "areaEditMode" in el && el.tagName.toLowerCase().includes("homepage-card"));
-        card.areaEditMode = true;
-        card.requestUpdate();
-      });
-      await page.waitForTimeout(800);
+      assert.ok(!requests.some((path) => path.includes("/chunks/")), "no edit code before edit mode");
+      await clickMenuItem(page, "homepage-card", "Bereiche", "Bearbeitungsmodus");
+      await poll(() => deep(page, (all) => {
+        const card = all.find((el) => el.localName === "homepage-card");
+        return card.areaEditMode === true && card._sortable?.length > 0;
+      }), "area edit mode with drag sorting");
+      assert.ok(requests.some((path) => /\/chunks\/sortable\.[0-9a-f]+\.js$/.test(path)), "Sortable loaded");
+    });
+
+    const openAreaDialog = async () => {
       await poll(() => deep(page, (all, areaId) => {
         const button = all.find((el) => el.tagName === "HA-BUTTON" && el.area_id === areaId);
         button?.click();
         return Boolean(button);
       }, token.areaId), "edit button");
-      const picker = await poll(() => deep(page, (all) => {
+      return poll(() => deep(page, (all) => {
         const card = all.find((el) => el.tagName.startsWith("DWAINS-EDIT-AREA-BUTTON-CARD"));
-        return card?.shadowRoot?.querySelector("ha-entity-picker")?.value;
+        return card?.shadowRoot?.querySelector("ha-entity-picker") && card;
       }), "edit dialog");
-      assert.equal(picker, "sensor.temperatur_wohnzimmer");
+    };
+    const areaDialog = (fn) => deep(page, (all, src) => {
+      const card = all.find((el) => el.tagName.startsWith("DWAINS-EDIT-AREA-BUTTON-CARD"));
+      return new Function("card", src)(card);
+    }, fn);
+
+    await step("the area dialog shows the graph settings", async () => {
+      await openAreaDialog();
+      assert.ok(requests.some((path) => /\/chunks\/editors\.[0-9a-f]+\.js$/.test(path)), "editors loaded");
+      assert.equal(await areaDialog("return card.shadowRoot.querySelector('ha-entity-picker').value"), "sensor.temperatur_wohnzimmer");
+    });
+
+    await step("a dialog checkbox toggles with its text and the change is saved", async () => {
+      const label = "[...card.shadowRoot.querySelectorAll('label.dd-check')].find((row) => row.textContent.includes('Icon ausblenden'))";
+      assert.equal(await areaDialog("return card.hideIcon"), false);
+      await areaDialog(`${label}.querySelector('span').click()`);
+      assert.equal(await areaDialog("return card.hideIcon"), true);
+      assert.equal(await areaDialog(`return ${label}.querySelector('ha-checkbox').checked`), true);
+      await areaDialog("card.shadowRoot.querySelector('ha-button[slot=primaryAction]').click()");
+      await poll(() => deep(page, (all) => !all.some((el) => el.tagName.startsWith("DWAINS-EDIT-AREA-BUTTON-CARD") && el.isConnected && el.offsetParent)), "dialog closed");
+      await page.waitForTimeout(1500);
+      await openAreaDialog();
+      await poll(() => areaDialog("return card.hideIcon === true"), "saved setting");
+      // Restore it for the remaining tests.
+      await areaDialog(`${label}.querySelector('ha-checkbox').click()`);
+      assert.equal(await areaDialog("return card.hideIcon"), false);
+      await areaDialog("card.shadowRoot.querySelector('ha-button[slot=primaryAction]').click()");
+      await page.waitForTimeout(1500);
+    });
+
+    await step("the devices page lists the device types and opens one", async () => {
+      await page.goto(BASE + "/dwains-dashboard/devices");
+      const types = await poll(() => deep(page, (all) => {
+        const card = all.find((el) => el.localName === "devices-card");
+        const buttons = [...(card?.shadowRoot?.querySelectorAll(".device-button") || [])];
+        return buttons.length && buttons.map((button) => button.dataset.device);
+      }), "device buttons");
+      assert.ok(types.includes("sensor"), types.join(","));
+      await deep(page, (all) => all.find((el) => el.localName === "devices-card").shadowRoot.querySelector('.device-button[data-device="sensor"]').click());
+      await poll(() => deep(page, (all) => {
+        const card = all.find((el) => el.localName === "devices-card");
+        return card.selectedDevice === "sensor"
+          && all.some((el) => /^hui-.*-card$/.test(el.localName) && el.shadowRoot?.textContent.includes("Temperatur"));
+      }), "sensor page");
+    });
+
+    await step("the devices menu switches edit mode on", async () => {
+      await page.goto(BASE + "/dwains-dashboard/devices");
+      await poll(() => deep(page, (all) => all.find((el) => el.localName === "devices-card")?.shadowRoot?.querySelector(".device-button")), "devices page");
+      await clickMenuItem(page, "devices-card", "", "Bearbeitungsmodus");
+      await poll(() => deep(page, (all) => {
+        const card = all.find((el) => el.localName === "devices-card");
+        return card.deviceEditMode === true && card._sortable?.length === 1;
+      }), "device edit mode with drag sorting");
+    });
+
+    await step("more pages: the create dialog opens", async () => {
+      await page.goto(BASE + "/dwains-dashboard/more_page");
+      await poll(() => deep(page, (all) => all.find((el) => el.localName === "more-pages-card")?.shadowRoot?.querySelector("ha-dropdown")), "more pages");
+      await clickMenuItem(page, "more-pages-card", "", ".");
+      await poll(() => deep(page, (all) => all.some((el) => el.tagName.startsWith("DWAINS-EDIT-MORE-PAGE-CARD") && el.shadowRoot?.childElementCount)), "create dialog");
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(500);
     });
   }
 
