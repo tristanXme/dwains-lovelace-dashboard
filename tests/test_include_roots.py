@@ -88,3 +88,11 @@ def test_templates_can_include_dashboard_files(base: Path) -> None:
 def test_files_outside_cannot_be_loaded_directly(base: Path) -> None:
     with pytest.raises(DashboardPathError):
         _processor(base).load_yaml(str(base / "secrets.yaml"))
+
+
+def test_secrets_cannot_be_used(base: Path) -> None:
+    from homeassistant.exceptions import HomeAssistantError
+
+    page = _page(base, "card:\n  type: markdown\n  content: !secret password\n")
+    with pytest.raises(HomeAssistantError, match="!secret password is not supported"):
+        _processor(base).load_yaml(page)

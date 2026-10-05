@@ -333,6 +333,19 @@ def _include_dir_merge_list_yaml(ldr, node):
     return _add_reference(merged_list, ldr, node)
 
 
+def _reject_secret(ldr, node):
+    # Dashboard files are shown to every dashboard user and can come from an
+    # imported export or a shared blueprint; a secret would end up on screen.
+    raise yaml.constructor.ConstructorError(
+        None,
+        None,
+        f"!secret {node.value} is not supported in Dwains Dashboard files: "
+        "the value would be shown to every dashboard user",
+        node.start_mark,
+    )
+
+
+_DwainsDashboardLoader.add_constructor("!secret", _reject_secret)
 _DwainsDashboardLoader.add_constructor("!include", _include_yaml)
 _DwainsDashboardLoader.add_constructor(
     "!include_dir_named",
