@@ -1,15 +1,24 @@
 "use strict";
 
 const AREA_BINARY_SENSOR_SUMMARY_KEYS = Object.freeze({
+  carbon_monoxide: "carbon_monoxide",
   cold: "cold",
   door: "door",
   garage_door: "garage_door",
+  gas: "gas",
   lock: "lock",
   moisture: "moisture",
   motion: "motion",
+  occupancy: "occupancy",
+  opening: "opening",
+  presence: "presence",
+  problem: "problem",
+  running: "running",
   safety: "safety",
   smoke: "smoke",
   sound: "sound",
+  // Not a binary sensor class: tooltip of the valve badge.
+  valve: "valve",
   vibration: "vibration",
   window: "window",
 });

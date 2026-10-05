@@ -44,13 +44,23 @@ export const TOGGLE_DOMAINS = ["light", "switch", "fan"];
 
 export const CLIMATE_DOMAINS = ["climate"];
 
-export const OTHER_DOMAINS = ["vacuum", "media_player", "lock"];
+export const OTHER_DOMAINS = ["vacuum", "media_player", "lock", "valve", "humidifier", "lawn_mower", "siren"];
 
 export const DEVICE_CLASSES = {
     sensor: ["temperature", "humidity"],
-    binary_sensor: ["motion", "occupancy", "presence", "door", "window", "vibration", "moisture", "smoke", "running"],
+    // Safety first, then openings, then presence and the rest; this is the
+    // order of the badges on the area tile.
+    binary_sensor: [
+      "smoke", "carbon_monoxide", "gas", "moisture", "problem", "safety",
+      "door", "window", "opening", "garage_door", "lock",
+      "motion", "occupancy", "presence", "vibration", "running",
+    ],
     cover: ["garage","shutter"],
   };
+
+// Status text of a badge in the house status bar: "2 open", "1 detected".
+export const OPEN_DEVICE_CLASSES = ["door", "window", "opening", "garage_door", "lock"];
+export const DETECTED_DEVICE_CLASSES = ["smoke", "carbon_monoxide", "gas", "moisture", "problem", "safety"];
 
 export const DEVICE_ICONS = {
 
@@ -67,10 +77,17 @@ export const DOMAIN_STATE_ICONS = {
       presence: "mdi:motion-sensor",
       door: "mdi:door-open",
       window: "mdi:window-open-variant",
+      opening: "mdi:square-outline",
+      garage_door: "mdi:garage-open",
+      lock: "mdi:lock-open",
       vibration: "mdi:vibrate",
       moisture: "mdi:water-alert",
       smoke: "mdi:smoke-detector-variant-alert",
-      running: "mdi:smoke-detector-outline",
+      carbon_monoxide: "mdi:molecule-co",
+      gas: "mdi:gas-cylinder",
+      problem: "mdi:alert-circle",
+      safety: "mdi:alert-circle",
+      running: "mdi:play",
     },
     cover: {
       garage: "mdi:garage",
@@ -79,6 +96,10 @@ export const DOMAIN_STATE_ICONS = {
     vacuum: { on: "mdi:robot-vacuum" },
     media_player: { on: "mdi:cast-connected" },
     lock: { on: "mdi:lock-open" },
+    valve: { on: "mdi:valve-open" },
+    humidifier: { on: "mdi:air-humidifier" },
+    lawn_mower: { on: "mdi:robot-mower" },
+    siren: { on: "mdi:bullhorn" },
     climate: { on: "mdi:thermostat"},
   };
 
@@ -115,6 +136,9 @@ export const DOMAIN_STATE_ICONS = {
     automation: "mdi:robot-outline",
     alarm_control_panel: "mdi:shield-home",
     siren: "mdi:alarm-light-outline",
+    valve: "mdi:valve",
+    humidifier: "mdi:air-humidifier",
+    lawn_mower: "mdi:robot-mower",
     unknown: "mdi:help-circle-outline",
     text: "mdi:format-text",
     event: "mdi:calendar-clock",

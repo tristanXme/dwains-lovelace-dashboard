@@ -14,7 +14,9 @@ import {
     CLIMATE_DOMAINS,
     OTHER_DOMAINS,
     DEVICE_CLASSES,
-    DOMAIN_STATE_ICONS
+    DOMAIN_STATE_ICONS,
+    OPEN_DEVICE_CLASSES,
+    DETECTED_DEVICE_CLASSES
 } from './variables';
 const { defineDwainsElement } = require('./custom-element-registration');
 import translateEngine from './translate-engine';
@@ -513,10 +515,13 @@ class DwainsHouseInformationCard extends LitElement {
     }
     _renderDomainBadgeCard(domain, name, icon, count, deviceClass) {
         let translatedStatus;
-        if ((deviceClass == 'window' || deviceClass == 'door' || domain == 'cover' || domain == 'lock') && !this.configuration['homepage_header']['invert_cover']) {
+        const opened = OPEN_DEVICE_CLASSES.includes(deviceClass) || ['cover', 'lock', 'valve'].includes(domain);
+        if (opened && !(this.configuration['homepage_header']['invert_cover'] && domain == 'cover')) {
             translatedStatus = translateEngine(this._hass, 'device.open')
         } else if (this.configuration['homepage_header']['invert_cover'] && domain == 'cover') {
             translatedStatus = translateEngine(this._hass, 'device.closed')
+        } else if (DETECTED_DEVICE_CLASSES.includes(deviceClass)) {
+            translatedStatus = translateEngine(this._hass, 'device.detected')
         } else {
             translatedStatus = translateEngine(this._hass, 'device.on')
 

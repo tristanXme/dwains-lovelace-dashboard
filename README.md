@@ -59,6 +59,13 @@ Security, stability and performance release of DD3.
 - **Refresh:** values below the area name follow the Home Assistant language
   (`24,1 °C · 48 %` in German) and are separated by `·`; area badges are
   rounder; the house status bar uses the full width with quiet dividers.
+- **Area badges:** more sensor types get a badge on the area tile and in the
+  house status bar: gas, carbon monoxide, problem, safety, opening (plain
+  door/window contacts), garage door and lock. Open valves, running
+  humidifiers, mowing lawn mowers and active sirens are shown like the vacuum.
+  "Running" no longer uses the smoke detector icon. Safety first: smoke, CO,
+  gas, water and problems come before doors, windows and motion. Hovering a
+  badge tells what it counts ("2 windows open"), in all ten languages.
 
 ## Development
 

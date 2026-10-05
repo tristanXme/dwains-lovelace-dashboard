@@ -145,6 +145,13 @@ export const AreaTilesMixin = (Base) => class extends Base {
         .map((entity) => entity.entity_id);
     }
 
+    // Tooltip of a status badge: "2 windows open", "Vacuum: active".
+    _badgeTitle(type, count) {
+      return translateEngine(this._hass, summaryTranslationKey(type, count))
+        .replace('{count}', count)
+        .replace('{label}', translateEngine(this._hass, 'device.' + type));
+    }
+
     _binarySensorStateLabel(entity) {
       if(!entity){
         return "";
@@ -305,7 +312,10 @@ export const AreaTilesMixin = (Base) => class extends Base {
                     return html`
                       ${DOMAIN_STATE_ICONS[domain][deviceClass]
                         ? html`
-                          <span class="info-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium">
+                          <span
+                            class="info-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium"
+                            title=${this._badgeTitle(deviceClass, isOn)}
+                          >
                             <ha-icon
                               class="w-6 h-6 mr-0.5"
                               .icon=${DOMAIN_STATE_ICONS[domain][deviceClass]}
@@ -345,7 +355,10 @@ export const AreaTilesMixin = (Base) => class extends Base {
                 if(isOn){
                   return OTHER_DOMAINS.includes(domain)
                     ? html`
-                      <span class="info-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium">
+                      <span
+                        class="info-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium"
+                        title=${this._badgeTitle(domain, isOn)}
+                      >
                         <ha-icon
                           class="${isOn ? 'on' : 'off'} w-6 h-6 mr-0.5"
                           .icon=${DOMAIN_STATE_ICONS[domain][isOn ? "on" : "off"]}
