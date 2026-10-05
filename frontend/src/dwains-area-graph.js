@@ -2,34 +2,16 @@ import { css, html, svg, LitElement } from 'lit';
 const { defineDwainsElement } = require('./custom-element-registration');
 const {
   normalizeGraphHours,
-  historyToPoints,
   bucketPoints,
   graphPaths,
 } = require('./area-graph');
 
-// History is shared between tiles and re-fetched at most every few minutes,
-// so re-rendering the homepage does not hit the recorder again.
-const CACHE_TTL_MS = 5 * 60 * 1000;
-const REFRESH_MS = 10 * 60 * 1000;
-const historyCache = new Map();
-let graphSequence = 0;
+const { createAreaGraphLoader } = require('./area-graph-loader');
 
-function loadHistory(hass, entityId, hours) {
-  const key = `${entityId}|${hours}`;
-  const cached = historyCache.get(key);
-  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return cached.promise;
-  const promise = hass.callWS({
-    type: 'history/history_during_period',
-    start_time: new Date(Date.now() - hours * 3600 * 1000).toISOString(),
-    entity_ids: [entityId],
-    minimal_response: true,
-    no_attributes: true,
-    significant_changes_only: false,
-  }).then((result) => historyToPoints(result?.[entityId]));
-  promise.catch(() => historyCache.delete(key));
-  historyCache.set(key, { promise, fetchedAt: Date.now() });
-  return promise;
-}
+// One loader for all tiles: requests are batched and cached.
+const REFRESH_MS = 10 * 60 * 1000;
+const loader = createAreaGraphLoader();
+let graphSequence = 0;
 
 class DwainsAreaGraph extends LitElement {
   static get properties() {
@@ -75,11 +57,18 @@ class DwainsAreaGraph extends LitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this._timer = setInterval(() => this._load(true), REFRESH_MS);
+    // Refresh on the wall-clock grid so all tiles reload in the same moment
+    // and share one batched request.
+    const delay = REFRESH_MS - (Date.now() % REFRESH_MS);
+    this._timer = setTimeout(() => {
+      this._load(true);
+      this._timer = setInterval(() => this._load(true), REFRESH_MS);
+    }, delay);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    clearTimeout(this._timer);
     clearInterval(this._timer);
   }
 
@@ -95,10 +84,9 @@ class DwainsAreaGraph extends LitElement {
     if (!this.hass?.callWS || !entityId) return;
     const hours = normalizeGraphHours(this.hours);
     const key = `${entityId}|${hours}`;
-    if (force) historyCache.delete(key);
     this._loadedFor = key;
     try {
-      const points = await loadHistory(this.hass, entityId, hours);
+      const points = await loader.load(this.hass, entityId, hours, { force });
       if (this._loadedFor === key) this._points = points.slice();
     } catch (error) {
       if (this._loadedFor === key) this._points = [];

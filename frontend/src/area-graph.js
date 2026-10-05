@@ -68,6 +68,33 @@ function bucketPoints(points, { start, end, buckets = 48 }) {
   return values.map((value) => (value === undefined ? values[firstKnown] : value));
 }
 
+/**
+ * Turn a `recorder/statistics_during_period` result (hourly means) into
+ * points. `start` is epoch milliseconds in current Home Assistant versions
+ * and an ISO string in older ones.
+ */
+function statisticsToPoints(rows) {
+  const points = [];
+  for (const row of rows || []) {
+    const raw = row.mean ?? row.state;
+    const value = Number(raw);
+    if (raw === null || raw === undefined || !Number.isFinite(value)) continue;
+    const time = typeof row.start === "number" ? row.start : Date.parse(row.start);
+    if (!Number.isFinite(time)) continue;
+    points.push({ time, value });
+  }
+  points.sort((a, b) => a.time - b.time);
+  return points;
+}
+
+// Periods of two days and more use the hourly long-term statistics: much less
+// data, and still available after the recorder purged the raw states.
+const STATISTICS_MIN_HOURS = 48;
+
+function usesStatistics(hours) {
+  return hours >= STATISTICS_MIN_HOURS;
+}
+
 /** Smooth SVG path (line and closed area) for values in a width x height box. */
 function graphPaths(values, width, height, { padTop = 4, padBottom = 2 } = {}) {
   if (values.length < 2) return null;
@@ -92,4 +119,6 @@ module.exports = {
   historyToPoints,
   bucketPoints,
   graphPaths,
+  statisticsToPoints,
+  usesStatistics,
 };

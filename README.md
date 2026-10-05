@@ -47,11 +47,13 @@ Security, stability and performance release of DD3.
   Dashboard → ⋮ → Download diagnostics), including the orphaned entries.
 - **New:** optional history graph at the bottom of an area tile. Pick a
   sensor and a period (6 h to 7 days) under *Edit* of the area tile; leave the
-  sensor empty for no graph. History is loaded from the recorder and cached.
+  sensor empty for no graph. All tiles share one recorder request per period
+  and refresh together every 10 minutes; periods of 2 and 7 days use the
+  hourly long-term statistics (sensors without statistics fall back to their
+  history). A click on the graph opens the sensor's history.
 - **Refresh:** values below the area name follow the Home Assistant language
   (`24,1 °C · 48 %` in German) and are separated by `·`; area badges are
-  rounder and the bulb turns yellow while lights are on; the house status bar
-  uses the full width with quiet dividers.
+  rounder; the house status bar uses the full width with quiet dividers.
 
 ## Development
 
