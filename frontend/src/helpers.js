@@ -6,6 +6,7 @@ const { isInvalidDwainsCardElement } = require('./card-element-validation');
 const { defineDwainsElement } = require('./custom-element-registration');
 const { closeCardToolsPopup } = require('./popup-host');
 const { getDwainsRuntimeState } = require('./runtime-state');
+const { isEditorTag, loadEditors } = require('./lazy-modules');
 
 const getUsableDwainsConstructor = (tag) => {
   const runtimeState = getDwainsRuntimeState();
@@ -50,6 +51,14 @@ export async function createCardElementSafe(cardHelpers, config, hassObj) {
   const isDwainsCard = tag.startsWith('dwains-')
     || ['homepage-card', 'devices-card', 'more-page-card', 'more-pages-card'].includes(tag);
   let originalError;
+
+  if (isEditorTag(tag)) {
+    try {
+      await loadEditors();
+    } catch (err) {
+      console.error('Dwains Dashboard: failed to load the editors (reload the page after an update)', err);
+    }
+  }
 
   if (isDwainsCard) {
     const ctor = await waitForDwainsConstructor(tag);

@@ -9,7 +9,7 @@ import {
 } from './frontend-helpers';
 import { mdiDotsVertical, mdiCog } from "@mdi/js";
 import { css, html, LitElement } from 'lit';
-import Sortable from 'sortablejs/modular/sortable.complete.esm.js';
+const { loadSortable } = require('./lazy-modules');
 import translateEngine from './translate-engine';
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import {
@@ -957,18 +957,10 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           const value = ev.currentTarget.ddValue;
 
           if(value){
-            if(this.shadowRoot.getElementById("sortable")){
-              this._sortable = new Sortable(this.shadowRoot.getElementById("sortable"), {
-                forceFallback: true,
-                animation: 150,
-                dataIdAttr: "data-device",
-                handle: '.sortable-move',
-                onEnd: async (evt) => this._deviceButtonMoved(evt),
-              });
-            }
+            this._attachSortables('#sortable', 'data-device', () => this.deviceEditMode,
+              (evt) => this._deviceButtonMoved(evt));
           } else {
-            this._sortable.destroy();
-            this._sortable = undefined;
+            this._destroySortables();
           }
           this.deviceEditMode = value;
         }
@@ -979,37 +971,50 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           const value = ev.currentTarget.ddValue;
 
           if(value){
-            this._sortable = [];
-            const sortableElements = this.shadowRoot.querySelectorAll('.sortable');
             const cardHass = this._hass;
-            for(let i=0; i<sortableElements.length; i++){
-              const sortType = (this.deviceViewDisplayGrouped ? 'devices_grouped_sort_order' : 'devices_sort_order');
-              this._sortable[i] = new Sortable(sortableElements[i], {
-                  forceFallback: true,
-                  animation: 150,
-                  dataIdAttr: "data-entity",
-                  handle: '.sortable-move',
-                  onEnd: function(event){
-                    cardHass.callWS({
-                        type: 'dwains_dashboard/sort_entity',
-                        sortData: JSON.stringify(this.toArray()),
-                        sortType: sortType
-                      }).then(
-                          (resp) => {
-                              console.log(resp);
-                          },
-                          (err) => {
-                              console.error('Message failed!', err);
-                          }
-                      );
-                  }
-              });
-            }
+            const sortType = (this.deviceViewDisplayGrouped ? 'devices_grouped_sort_order' : 'devices_sort_order');
+            this._attachSortables('.sortable', 'data-entity', () => this.deviceViewEditMode, function(){
+              cardHass.callWS({
+                type: 'dwains_dashboard/sort_entity',
+                sortData: JSON.stringify(this.toArray()),
+                sortType: sortType
+              }).then(
+                (resp) => console.log(resp),
+                (err) => console.error('Message failed!', err),
+              );
+            });
           } else {
+            this._destroySortables();
+          }
+          this.deviceViewEditMode = value;
+        }
+
+        // Sortable is loaded on first use, so isActive() tells whether the
+        // edit mode is still on once it has arrived.
+        async _attachSortables(selector, dataIdAttr, isActive, onEnd){
+          let Sortable;
+          try {
+            Sortable = await loadSortable();
+          } catch (err) {
+            console.error('Dwains Dashboard: failed to load drag and drop (reload the page after an update)', err);
+            return;
+          }
+          if(!isActive()) return;
+          this._destroySortables();
+          this._sortable = [...this.shadowRoot.querySelectorAll(selector)].map((element) => new Sortable(element, {
+            forceFallback: true,
+            animation: 150,
+            dataIdAttr: dataIdAttr,
+            handle: '.sortable-move',
+            onEnd: onEnd,
+          }));
+        }
+
+        _destroySortables(){
+          if(this._sortable){
             this._sortable.forEach(sortElement => sortElement.destroy());
             this._sortable = undefined;
           }
-          this.deviceViewEditMode = value;
         }
 
         _renderDeviceButtonCard(domain, type) {

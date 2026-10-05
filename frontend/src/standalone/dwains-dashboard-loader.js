@@ -43,10 +43,82 @@
     return url.href;
   };
 
+  // Written by scripts/postbuild.mjs: language code -> strings file next to
+  // this loader (the file name carries a content hash). English is bundled.
+  const languageFiles = /*DD_LANGUAGE_FILES*/{};
+  runtimeState.languageFiles = Object.fromEntries(
+    Object.entries(languageFiles).map(([code, file]) => [code, new URL(file, loaderUrl).href]),
+  );
+
+  const storedLanguage = () => {
+    try {
+      const value = window.localStorage?.getItem("selectedLanguage");
+      return value ? JSON.parse(value) : undefined;
+    } catch (error) {
+      return undefined;
+    }
+  };
+
+  // The language Home Assistant shows, or the guess Home Assistant itself
+  // starts with while its connection is still coming up.
+  const languageCode = () => {
+    const hass = window.document?.querySelector("home-assistant")?.hass;
+    const language = hass?.selectedLanguage || hass?.language || storedLanguage() || window.navigator?.language;
+    if (typeof language !== "string") return undefined;
+    if (languageFiles[language]) return language;
+    const base = language.split("-")[0];
+    return languageFiles[base] ? base : undefined;
+  };
+
+  // Same contract as requestLanguage() in frontend/src/language-loader.js,
+  // which reuses this request: resolves to the strings or to undefined.
+  const requestLanguage = (code) => {
+    const requests = (runtimeState.languageRequests ||= {});
+    requests[code] ||= window.fetch(runtimeState.languageFiles[code])
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((strings) => {
+        (runtimeState.translations ||= {})[code] = strings;
+        return strings;
+      })
+      .catch((error) => {
+        reportLoaderError(`failed to load the "${code}" strings`, error);
+        return undefined;
+      });
+    return requests[code];
+  };
+
+  // Start downloading the bundle while the strings load; it runs afterwards,
+  // so the first render is already in the right language.
+  const preloadModule = (url) => {
+    try {
+      const link = window.document.createElement("link");
+      link.rel = "modulepreload";
+      link.href = url;
+      window.document.head.appendChild(link);
+    } catch (error) {
+      reportLoaderError("failed to preload the bundle", error);
+    }
+  };
+
+  const LANGUAGE_WAIT_MS = 3000;
+
   const load = () => {
     if (!isDwainsRoute() || runtimeState.routeBundleRequested) return;
     runtimeState.routeBundleRequested = true;
-    import(bundleUrl()).catch((err) => {
+    const url = bundleUrl();
+    const code = languageCode();
+    let ready = Promise.resolve();
+    if (code && !runtimeState.translations?.[code]) {
+      preloadModule(url);
+      ready = Promise.race([
+        requestLanguage(code),
+        new Promise((resolve) => setTimeout(resolve, LANGUAGE_WAIT_MS)),
+      ]);
+    }
+    ready.then(() => import(url)).catch((err) => {
       runtimeState.routeBundleRequested = false;
       console.error("Dwains Dashboard: failed to load route bundle", err);
     });

@@ -65,6 +65,6 @@ __pycache__/
 
 # Frontend build
 node_modules/
-custom_components/dwains_dashboard/js/*.map
+custom_components/dwains_dashboard/js/**/*.map
 /.e2e/
 !/tests/e2e/configuration.yaml

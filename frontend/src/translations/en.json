@@ -1,0 +1,312 @@
+{
+  "global": {
+    "enable_edit_mode": "Enable edit mode",
+    "disable_edit_mode": "Disable edit mode",
+    "version": "Version",
+    "disable_clock": "Disable clock",
+    "am_pm_clock": "AM/PM clock",
+    "disable_welcome_message": "Disable Welcome message",
+    "settings": "Global settings",
+    "dashboard_information": "Dashboard information",
+    "alarm_entity": "Alarm entity",
+    "weather_entity": "Weather entity",
+    "greeting_morning": "Good morning",
+    "greeting_afternoon": "Good afternoon",
+    "greeting_evening": "Good evening",
+    "v2_mode": "Enable Dwains Dashboard v2 mode (layout)",
+    "disable_sensor_graph": "Disable show sensor as graph",
+    "invert_cover": "Invert Cover"
+  },
+  "editor": {
+    "lovelace_card": "Lovelace Card",
+    "create_lovelace_card": "Create a new lovelace card from scratch",
+    "select_card_for": "Select a card for",
+    "select_popup_card_for": "Select a popup card for",
+    "loading_card_editor": "Loading card editor…",
+    "no_visual_editor": "This card has no visual editor. Edit its JSON configuration:",
+    "dwains_dashboard_blueprint": "Dwains Dashboard Blueprint",
+    "use_dwains_dashboard_blueprint": "Use a Dwain Dashboard Blueprint to create a card",
+    "row_span": "Row span",
+    "row": "Row",
+    "rows": "Rows",
+    "col_span": "Col span",
+    "column": "Column",
+    "columns": "Columns",
+    "default_col_row": "Default col and row size",
+    "large_col_row": "Large screen col and row size",
+    "extra_large_col_row": "Extra large screen col and row size"
+  },
+  "entity": {
+    "title": "Entity",
+    "title_plural": "entities",
+    "add_card_to": "Add card to ",
+    "edit_entity": "Edit entity",
+    "edit_entity_card": "Edit entity card",
+    "edit_entity_popup_card": "Edit entity popup card",
+    "add_to_favorites": "Add to favorites",
+    "remove_from_favorites": "Remove from favorites",
+    "popup_card": "Popup card",
+    "entity_card": "Entity card",
+    "settings": "Entity settings",
+    "group": "Group by devices",
+    "ungroup": "Ungroup by devices",
+    "enable": "Enable entity",
+    "disable": "Disable entity in DD",
+    "disable_all": "Disable all entities",
+    "hide_all": "Hide all entities",
+    "exclude": "Exclude entity in DD",
+    "hide": "Hide entity in DD",
+    "hide_in_area": "Hide entity from area views",
+    "unhide_in_area": "Show entity in area views",
+    "unhide": "Unhide entity",
+    "use_popup_card": "Use own popup card",
+    "use_entity_card": "Use own entity card",
+    "friendly_name": "Rename for DD",
+    "hidden": "The following entities are hidden:",
+    "disabled": "The following entities are disabled:",
+    "unavailable": "The following entities are unavailable:"
+  },
+  "favorite": {
+    "title": "Favorite",
+    "title_plural": "Favorites",
+    "all_favorites": "All favorites"
+  },
+  "home": {
+    "title": "Home"
+  },
+  "area": {
+    "sensor_entities": "Sensors below the area name",
+    "sensor_entities_helper": "Their values are shown below the area name. A chosen sensor replaces the average of its kind in this area (for example one thermometer instead of the average of all).",
+    "binary_sensor_entities": "Binary sensors below the area name",
+    "binary_sensor_entities_helper": "Their state is shown after the values, for example \"Window: Open\".",
+    "title": "Area",
+    "title_plural": "Areas",
+    "edit_area_button": "Edit area button",
+    "group_by_floor": "Group by floor",
+    "ungroup_by_floor": "Ungroup by floor",
+    "icon": "Area icon",
+    "hide_icon": "Hide icon",
+    "graph_entity": "Graph in the area tile",
+    "graph_entity_helper": "Sensor whose history is drawn at the bottom of the tile. Leave empty for no graph.",
+    "graph_hours": "Graph period",
+    "graph_hours_6": "6 hours",
+    "graph_hours_12": "12 hours",
+    "graph_hours_24": "24 hours",
+    "graph_hours_48": "2 days",
+    "graph_hours_168": "7 days",
+    "graph_open_history": "Show history",
+    "toggle_all_off": "Tap to turn off all {domain} in this area",
+    "toggle_all_on": "Tap to turn on all {domain} in this area",
+    "floor": "Area floor",
+    "no_floor": "No floor",
+    "disable": "Disable area in DD",
+    "disabled": "The following areas are disabled:",
+    "enable": "Enable area"
+  },
+  "area_binary_sensor": {
+    "summary": {
+      "valve": {
+        "zero": "Valves closed",
+        "one": "1 valve open",
+        "many": "{count} valves open"
+      },
+      "carbon_monoxide": {
+        "zero": "No carbon monoxide",
+        "one": "Carbon monoxide detected",
+        "many": "Carbon monoxide detected"
+      },
+      "gas": {
+        "zero": "No gas",
+        "one": "Gas detected",
+        "many": "Gas detected"
+      },
+      "occupancy": {
+        "zero": "Unoccupied",
+        "one": "Occupied",
+        "many": "Occupied"
+      },
+      "opening": {
+        "zero": "All closed",
+        "one": "1 contact open",
+        "many": "{count} contacts open"
+      },
+      "presence": {
+        "zero": "No presence",
+        "one": "Presence detected",
+        "many": "Presence detected"
+      },
+      "problem": {
+        "zero": "No problem",
+        "one": "Problem detected",
+        "many": "{count} problems"
+      },
+      "running": {
+        "zero": "Not running",
+        "one": "1 running",
+        "many": "{count} running"
+      },
+      "cold": {
+        "zero": "No cold detected",
+        "one": "Cold detected",
+        "many": "Cold detected"
+      },
+      "door": {
+        "zero": "Doors closed",
+        "one": "1 door open",
+        "many": "{count} doors open"
+      },
+      "fallback": {
+        "zero": "{label}: off",
+        "one": "{label}: active",
+        "many": "{label}: {count} active"
+      },
+      "garage_door": {
+        "zero": "Garage door closed",
+        "one": "1 garage door open",
+        "many": "{count} garage doors open"
+      },
+      "lock": {
+        "zero": "Locks secured",
+        "one": "1 lock unlocked",
+        "many": "{count} locks unlocked"
+      },
+      "moisture": {
+        "zero": "Dry",
+        "one": "Moisture detected",
+        "many": "Moisture detected"
+      },
+      "motion": {
+        "zero": "No motion",
+        "one": "Motion detected",
+        "many": "Motion detected"
+      },
+      "safety": {
+        "zero": "Safe",
+        "one": "Unsafe",
+        "many": "Unsafe"
+      },
+      "smoke": {
+        "zero": "No smoke",
+        "one": "Smoke detected",
+        "many": "Smoke detected"
+      },
+      "sound": {
+        "zero": "No sound",
+        "one": "Sound detected",
+        "many": "Sound detected"
+      },
+      "vibration": {
+        "zero": "No vibration",
+        "one": "Vibration detected",
+        "many": "Vibration detected"
+      },
+      "window": {
+        "zero": "Windows closed",
+        "one": "1 window open",
+        "many": "{count} windows open"
+      }
+    }
+  },
+  "device": {
+    "opening": "Opening",
+    "garage_door": "Garage door",
+    "valve": "Valve",
+    "humidifier": "Humidifier",
+    "lawn_mower": "Lawn mower",
+    "detected": "detected",
+    "title": "Device",
+    "title_plural": "devices",
+    "edit_device_button": "Edit device button",
+    "edit_device_card": "Set custom entities card for domain ",
+    "edit_device_popup": "Set custom entities popup for domain ",
+    "current_blueprint_card": "You are currently using the following blueprint for all entities cards in the domain ",
+    "current_blueprint_popup": "You are currently using the following blueprint for all entities popups in the domain ",
+    "icon_required": "If you want to add it to navbar you must select an icon!",
+    "icon": "Device icon",
+    "show_in_navbar": "Add device page in main navbar",
+    "hide": "Hide device overview",
+    "unhide": "Unhide device overview",
+    "hidden": "The following device overviews are hidden",
+    "see_all": "See all",
+    "turn_all_off": "Turn all off",
+    "on": "on",
+    "open": "open",
+    "closed": "closed",
+    "cover": "Cover",
+    "light": "Light",
+    "climate": "Climate",
+    "sensor": "Sensors",
+    "binary_sensor": "Binary sensors",
+    "media_player": "Media player",
+    "garage": "Garage",
+    "shutter": "Shutter",
+    "running": "Running",
+    "remote": "Remote",
+    "scene": "Scene",
+    "number": "Number",
+    "switch": "Switch",
+    "button": "Button",
+    "water_heater": "Water heater",
+    "camera": "Camera",
+    "select": "Select",
+    "vacuum": "Vacuum",
+    "fan": "Fan",
+    "door": "Door",
+    "window": "Window",
+    "vibration": "Vibration",
+    "motion": "Motion",
+    "occupancy": "Occupancy",
+    "presence": "Presence",
+    "device_tracker": "Device tracker",
+    "lock": "Lock",
+    "siren": "Siren",
+    "input_boolean": "Input boolean",
+    "weather": "Weather",
+    "moisture": "Moisture",
+    "input_select": "Input select",
+    "carbon_monoxide": "Carbon monoxide",
+    "gas": "Gas",
+    "problem": "Problem",
+    "safety": "Safety",
+    "smoke": "Smoke",
+    "tamper": "Tamper",
+    "update": "Update",
+    "person": "Person",
+    "alarm_control_panel": "Alarm control panel",
+    "automation": "Automation",
+    "group": "Group by areas",
+    "ungroup": "Ungroup by areas",
+    "script": "Script",
+    "time": "Time",
+    "event": "Event",
+    "text": "Text"
+  },
+  "more": {
+    "title": "More",
+    "title_plural": "More pages",
+    "pages": "pages",
+    "create": "Create new more page",
+    "edit": "Edit more page",
+    "name_required": "You must specify a name for the page",
+    "icon_required": "If you want to add it to navbar you must select an icon!",
+    "add_navbar": "Add this more page in main navbar",
+    "remove_navbar": "Remove this more page from main navbar",
+    "name": "More page name",
+    "icon": "More page icon"
+  },
+  "blueprint": {
+    "title": "Blueprint",
+    "title_plural": "Blueprints",
+    "yaml_required": "No YAML code entered!",
+    "installed": "Installed",
+    "no_blueprints_installed": "No blueprints installed",
+    "not_installed": "Not installed",
+    "installed_blueprints": "Installed blueprints",
+    "type": "Type blueprint",
+    "used_custom_cards": "Used custom cards",
+    "use": "Use this blueprint",
+    "install": "Install blueprint",
+    "yaml_code": "Blueprint YAML code",
+    "instruction": "Look for the blueprint you want to install in the Dwains Dashboard Community Blueprints Github and paste the blueprint yaml code below. After succesfull installation lovelace and this page will reload. Then you can use the installed blueprint."
+  }
+}

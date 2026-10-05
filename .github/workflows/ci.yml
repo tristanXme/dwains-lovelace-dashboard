@@ -56,8 +56,12 @@ jobs:
       - run: npm run build
       - name: Committed bundle matches the sources
         run: |
-          git diff --exit-code -- custom_components/dwains_dashboard/js custom_components/dwains_dashboard/const.py \
-            || (echo "::error::Run 'npm run build' and commit the result." && exit 1)
+          changes=$(git status --porcelain -- custom_components/dwains_dashboard/js custom_components/dwains_dashboard/const.py)
+          if [ -n "$changes" ]; then
+            echo "$changes"
+            echo "::error::Run 'npm run build' and commit the result."
+            exit 1
+          fi
 
   e2e:
     name: Browser tests (real Home Assistant)

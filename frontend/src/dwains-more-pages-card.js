@@ -8,7 +8,7 @@ import { mdiDotsVertical, mdiNotePlus, mdiCog, mdiPencil } from "@mdi/js";
 import { css, html, LitElement } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import translateEngine from './translate-engine';
-import Sortable from 'sortablejs/modular/sortable.complete.esm.js';
+const { loadSortable } = require('./lazy-modules');
 import { subtleMorePagesStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
 const { TimerOwner } = require('./timer-owner');
@@ -344,9 +344,21 @@ class MorePagesCard extends LitElement {
           if (scope) morePagesEditModes.set(scope, value);
         }
 
-        _syncSortable() {
+        // Sortable is loaded on first use; a later sync or leaving edit mode
+        // while it loads wins over this one.
+        async _syncSortable() {
           this._destroySortable();
           if (!this.editMode || !this.isConnected) return;
+          const generation = (this._sortableGeneration = (this._sortableGeneration || 0) + 1);
+          let Sortable;
+          try {
+            Sortable = await loadSortable();
+          } catch (err) {
+            console.error('Dwains Dashboard: failed to load drag and drop (reload the page after an update)', err);
+            return;
+          }
+          if (generation !== this._sortableGeneration || !this.editMode || !this.isConnected) return;
+          this._destroySortable();
           const sortableElement = this.shadowRoot?.querySelector('.sortable');
           if (!sortableElement) return;
           const card = this;

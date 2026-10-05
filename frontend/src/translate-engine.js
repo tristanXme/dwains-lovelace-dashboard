@@ -1,4 +1,5 @@
-import translations from './translations';
+import en from './translations/en.json';
+const { loadedLanguage, requestLanguage } = require('./language-loader');
 
 //From Mini Media Player, Credits to Kalkih
 
@@ -6,13 +7,21 @@ const DEFAULT_LANG = 'en';
 
 const getNestedProp = (obj, path) => path.split('.').reduce((p, c) => p && p[c] || null, obj);
 
+// English is bundled; other languages are loaded on first use.
+const strings = (code) => {
+  if (code === DEFAULT_LANG) return en;
+  const loaded = loadedLanguage(code);
+  if (!loaded) requestLanguage(code);
+  return loaded;
+};
+
 const translation = (hass, label, hassLabel = undefined, fallback = 'unknown') => {
   const lang = hass.selectedLanguage || hass.language || hass.locale && hass.locale.language || DEFAULT_LANG;
   const l639 = lang.split('-')[0];
-  return translations[lang] && getNestedProp(translations[lang], label)
+  return getNestedProp(strings(lang), label)
     || hass && hass.resources && hass.resources[lang] && hass.resources[lang][hassLabel]
-    || translations[l639] && getNestedProp(translations[l639], label)
-    || getNestedProp(translations[DEFAULT_LANG], label)
+    || l639 !== lang && getNestedProp(strings(l639), label)
+    || getNestedProp(en, label)
     || fallback;
 };
 

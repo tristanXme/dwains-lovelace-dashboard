@@ -1,0 +1,300 @@
+{
+  "global": {
+    "enable_edit_mode": "Habilitar modo edición",
+    "disable_edit_mode": "Deshabilitar modo edición",
+    "version": "Version",
+    "disable_clock": "Desactivar reloj",
+    "am_pm_clock": "AM/PM clock",
+    "disable_welcome_message": "Desabilitar mensaje de bienvenida",
+    "settings": "Configuración global",
+    "dashboard_information": "información del Dashboard",
+    "alarm_entity": "Entidad alarma",
+    "weather_entity": "Entidad tiempo",
+    "greeting_morning": "Buenos días",
+    "greeting_afternoon": "Buenas tardes",
+    "greeting_evening": "Buenas noches",
+    "v2_mode": "Enable Dwains Dashboard v2 mode (layout)",
+    "disable_sensor_graph": "Desactivar la visualización del sensor como gráfico"
+  },
+  "editor": {
+    "lovelace_card": "Lovelace Card",
+    "create_lovelace_card": "Crea una nueva lovelace card desde cero",
+    "dwains_dashboard_blueprint": "Dwains Dashboard Blueprint",
+    "use_dwains_dashboard_blueprint": "Usar un Blueprint de Dwain Dashboard para crear una tarjeta",
+    "row_span": "Intervalo de filas",
+    "row": "Fila",
+    "rows": "Filas",
+    "col_span": "Intervalo de Columnas",
+    "column": "Columna",
+    "columns": "Columnas",
+    "default_col_row": "Tamaño predeterminado de columna y fila",
+    "large_col_row": "Tamaño de columna y fila grande",
+    "extra_large_col_row": "Tamaño de columna y fila extra grande"
+  },
+  "entity": {
+    "title": "Entidad",
+    "title_plural": "Entidades",
+    "add_card_to": "Agregar tarjeta a ",
+    "edit_entity": "Editar entidad",
+    "edit_entity_card": "Editar tarjeta de entidad",
+    "edit_entity_popup_card": "Editar tarjeta emergente de entidad",
+    "add_to_favorites": "Agregar a favoritos",
+    "remove_from_favorites": "Quitar de favoritos",
+    "popup_card": "Tarjeta emergente",
+    "entity_card": "Tarjeta de entidad",
+    "settings": "Configuración de entidad",
+    "group": "Agrupar por dispositivos",
+    "ungroup": "Desagrupar por dispositivos",
+    "enable": "Habilitar entidad",
+    "disable": "Deshabilitar entidad en DD",
+    "disable_all": "Disable all entities",
+    "hide_all": "Hide all entities",
+    "exclude": "Exclude entity in DD",
+    "hide": "Ocultar entidad en DD",
+    "unhide": "Mostrar entidad",
+    "use_popup_card": "Utilizar su propia tarjeta emergente",
+    "use_entity_card": "Utilice su propia tarjeta de entidad",
+    "friendly_name": "Renombrar en DD",
+    "hidden": "Las siguientes entidades están ocultas:",
+    "disabled": "Las siguientes entidades estan deshabilitadas:",
+    "unavailable": "Las siguientes entidades no están disponibles:"
+  },
+  "favorite": {
+    "title": "Favorito",
+    "title_plural": "Favoritos",
+    "all_favorites": "Todos los favoritos"
+  },
+  "home": {
+    "title": "Home"
+  },
+  "area": {
+    "sensor_entities": "Sensores bajo el nombre del área",
+    "sensor_entities_helper": "Sus valores aparecen bajo el nombre del área. Un sensor elegido sustituye en esta área la media de su tipo (por ejemplo un termómetro en lugar de la media de todos).",
+    "binary_sensor_entities": "Sensores binarios bajo el nombre del área",
+    "binary_sensor_entities_helper": "Su estado aparece después de los valores, por ejemplo \"Ventana: Abierta\".",
+    "graph_entity": "Gráfico en la tarjeta del área",
+    "graph_entity_helper": "Sensor cuyo historial se dibuja en la parte inferior de la tarjeta. Déjalo vacío para no mostrar gráfico.",
+    "graph_hours": "Periodo del gráfico",
+    "graph_hours_6": "6 horas",
+    "graph_hours_12": "12 horas",
+    "graph_hours_24": "24 horas",
+    "graph_hours_48": "2 días",
+    "graph_hours_168": "7 días",
+    "graph_open_history": "Mostrar historial",
+    "toggle_all_off": "Toca: apagar todos los {domain} de esta área",
+    "toggle_all_on": "Toca: encender todos los {domain} de esta área",
+    "title": "Habitación",
+    "title_plural": "Habitaciónes",
+    "edit_area_button": "Editar Habitación",
+    "group_by_floor": "Agrupar por piso",
+    "ungroup_by_floor": "Desagrupar por piso",
+    "icon": "Icono de Habitación",
+    "hide_icon": "Ocultar icono",
+    "floor": "Piso de Habitación",
+    "no_floor": "Sin piso",
+    "disable": "Disable area in DD",
+    "disabled": "The following areas are disabled:",
+    "enable": "Enable area"
+  },
+  "area_binary_sensor": {
+    "summary": {
+      "valve": {
+        "zero": "Válvulas cerradas",
+        "one": "1 válvula abierta",
+        "many": "{count} válvulas abiertas"
+      },
+      "carbon_monoxide": {
+        "zero": "Sin monóxido de carbono",
+        "one": "Monóxido de carbono detectado",
+        "many": "Monóxido de carbono detectado"
+      },
+      "cold": {
+        "zero": "Sin frío",
+        "one": "Frío detectado",
+        "many": "Frío detectado"
+      },
+      "door": {
+        "zero": "Puertas cerradas",
+        "one": "1 puerta abierta",
+        "many": "{count} puertas abiertas"
+      },
+      "garage_door": {
+        "zero": "Puerta del garaje cerrada",
+        "one": "1 puerta del garaje abierta",
+        "many": "{count} puertas del garaje abiertas"
+      },
+      "gas": {
+        "zero": "Sin gas",
+        "one": "Gas detectado",
+        "many": "Gas detectado"
+      },
+      "lock": {
+        "zero": "Cerraduras bloqueadas",
+        "one": "1 cerradura desbloqueada",
+        "many": "{count} cerraduras desbloqueadas"
+      },
+      "moisture": {
+        "zero": "Seco",
+        "one": "Humedad detectada",
+        "many": "Humedad detectada"
+      },
+      "motion": {
+        "zero": "Sin movimiento",
+        "one": "Movimiento detectado",
+        "many": "Movimiento detectado"
+      },
+      "occupancy": {
+        "zero": "Libre",
+        "one": "Ocupado",
+        "many": "Ocupado"
+      },
+      "opening": {
+        "zero": "Todo cerrado",
+        "one": "1 contacto abierto",
+        "many": "{count} contactos abiertos"
+      },
+      "presence": {
+        "zero": "Sin presencia",
+        "one": "Presencia detectada",
+        "many": "Presencia detectada"
+      },
+      "problem": {
+        "zero": "Sin problemas",
+        "one": "Problema detectado",
+        "many": "{count} problemas"
+      },
+      "running": {
+        "zero": "Detenido",
+        "one": "1 en marcha",
+        "many": "{count} en marcha"
+      },
+      "safety": {
+        "zero": "Seguro",
+        "one": "Inseguro",
+        "many": "Inseguro"
+      },
+      "smoke": {
+        "zero": "Sin humo",
+        "one": "Humo detectado",
+        "many": "Humo detectado"
+      },
+      "sound": {
+        "zero": "Sin sonido",
+        "one": "Sonido detectado",
+        "many": "Sonido detectado"
+      },
+      "vibration": {
+        "zero": "Sin vibración",
+        "one": "Vibración detectada",
+        "many": "Vibración detectada"
+      },
+      "window": {
+        "zero": "Ventanas cerradas",
+        "one": "1 ventana abierta",
+        "many": "{count} ventanas abiertas"
+      },
+      "fallback": {
+        "zero": "{label}: apagado",
+        "one": "{label}: activo",
+        "many": "{label}: {count} activos"
+      }
+    }
+  },
+  "device": {
+    "opening": "Apertura",
+    "garage_door": "Puerta del garaje",
+    "valve": "Válvula",
+    "humidifier": "Humidificador",
+    "lawn_mower": "Robot cortacésped",
+    "detected": "detectado",
+    "running": "En marcha",
+    "occupancy": "Ocupación",
+    "presence": "Presencia",
+    "closed": "cerrado",
+    "garage": "Garaje",
+    "shutter": "Persiana",
+    "title": "Dispositivo",
+    "title_plural": "Dispositivos",
+    "edit_device_button": "Editar dispositivo",
+    "edit_device_card": "Establecer tarjeta de entidades personalizadas para el dominio ",
+    "edit_device_popup": "Establecer una ventana emergente de entidades personalizadas para el dominio",
+    "current_blueprint_card": "Actualmente está utilizando el siguiente modelo para todas las tarjetas de entidades en el dominio",
+    "current_blueprint_popup": "Actualmente está utilizando el siguiente modelo para todas las ventanas emergentes de entidades en el dominio",
+    "icon_required": "Si desea agregarlo a la barra de navegación, debe seleccionar un icono.",
+    "icon": "Icono de dispositivo",
+    "show_in_navbar": "Agregar página de dispositivo en la barra de navegación principal",
+    "hide": "Hide device overview",
+    "unhide": "Unhide device overview",
+    "hidden": "The following device overviews are hidden",
+    "see_all": "Ver todos",
+    "turn_all_off": "Turn all off",
+    "on": "on",
+    "open": "Abierto",
+    "cover": "Cover",
+    "light": "Luz",
+    "climate": "Clima",
+    "sensor": "Sensores",
+    "binary_sensor": "Sensores binarios",
+    "media_player": "Reproductor multimedia",
+    "remote": "Control remoto",
+    "scene": "Escena",
+    "number": "Número",
+    "switch": "Interruptor",
+    "button": "Botón",
+    "water_heater": "Calentador de agua",
+    "camera": "Cámara",
+    "select": "seleccione",
+    "vacuum": "Aspiradora",
+    "fan": "Ventilador",
+    "door": "Puerta",
+    "window": "Ventana",
+    "vibration": "Vibración",
+    "motion": "Movimiento",
+    "device_tracker": "Rastreador de dispositivo",
+    "lock": "Bloquear",
+    "siren": "Siren",
+    "input_boolean": "Entrada booleana",
+    "weather": "Clima",
+    "moisture": "Humedad",
+    "input_select": "Selección de entrada",
+    "carbon_monoxide": "Monoxido de carbono",
+    "gas": "Gas",
+    "problem": "Problema",
+    "safety": "Seguridad",
+    "smoke": "Humo",
+    "tamper": "Manipular",
+    "update": "Actualizar",
+    "person": "Persona",
+    "alarm_control_panel": "Panel de control de Alarma",
+    "automation": "Automation",
+    "group": "Group by areas",
+    "ungroup": "Ungroup by areas"
+  },
+  "more": {
+    "title": "Más",
+    "title_plural": "Páginas extra ",
+    "pages": "páginas",
+    "create": "Crear nueva página extra",
+    "edit": "Editar página extra",
+    "name_required": "Debe especificar un nombre para la página.",
+    "icon_required": "Si desea agregarla a la barra de navegación, debe seleccionar un icono.",
+    "add_navbar": "Agregar esta página extra en la barra de navegación principal",
+    "name": "Nombre de la página extra",
+    "icon": "Icono de la página extra"
+  },
+  "blueprint": {
+    "title": "Blueprint",
+    "title_plural": "Blueprints",
+    "yaml_required": "¡No se ingresó ningún código YAML!",
+    "installed": "Instalado",
+    "no_blueprints_installed": "No hay blueprints instalados",
+    "not_installed": "No instalado",
+    "installed_blueprints": "Blueprints instalados",
+    "type": "Tipo de blueprint",
+    "used_custom_cards": "Tarjetas personalizadas usadas",
+    "use": "Usar este blueprint",
+    "install": "Instalar blueprint",
+    "yaml_code": "Blueprint código YAML",
+    "instruction": "Busque el blueprint que desea instalar en Dwains Dashboard Community Blueprints Github y pegue el código yaml del blueprint a continuación. Después de una instalación exitosa, lovelace y esta página se volverá a cargar. Entonces podrás usar el plano instalado."
+  }
+}

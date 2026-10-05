@@ -5,7 +5,6 @@ import { css, html, LitElement } from 'lit';
 import { clientPreferences } from './client-preferences';
 import { WEATHER_ICONS, STATES_OFF, UNAVAILABLE_STATES, SENSOR_DOMAINS, ALERT_DOMAINS, COVER_DOMAINS, TOGGLE_DOMAINS, CLIMATE_DOMAINS, OTHER_DOMAINS, DEVICE_CLASSES, ALARM_ICONS } from './variables';
 import { computeDomain } from './frontend-helpers';
-import Sortable from 'sortablejs/modular/sortable.complete.esm.js';
 import translateEngine from './translate-engine';
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
@@ -19,6 +18,7 @@ const { websocketReadStore } = require('./websocket-read-store');
 const { loadDashboardRegistrySnapshot } = require('./dashboard-registry-snapshot');
 const { resolveHass } = require('./hass-provider');
 const { loadCardHelpers } = require('./card-helpers-loader');
+const { loadSortable } = require('./lazy-modules');
 const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
 const { attachDeferredCard } = require('./deferred-card');
@@ -1392,35 +1392,10 @@ function getDwainsHass() {
       const value = ev.currentTarget.ddValue;
 
       if(value){
-        this._sortable = [];
-        const sortableElements = this.shadowRoot.querySelectorAll('.sortable');
-        const cardHass = this._hass;
-        for(let i=0; i<sortableElements.length; i++){
-          this._sortable[i] = new Sortable(sortableElements[i], {
-              forceFallback: true,
-              animation: 150,
-              dataIdAttr: "data-entity",
-              handle: '.sortable-move',
-              onEnd: function(event){
-                console.log(event);
-                cardHass.callWS({
-                    type: 'dwains_dashboard/sort_entity',
-                    sortData: JSON.stringify(this.toArray()),
-                    sortType: 'favorite_sort_order',
-                  }).then(
-                      (resp) => {
-                          console.log(resp);
-                      },
-                      (err) => {
-                          console.error('Message failed!', err);
-                      }
-                  );
-              }
-          });
-        }
+        this._attachSortables('.sortable', 'data-entity', 'dwains_dashboard/sort_entity',
+          'favorite_sort_order', () => this.favoriteEditMode);
       } else {
-        this._sortable.forEach(sortElement => sortElement.destroy());
-        this._sortable = undefined;
+        this._destroySortables();
       }
       this.favoriteEditMode = value;
     }
@@ -1431,38 +1406,44 @@ function getDwainsHass() {
       const value = ev.currentTarget.ddValue;
 
       if(value){
-        this._sortable = [];
-        const sortableElements = this.shadowRoot.querySelectorAll('.sortable');
-        const cardHass = this._hass;
-        for(let i=0; i<sortableElements.length; i++){
-          const sortType = (this.areaDisplayGrouped ? 'grouped_sort_order' : 'sort_order');
-          this._sortable[i] = new Sortable(sortableElements[i], {
-              forceFallback: true,
-              animation: 150,
-              dataIdAttr: "data-area-id",
-              handle: '.sortable-move',
-              onEnd: function(event){
-                console.log(event);
-                cardHass.callWS({
-                    type: 'dwains_dashboard/sort_area_button',
-                    sortData: JSON.stringify(this.toArray()),
-                    sortType: sortType
-                  }).then(
-                      (resp) => {
-                          console.log(resp);
-                      },
-                      (err) => {
-                          console.error('Message failed!', err);
-                      }
-                  );
-              }
-          });
-        }
+        this._attachSortables('.sortable', 'data-area-id', 'dwains_dashboard/sort_area_button',
+          this.areaDisplayGrouped ? 'grouped_sort_order' : 'sort_order', () => this.areaEditMode);
       } else {
-        this._sortable.forEach(sortElement => sortElement.destroy());
-        this._sortable = undefined;
+        this._destroySortables();
       }
       this.areaEditMode = value;
+    }
+
+    // Makes the grids matching selector drag-sortable and saves the new order.
+    // Sortable is loaded on first use, so isActive() tells whether the edit
+    // mode is still on once it has arrived.
+    async _attachSortables(selector, dataIdAttr, type, sortType, isActive){
+      let Sortable;
+      try {
+        Sortable = await loadSortable();
+      } catch (err) {
+        console.error('Dwains Dashboard: failed to load drag and drop (reload the page after an update)', err);
+        return;
+      }
+      if(!isActive()) return;
+      this._destroySortables();
+      const cardHass = this._hass;
+      this._sortable = [...this.shadowRoot.querySelectorAll(selector)].map((element) => new Sortable(element, {
+        forceFallback: true,
+        animation: 150,
+        dataIdAttr: dataIdAttr,
+        handle: '.sortable-move',
+        onEnd: function(){
+          cardHass.callWS({
+            type: type,
+            sortData: JSON.stringify(this.toArray()),
+            sortType: sortType,
+          }).then(
+            (resp) => console.log(resp),
+            (err) => console.error('Message failed!', err),
+          );
+        }
+      }));
     }
 
     _destroySortables(){
@@ -1472,40 +1453,12 @@ function getDwainsHass() {
       }
     }
 
-    _initAreaViewSortables(){
-      this._sortable = [];
-      const sortableElements = this.shadowRoot.querySelectorAll('.area-view-entity-sortable');
-      const cardHass = this._hass;
-      for(let i=0; i<sortableElements.length; i++){
-        const sortType = (this.areaViewDisplayGrouped ? 'grouped_sort_order' : 'sort_order');
-        this._sortable[i] = new Sortable(sortableElements[i], {
-            forceFallback: true,
-            animation: 150,
-            dataIdAttr: "data-entity",
-            handle: '.sortable-move',
-            onEnd: function(event){
-              cardHass.callWS({
-                  type: 'dwains_dashboard/sort_entity',
-                  sortData: JSON.stringify(this.toArray()),
-                  sortType: sortType
-                }).then(
-                    (resp) => {
-                        console.log(resp);
-                    },
-                    (err) => {
-                        console.error('Message failed!', err);
-                    }
-                );
-            }
-        });
-      }
-    }
-
     _requestAreaViewSortableRebuild(){
       this._destroySortables();
       this.updateComplete.then(() => {
         if(this.areaViewEditMode){
-          this._initAreaViewSortables();
+          this._attachSortables('.area-view-entity-sortable', 'data-entity', 'dwains_dashboard/sort_entity',
+            this.areaViewDisplayGrouped ? 'grouped_sort_order' : 'sort_order', () => this.areaViewEditMode);
         }
       });
     }

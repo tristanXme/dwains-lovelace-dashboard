@@ -5,7 +5,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { summaryTranslationKey } = require("../src/area-binary-sensors");
 
-// variables.js and translations.js are ES modules; evaluate their plain data.
+// variables.js is an ES module; evaluate its plain data.
 function loadModule(file) {
   const source = fs.readFileSync(path.join(__dirname, "../src", file), "utf8")
     .replace(/export\s+default\s+/, "module.exports = ")
@@ -16,7 +16,12 @@ function loadModule(file) {
 }
 
 const variables = loadModule("variables.js");
-const translations = loadModule("translations.js");
+const translationsDir = path.join(__dirname, "../src/translations");
+const translations = Object.fromEntries(
+  fs.readdirSync(translationsDir)
+    .filter((file) => file.endsWith(".json"))
+    .map((file) => [file.slice(0, -5), JSON.parse(fs.readFileSync(path.join(translationsDir, file), "utf8"))]),
+);
 const get = (object, key) => key.split(".").reduce((value, part) => value?.[part], object);
 
 test("every badge on an area tile has an icon", () => {
