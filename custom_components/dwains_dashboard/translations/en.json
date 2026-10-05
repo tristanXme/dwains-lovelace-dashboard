@@ -226,6 +226,10 @@
           }
         }
       }
+    },
+    "broken_configuration_files": {
+      "title": "Some Dwains Dashboard files cannot be read",
+      "description": "These files in `dwains-dashboard/configs/` are damaged or not valid YAML. The dashboard works without them until they are fixed or removed:\n\n{files}\n\nThis message disappears once the files can be read again."
     }
   }
 }

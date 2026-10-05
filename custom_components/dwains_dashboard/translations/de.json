@@ -226,6 +226,10 @@
           }
         }
       }
+    },
+    "broken_configuration_files": {
+      "title": "Einige Dateien von Dwains Dashboard sind nicht lesbar",
+      "description": "Diese Dateien in `dwains-dashboard/configs/` sind beschädigt oder kein gültiges YAML. Das Dashboard funktioniert ohne sie, bis sie repariert oder entfernt sind:\n\n{files}\n\nDiese Meldung verschwindet, sobald die Dateien wieder lesbar sind."
     }
   }
 }
