@@ -31,21 +31,38 @@ class DwainsDashboardLayout extends LitElement {
 
   static get styles() {
     return css`
+      /* The Lovelace header is hidden, and with it the space it keeps for
+         the notch / status bar (viewport-fit=cover). Keep that space here;
+         the values are 0 on devices without a notch. */
       :host {
         display: block;
         --dd-mobile-navigation-height: 2.75rem;
         --dd-mobile-navigation-content-gap: 0.5rem;
         margin-top: calc(-1 * var(--dd-lovelace-header-offset, 0px));
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+      :host::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: env(safe-area-inset-top, 0px);
+        background: var(--primary-background-color);
+        z-index: 31;
+        pointer-events: none;
       }
       #dwains_dashboard {
         margin: 0 auto;
         font-family: "Open Sans", sans-serif;
         padding-top: 10px;
         padding-bottom: 50px;
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
       }
       #dwains_navigation {
         position: sticky;
-        top: 0;
+        top: env(safe-area-inset-top, 0px);
         z-index: 8;
       }
 

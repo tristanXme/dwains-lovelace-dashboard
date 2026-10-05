@@ -48,9 +48,12 @@
       const sr = this.attachShadow({ mode: "open" });
       const style = document.createElement("style");
       style.textContent =
-        ':host{display:block;--dd-mobile-navigation-height:2.75rem;--dd-mobile-navigation-content-gap:0.5rem;margin-top:calc(-1 * var(--dd-lovelace-header-offset,0px))}' +
-        '#dwains_navigation{position:sticky;top:0;z-index:8}' +
-        '#dwains_dashboard{margin:0 auto;font-family:"Open Sans",sans-serif;padding-top:10px;padding-bottom:50px}' +
+        // Keep the notch / status bar space the hidden Lovelace header kept
+        // (same rules as dwains-dashboard-layout.js).
+        ':host{display:block;--dd-mobile-navigation-height:2.75rem;--dd-mobile-navigation-content-gap:0.5rem;margin-top:calc(-1 * var(--dd-lovelace-header-offset,0px));padding-top:env(safe-area-inset-top,0px)}' +
+        ':host::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--primary-background-color);z-index:31;pointer-events:none}' +
+        '#dwains_navigation{position:sticky;top:env(safe-area-inset-top,0px);z-index:8}' +
+        '#dwains_dashboard{margin:0 auto;font-family:"Open Sans",sans-serif;padding-top:10px;padding-bottom:50px;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}' +
         ":host([mobile-navigation]) #dwains_navigation{position:fixed;left:0;right:0;top:auto;bottom:0;z-index:30}" +
         ":host([mobile-navigation]) #dwains_dashboard{padding-top:1px;padding-bottom:calc(var(--dd-mobile-navigation-height) + var(--dd-mobile-navigation-content-gap) + env(safe-area-inset-bottom))}";
       sr.appendChild(style);
