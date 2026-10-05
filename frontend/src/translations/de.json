@@ -1,5 +1,6 @@
 {
   "global": {
+    "save_failed": "Speichern fehlgeschlagen",
     "invert_cover": "Rollläden umkehren",
     "enable_edit_mode": "Aktiviere Bearbeitungsmodus",
     "disable_edit_mode": "Deaktiviere Bearbeitungsmodus",

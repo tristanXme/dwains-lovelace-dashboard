@@ -20,6 +20,11 @@ test("the first entry is selected only when there is one", () => {
   assert.equal(initialSelection(undefined, []), "");
 });
 
+test("a selection that is no longer listed falls back to the first entry", () => {
+  assert.equal(initialSelection("removed", ["living", "kitchen"]), "living");
+  assert.equal(initialSelection("removed", []), "");
+});
+
 test("homepage: no areas at all", () => {
   assert.equal(homepageEmptyReason({ areas: [], disabledAreas: [], data: [] }), "no_areas");
   assert.equal(homepageEmptyReason({ areas: undefined, data: [] }), "no_areas");

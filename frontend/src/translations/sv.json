@@ -1,5 +1,6 @@
 {
   "global": {
+    "save_failed": "Det gick inte att spara",
     "enable_edit_mode": "Aktivera redigeringsläge",
     "disable_edit_mode": "Inaktivera redigeringsläge",
     "version": "Version",

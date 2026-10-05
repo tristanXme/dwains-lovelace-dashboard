@@ -1,5 +1,6 @@
 {
   "global": {
+    "save_failed": "Salvataggio non riuscito",
     "enable_edit_mode": "Abilita la modalità di modifica",
     "disable_edit_mode": "Disabilita la modalità di modifica",
     "version": "Versione",

@@ -1,5 +1,6 @@
 {
   "global": {
+    "save_failed": "L'enregistrement a échoué",
     "enable_edit_mode": "Activer le mode d'édition",
     "disable_edit_mode": "Désactiver le mode d'édition",
     "version": "Version",

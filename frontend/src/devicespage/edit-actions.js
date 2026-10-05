@@ -2,6 +2,7 @@ import { popUp } from "../dwains-popup";
 import { fireEvent } from "../card-tools-compat";
 const { loadSortable } = require('../lazy-modules');
 import translateEngine from '../translate-engine';
+import { showSaveError } from '../save-error-toast';
 const { closeParentDropdown } = require('../dropdown-controller');
 const { entitySettingsFromConfiguration } = require('../entity-settings-config');
 
@@ -212,7 +213,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
         device: device,
         key: key,
         value: value,
-      }).catch((err) => console.error('Message failed!', err));
+      }).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleDeviceEditCardClick(ev) {
@@ -270,7 +271,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
       this._hass.callWS({
         type: 'dwains_dashboard/sort_device_button',
         sortData: JSON.stringify(this._sortable.toArray()),
-      }).catch((err) => console.error('Message failed!', err));
+      }).catch((err) => showSaveError(this._hass, err));
     }
     _handleDeviceEditModeClicked(ev){
       closeParentDropdown(ev);
@@ -299,7 +300,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
             type: 'dwains_dashboard/sort_entity',
             sortData: JSON.stringify(this.toArray()),
             sortType: sortType
-          }).catch((err) => console.error('Message failed!', err));
+          }).catch((err) => showSaveError(cardHass, err));
         });
       } else {
         this._destroySortables();

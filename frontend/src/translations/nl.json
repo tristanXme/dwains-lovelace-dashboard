@@ -1,5 +1,6 @@
 {
   "global": {
+    "save_failed": "Opslaan mislukt",
     "enable_edit_mode": "Bewerkingsmodus inschakelen",
     "disable_edit_mode": "Bewerkingsmodus uitschakelen",
     "version": "Versie",

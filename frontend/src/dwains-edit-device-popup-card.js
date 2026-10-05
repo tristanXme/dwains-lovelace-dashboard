@@ -1,5 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import translateEngine from './translate-engine';
+import { showSaveError } from './save-error-toast';
 import { closePopup } from "./helpers";
 const { websocketReadStore } = require('./websocket-read-store');
 const { installBlueprint } = require('./blueprint-install');
@@ -266,7 +267,7 @@ class DwainsEditDevicePopupCard extends LitElement {
                 closePopup();
             },
             (err) => {
-                console.error('Message failed!', err);
+                showSaveError(this.hass, err);
             }
         );
       }
@@ -282,7 +283,7 @@ class DwainsEditDevicePopupCard extends LitElement {
               this.requestUpdate();
             },
             (err) => {
-                console.error('Message failed!', err);
+                showSaveError(this.hass, err);
             }
         );
       }
@@ -305,7 +306,7 @@ class DwainsEditDevicePopupCard extends LitElement {
                 closePopup();
             },
             (err) => {
-                console.error('Message failed!', err);
+                showSaveError(this.hass, err);
             }
         );
       }
@@ -319,8 +320,9 @@ class DwainsEditDevicePopupCard extends LitElement {
           translate: (key) => translateEngine(this.hass, key),
           onInstalled: () => {
             websocketReadStore.invalidate(this.hass);
-            this._loadBlueprints();
             this.requestUpdate();
+            // Returned so installBlueprint waits for the list and logs a failed reload.
+            return this._loadBlueprints();
           },
         });
       }

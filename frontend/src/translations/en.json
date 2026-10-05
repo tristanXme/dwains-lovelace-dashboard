@@ -1,5 +1,6 @@
 {
   "global": {
+    "save_failed": "Saving failed",
     "enable_edit_mode": "Enable edit mode",
     "disable_edit_mode": "Disable edit mode",
     "version": "Version",

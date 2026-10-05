@@ -86,3 +86,16 @@ test("a failing refresh does not turn a successful install into an error", async
     console.error = originalError;
   }
 });
+
+test("the install finishes only after the list is reloaded", async () => {
+  let reloaded = false;
+  const result = await installBlueprint({
+    hass: { localize: (key) => key, callWS: async () => ({ succesfull: "test.yaml" }) },
+    yamlCode: BLUEPRINT,
+    translate,
+    notify: () => {},
+    onInstalled: () => new Promise((resolve) => setTimeout(() => { reloaded = true; resolve(); }, 5)),
+  });
+  assert.equal(result, true);
+  assert.equal(reloaded, true);
+});

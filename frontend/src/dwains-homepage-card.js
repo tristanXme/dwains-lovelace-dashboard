@@ -6,6 +6,7 @@ import { clientPreferences } from './client-preferences';
 import { WEATHER_ICONS, STATES_OFF, UNAVAILABLE_STATES, SENSOR_DOMAINS, ALERT_DOMAINS, COVER_DOMAINS, TOGGLE_DOMAINS, CLIMATE_DOMAINS, OTHER_DOMAINS, DEVICE_CLASSES, ALARM_ICONS } from './variables';
 import { computeDomain } from './frontend-helpers';
 import translateEngine from './translate-engine';
+import { showSaveError } from './save-error-toast';
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
@@ -1067,7 +1068,7 @@ function getDwainsHass() {
         entities: JSON.stringify([...data.entities]),
         key: key,
         value: value,
-      }).catch((err) => console.error('Message failed!', err));
+      }).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleAreaClick(event){
@@ -1281,7 +1282,7 @@ function getDwainsHass() {
         areaId: areaId,
         key: key,
         value: value,
-      }).catch((err) => console.error('Message failed!', err));
+      }).catch((err) => showSaveError(this._hass, err));
 
     }
 
@@ -1344,7 +1345,7 @@ function getDwainsHass() {
         type: 'dwains_dashboard/edit_entity_favorite',
         entityId: entityId,
         favorite: true,
-      }).catch((err) => console.error('Message failed!', err));
+      }).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleEntityRemoveFromFavoritesClick(ev){
@@ -1356,7 +1357,7 @@ function getDwainsHass() {
         type: 'dwains_dashboard/edit_entity_favorite',
         entityId: entityId,
         favorite: false,
-      }).catch((err) => console.error('Message failed!', err));
+      }).catch((err) => showSaveError(this._hass, err));
 
     }
 
@@ -1447,7 +1448,7 @@ function getDwainsHass() {
             type: type,
             sortData: JSON.stringify(this.toArray()),
             sortType: sortType,
-          }).catch((err) => console.error('Message failed!', err));
+          }).catch((err) => showSaveError(cardHass, err));
         }
       }));
     }

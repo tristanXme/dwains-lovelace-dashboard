@@ -4,10 +4,7 @@
 // The text goes to the backend unchanged; it parses and validates it
 // (blueprint_commands.py).
 
-function errorText(error) {
-  if (typeof error === "string") return error;
-  return error?.message || error?.code || String(error);
-}
+const { errorText } = require("./save-error");
 
 async function installBlueprint({
   hass,

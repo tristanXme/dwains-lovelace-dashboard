@@ -1,5 +1,6 @@
 {
   "global": {
+    "save_failed": "保存失败",
     "enable_edit_mode": "启用编辑模式",
     "disable_edit_mode": "禁用编辑模式",
     "version": "版本",
