@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import os
-import uuid
 from typing import Any
 
+from .mutation_files import replace_files
 from .yaml_files import dump_yaml_file, load_yaml_file
 
 
@@ -38,10 +38,6 @@ BLUEPRINT_FOLDERS = (
     "apexcharts_card_templates/blueprints",
 )
 
-# Moves of existing files; a name of its own so tests can make one fail.
-_move = os.replace
-
-
 def blueprint_file_paths(dashboard_path: str, filename: str) -> dict[str, str]:
     """Paths of a blueprint's files, keyed by folder (see BLUEPRINT_FOLDERS)."""
     return {
@@ -53,29 +49,13 @@ def blueprint_file_paths(dashboard_path: str, filename: str) -> dict[str, str]:
 def replace_blueprint_files(files: dict[str, Any]) -> None:
     """Write the given files together; None removes a file.
 
-    Existing files are moved aside first. If anything fails, the files
-    written so far are removed and the previous ones are put back, so a
-    blueprint is never left half installed or half removed.
+    A blueprint is never left half installed or half removed (replace_files).
     """
-    token = uuid.uuid4().hex
-    aside: dict[str, str] = {}
-    written: list[str] = []
-    try:
-        for path in files:
-            if os.path.lexists(path):
-                backup = f"{path}.{token}.previous"
-                _move(path, backup)
-                aside[path] = backup
-        for path, content in files.items():
-            if content is not None:
-                dump_yaml_file(path, content)
-                written.append(path)
-    except BaseException:
-        for path in written:
-            if os.path.lexists(path):
-                os.remove(path)
-        for path, backup in aside.items():
-            os.replace(backup, path)
-        raise
-    for backup in aside.values():
-        os.remove(backup)
+    replace_files(
+        {
+            path: None
+            if content is None
+            else lambda target, content=content: dump_yaml_file(target, content)
+            for path, content in files.items()
+        }
+    )

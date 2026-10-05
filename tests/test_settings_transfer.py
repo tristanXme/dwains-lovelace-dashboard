@@ -436,3 +436,58 @@ def test_an_existing_backup_is_never_overwritten(tmp_path: Path) -> None:
     assert result.backup != "import-20260101-000000"
     assert (tmp_path / "backups/import-20260101-000000/configs/areas.yaml").read_text() == "older backup\n"
     assert (tmp_path / "backups" / result.backup / "configs/areas.yaml").read_text().startswith("kitchen")
+
+
+def test_export_checks_sizes_before_reading(tmp_path: Path, monkeypatch) -> None:
+    _dashboard(tmp_path)
+    (tmp_path / "configs/big.yaml").write_text("a: " + "x" * 200 + "\n")
+    monkeypatch.setattr(settings_transfer, "MAX_FILE_BYTES", 100)
+    opened = []
+    real_open = open
+    monkeypatch.setattr(
+        "builtins.open", lambda path, *args, **kw: opened.append(path) or real_open(path, *args, **kw)
+    )
+    with pytest.raises(ExportError, match="file too large: configs/big.yaml"):
+        export_archive(str(tmp_path), "20260101-000000", {})
+    assert opened == []
+
+
+def test_two_exports_in_the_same_second_are_both_kept(tmp_path: Path) -> None:
+    _dashboard(tmp_path)
+    first, _ = export_archive(str(tmp_path), "20260101-000000", {})
+    second, _ = export_archive(str(tmp_path), "20260101-000000", {})
+    assert first == "dwains-dashboard-20260101-000000.zip"
+    assert second == "dwains-dashboard-20260101-000000-2.zip"
+    assert (tmp_path / "backups/exports" / first).is_file()
+
+
+def test_import_checks_sizes_before_unpacking(monkeypatch) -> None:
+    monkeypatch.setattr(settings_transfer, "MAX_FILE_BYTES", 100)
+    with pytest.raises(InvalidArchive, match="file too large: configs/big.yaml"):
+        read_archive(_zip({"configs/areas.yaml": "a: 1\n", "configs/big.yaml": "x" * 200}))
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr(MANIFEST_NAME, " " * (settings_transfer.MAX_MANIFEST_BYTES + 1))
+        archive.writestr("configs/areas.yaml", "a: 1\n")
+    with pytest.raises(InvalidArchive, match="manifest too large"):
+        read_archive(buffer.getvalue())
+
+    # Totals are checked before the manifest is read.
+    monkeypatch.setattr(settings_transfer, "MAX_FILES", 1)
+    with pytest.raises(InvalidArchive, match="too many files"):
+        read_archive(_zip({"configs/a.yaml": "a: 1\n", "configs/b.yaml": "b: 1\n"}, {"format": "other"}))
+
+
+def test_old_import_backups_are_pruned(tmp_path: Path) -> None:
+    tmp_path = tmp_path / "dashboard"
+    _dashboard(tmp_path)
+    for number in range(12):
+        folder = tmp_path / f"backups/import-2025{number:04d}-000000"
+        folder.mkdir(parents=True)
+        os.utime(folder, (number, number))
+    result = import_archive(str(tmp_path), _zip({"configs/areas.yaml": "new: {}\n"}), "20260101-000000")
+    imports = sorted(p.name for p in (tmp_path / "backups").iterdir() if p.name.startswith("import-"))
+    assert len(imports) == 10
+    assert result.backup in imports
+    assert (tmp_path / "backups/cleanup-1").is_dir()

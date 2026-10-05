@@ -21,6 +21,8 @@ import zipfile
 from dataclasses import dataclass, field
 from typing import Any
 
+from .mutation_files import prune_backups, unique_path
+
 MANIFEST_NAME = "dwains-dashboard-export.json"
 EXPORT_FORMAT = "dwains-dashboard-export"
 EXPORT_FORMAT_VERSION = 1
@@ -30,6 +32,9 @@ KEEP_EXPORTS = 5
 ALLOWED_SUFFIXES = (".yaml", ".yml")
 MAX_FILES = 5000
 MAX_TOTAL_BYTES = 50 * 1024 * 1024
+# Dashboard YAML files are small; anything bigger is not dashboard content.
+MAX_FILE_BYTES = 5 * 1024 * 1024
+MAX_MANIFEST_BYTES = 64 * 1024
 EXPORT_PREFIX = "dwains-dashboard-"
 
 
@@ -67,6 +72,12 @@ def _check_file(relative: str, data: bytes) -> str | None:
         data.decode("utf-8")
     except UnicodeDecodeError:
         return f"not UTF-8 text: {relative}"
+    return None
+
+
+def _check_size(relative: str, size: int) -> str | None:
+    if size > MAX_FILE_BYTES:
+        return f"file too large: {relative} ({size} bytes, at most {MAX_FILE_BYTES})"
     return None
 
 
@@ -130,21 +141,29 @@ def export_archive(
     Returns the archive file name and the number of exported files. Only the
     newest KEEP_EXPORTS archives are kept.
     """
-    files: dict[str, bytes] = {}
-    for relative in _exported_files(base):
-        with open(os.path.join(base, *relative.split("/")), "rb") as handle:
-            files[relative] = handle.read()
-    # The same checks the import applies, so the archive can be imported.
-    problem = _check_totals(len(files), sum(map(len, files.values()))) or next(
-        (reason for relative, data in files.items() if (reason := _check_file(relative, data))),
+    # The same checks the import applies, so the archive can be imported;
+    # sizes are checked before anything is read into memory.
+    relatives = _exported_files(base)
+    sizes = {
+        relative: os.path.getsize(os.path.join(base, *relative.split("/")))
+        for relative in relatives
+    }
+    problem = _check_totals(len(sizes), sum(sizes.values())) or next(
+        (reason for relative, size in sizes.items() if (reason := _check_size(relative, size))),
         None,
     )
     if problem:
         raise ExportError(problem)
+    files: dict[str, bytes] = {}
+    for relative in relatives:
+        with open(os.path.join(base, *relative.split("/")), "rb") as handle:
+            files[relative] = handle.read()
+        if problem := _check_file(relative, files[relative]):
+            raise ExportError(problem)
 
     exports = os.path.join(base, BACKUPS_FOLDER, EXPORTS_FOLDER)
     os.makedirs(exports, exist_ok=True)
-    filename = f"{EXPORT_PREFIX}{stamp}.zip"
+    filename = os.path.basename(unique_path(exports, f"{EXPORT_PREFIX}{stamp}", ".zip"))
     data = {
         **manifest,
         "format": EXPORT_FORMAT,
@@ -202,10 +221,31 @@ def read_archive(content: bytes) -> tuple[dict[str, Any], dict[str, bytes]]:
     except (zipfile.BadZipFile, ValueError) as err:
         raise InvalidArchive("not a zip file") from err
     with archive:
+        # Sizes come from the archive's directory; nothing is unpacked
+        # before they are checked.
         try:
-            manifest = json.loads(archive.read(MANIFEST_NAME))
+            manifest_info = archive.getinfo(MANIFEST_NAME)
         except KeyError as err:
             raise InvalidArchive("manifest missing") from err
+        if manifest_info.file_size > MAX_MANIFEST_BYTES:
+            raise InvalidArchive("manifest too large")
+        members = [info for info in archive.infolist() if not info.is_dir()]
+        problem = _check_totals(
+            len([info for info in members if info.filename != MANIFEST_NAME]),
+            sum(info.file_size for info in members if info.filename != MANIFEST_NAME),
+        ) or next(
+            (
+                reason
+                for info in members
+                if info.filename != MANIFEST_NAME
+                and (reason := _check_size(info.filename, info.file_size))
+            ),
+            None,
+        )
+        if problem:
+            raise InvalidArchive(problem)
+        try:
+            manifest = json.loads(archive.read(manifest_info))
         except ValueError as err:
             raise InvalidArchive("manifest unreadable") from err
         if (
@@ -214,14 +254,6 @@ def read_archive(content: bytes) -> tuple[dict[str, Any], dict[str, bytes]]:
             or manifest.get("format_version") != EXPORT_FORMAT_VERSION
         ):
             raise InvalidArchive("unknown export format")
-
-        members = [info for info in archive.infolist() if not info.is_dir()]
-        problem = _check_totals(
-            len([info for info in members if info.filename != MANIFEST_NAME]),
-            sum(info.file_size for info in members if info.filename != MANIFEST_NAME),
-        )
-        if problem:
-            raise InvalidArchive(problem)
 
         files: dict[str, bytes] = {}
         for info in members:
@@ -294,6 +326,7 @@ def import_archive(base: str, content: bytes, stamp: str) -> ImportResult:
     finally:
         remove_path(staging)
 
+    prune_backups(backups, "import-")
     options = manifest.get("options")
     return ImportResult(
         files=len(files),

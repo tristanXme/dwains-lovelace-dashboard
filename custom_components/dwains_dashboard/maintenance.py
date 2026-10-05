@@ -6,6 +6,7 @@ import logging
 import os
 from collections.abc import Callable
 from datetime import datetime
+from typing import TypeVar
 
 from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.helpers import area_registry as ar
@@ -20,8 +21,10 @@ from .maintenance_files import (
     remove_orphans,
     rename_entity,
 )
+from .mutation_files import prune_backups, unique_path
 
 _LOGGER = logging.getLogger(__name__)
+_T = TypeVar("_T")
 
 CONFIGS_PATH = "dwains-dashboard/configs"
 BACKUPS_PATH = "dwains-dashboard/backups"
@@ -97,6 +100,23 @@ def _notify_dashboard(hass: HomeAssistant) -> None:
         hass.bus.async_fire(event_type)
 
 
+def _with_backup(
+    prefix: str, backups_path: str, change: Callable[[str], _T]
+) -> tuple[_T, str]:
+    """Run change(backup_dir) with a fresh backup folder, then prune old ones.
+
+    Runs under the mutation lock, so the free name stays free until change()
+    creates the folder (only when it backs something up). Returns change()'s
+    result and the folder name.
+    """
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup_dir = unique_path(backups_path, f"{prefix}{stamp}")
+    result = change(backup_dir)
+    if os.path.isdir(backup_dir):
+        prune_backups(backups_path, prefix)
+    return result, os.path.basename(backup_dir)
+
+
 async def async_remove_orphans(hass: HomeAssistant) -> tuple[int, str]:
     """Remove orphaned entries after backing them up.
 
@@ -107,15 +127,15 @@ async def async_remove_orphans(hass: HomeAssistant) -> tuple[int, str]:
     runtime = get_configuration_runtime(hass)
     async with runtime.mutation_lock:
         report = await async_find_orphans(hass)
-        backup = os.path.join(
-            BACKUPS_PATH, f"cleanup-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        removed, backup_name = await hass.async_add_executor_job(
+            _with_backup,
+            "cleanup-",
+            hass.config.path(BACKUPS_PATH),
+            lambda backup_dir: remove_orphans(
+                hass.config.path(CONFIGS_PATH), report, backup_dir
+            ),
         )
-        removed = await hass.async_add_executor_job(
-            remove_orphans,
-            hass.config.path(CONFIGS_PATH),
-            report,
-            hass.config.path(backup),
-        )
+    backup = os.path.join(BACKUPS_PATH, backup_name)
     if removed:
         _LOGGER.info("Removed %d orphaned dashboard entries, backup in %s", removed, backup)
         _notify_dashboard(hass)
@@ -139,17 +159,17 @@ async def async_migrate_area_sensor_entities(hass: HomeAssistant) -> None:
         areas_by_entity[entry.entity_id] = area_id
 
     runtime = get_configuration_runtime(hass)
-    backup = os.path.join(
-        BACKUPS_PATH, f"migration-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-    )
     async with runtime.mutation_lock:
-        moved, dropped = await hass.async_add_executor_job(
-            migrate_area_sensor_entities,
-            hass.config.path(CONFIGS_PATH),
-            areas_by_entity.get,
-            hass.config.path(backup),
+        (moved, dropped), backup_name = await hass.async_add_executor_job(
+            _with_backup,
+            "migration-",
+            hass.config.path(BACKUPS_PATH),
+            lambda backup_dir: migrate_area_sensor_entities(
+                hass.config.path(CONFIGS_PATH), areas_by_entity.get, backup_dir
+            ),
         )
         runtime.clear_cache()
+    backup = os.path.join(BACKUPS_PATH, backup_name)
     if moved or dropped:
         _LOGGER.info(
             "Moved %d explicit area sensors into their areas (backup in %s)%s",
