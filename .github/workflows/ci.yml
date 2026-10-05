@@ -20,10 +20,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ha: [stable, beta]
+        # minimum: the oldest supported release (hacs.json).
+        ha: [minimum, stable, beta]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.14"
       - name: Install test dependencies
@@ -33,6 +34,8 @@ jobs:
             pip install --pre pytest-homeassistant-custom-component
             pip install "$(grep -h home-assistant-frontend \
               "$(python -c 'import homeassistant, os; print(os.path.dirname(homeassistant.__file__))')/package_constraints.txt")"
+          elif [ "${{ matrix.ha }}" = "minimum" ]; then
+            pip install -r requirements_test_min.txt
           else
             pip install -r requirements_test.txt
           fi
@@ -46,8 +49,8 @@ jobs:
     name: Frontend build is reproducible
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -73,13 +76,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ha: [stable, beta]
+        # minimum: the oldest supported release (hacs.json).
+        ha: [minimum, stable, beta]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.14"
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -90,6 +94,8 @@ jobs:
             pip install --pre pytest-homeassistant-custom-component
             pip install "$(grep -h home-assistant-frontend \
               "$(python -c 'import homeassistant, os; print(os.path.dirname(homeassistant.__file__))')/package_constraints.txt")"
+          elif [ "${{ matrix.ha }}" = "minimum" ]; then
+            pip install -r requirements_test_min.txt
           else
             pip install -r requirements_test.txt
           fi
@@ -111,7 +117,7 @@ jobs:
       # `npx playwright show-trace`), browser console and Home Assistant log.
       - name: Upload test artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: e2e-${{ matrix.ha }}
           path: |
@@ -124,15 +130,15 @@ jobs:
     name: hassfest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: home-assistant/actions/hassfest@master
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: home-assistant/actions/hassfest@06749dd8c0b54f350bc69c8752456cee498808a3 # master
 
   hacs:
     name: HACS validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: hacs/action@main
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: hacs/action@1ebf01c408f29afcb6406bd431bc98fd8cbb15aa # main
         with:
           category: integration
           # Repository settings of a fork, not code: enable issues, add

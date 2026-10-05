@@ -3,9 +3,10 @@
 // What the homepage and the devices page show when they have nothing to list,
 // and a safe selection for an empty list.
 
-// The selected id, or the first one, or "" when there is none.
+// The selected id while it is still listed, else the first one, or "" when
+// there is none (a removed or hidden area does not stay selected).
 function initialSelection(current, ids) {
-  if (typeof current === "string" && current.length) return current;
+  if (typeof current === "string" && current.length && ids.includes(current)) return current;
   return ids.find((id) => typeof id === "string" && id.length) ?? "";
 }
 

@@ -108,7 +108,7 @@ npm test          # unit tests
 npm run build     # writes custom_components/dwains_dashboard/js/* (+ .gz) and const.py revision
 
 # Backend (Python 3.14)
-pip install -r requirements_test.txt
+pip install -r requirements_test.txt   # requirements_test_min.txt: oldest supported release
 pytest
 
 # Browser tests against a real Home Assistant (port 8124)
@@ -120,8 +120,10 @@ Strings live in `frontend/src/translations/<language>.json`; English is
 bundled, the build writes the others to `js/lang/`.
 
 CI rebuilds the bundle and fails if the committed files differ from the sources,
-runs the unit and browser tests against the pinned Home Assistant release and
-the newest beta, and validates the integration with hassfest and HACS.
+runs the unit and browser tests against the oldest supported Home Assistant
+release (2026.5), the pinned current release and the newest beta, and validates
+the integration with hassfest and HACS. The workflow actions are pinned to
+commit SHAs; Dependabot proposes their updates.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 

@@ -11,14 +11,18 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
 
-from .blueprint_files import load_blueprint_files
+from .blueprint_files import (
+    blueprint_file_paths,
+    load_blueprint_files,
+    replace_blueprint_files,
+)
 from .configuration_runtime import serialize_configuration_mutation
 from .input_validation import DashboardInputError, safe_path_segment
-from .mutation_files import remove_file_if_exists
-from .yaml_files import dump_yaml_file, parse_yaml_text
+from .yaml_files import parse_yaml_text
 
 
 _LOGGER = logging.getLogger(__name__)
+DASHBOARD_PATH = "dwains-dashboard"
 
 
 @websocket_api.async_response
@@ -74,31 +78,15 @@ async def ws_handle_install_blueprint(
     if not isinstance(name, str) or not slugify(name):
         raise DashboardInputError("Blueprint has no usable name")
     filename = f"{slugify(name)}.yaml"
-    if filecontent.get("button_card_templates"):
-        await hass.async_add_executor_job(
-            dump_yaml_file,
-            hass.config.path(
-                f"dwains-dashboard/button_card_templates/blueprints/{filename}"
-            ),
-            filecontent.get("button_card_templates"),
-        )
-        filecontent.pop("button_card_templates")
-
-    if filecontent.get("apexcharts_card_templates"):
-        await hass.async_add_executor_job(
-            dump_yaml_file,
-            hass.config.path(
-                f"dwains-dashboard/apexcharts_card_templates/blueprints/{filename}"
-            ),
-            filecontent.get("apexcharts_card_templates"),
-        )
-        filecontent.pop("apexcharts_card_templates")
-
-    await hass.async_add_executor_job(
-        dump_yaml_file,
-        hass.config.path(f"dwains-dashboard/blueprints/{filename}"),
-        filecontent,
-    )
+    # Templates the blueprint no longer brings along are removed, so a
+    # reinstall never leaves stale ones active.
+    paths = blueprint_file_paths(hass.config.path(DASHBOARD_PATH), filename)
+    files = {
+        paths["button_card_templates/blueprints"]: filecontent.pop("button_card_templates", None) or None,
+        paths["apexcharts_card_templates/blueprints"]: filecontent.pop("apexcharts_card_templates", None) or None,
+    }
+    files[paths["blueprints"]] = filecontent
+    await hass.async_add_executor_job(replace_blueprint_files, files)
     connection.send_result(msg["id"], {"succesfull": filename})
 
 
@@ -118,8 +106,11 @@ async def ws_handle_delete_blueprint(
     blueprint = safe_path_segment(msg["blueprint"], "blueprint file name")
     if not blueprint.endswith(".yaml"):
         raise DashboardInputError(f"Invalid blueprint file name: {blueprint!r}")
-    filename = hass.config.path(f"dwains-dashboard/blueprints/{blueprint}")
-    await hass.async_add_executor_job(remove_file_if_exists, filename)
+    # The blueprint and the card templates it installed.
+    paths = blueprint_file_paths(hass.config.path(DASHBOARD_PATH), blueprint)
+    await hass.async_add_executor_job(
+        replace_blueprint_files, {path: None for path in paths.values()}
+    )
     connection.send_result(
         msg["id"], {"succesfull": "Blueprint deleted succesfull"}
     )

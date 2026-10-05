@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from collections import OrderedDict
-from datetime import datetime
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
 
 from .configuration_runtime import serialize_configuration_mutation
-from .mutation_files import file_has_content
+from .mutation_files import file_has_content, replace_files, unique_path
 from .more_page_files import (
     load_more_page_content,
     load_more_pages_metadata,
@@ -69,6 +69,17 @@ async def websocket_get_more_page(
         connection.send_error(msg["id"], "not_found", "More page not found")
         return
     connection.send_result(msg["id"], page)
+
+
+def _replace_page_files(folder: str, writes: dict) -> None:
+    """replace_files for one page folder; a new folder is removed on failure."""
+    created = not os.path.isdir(folder)
+    try:
+        replace_files(writes)
+    except BaseException:
+        if created:
+            shutil.rmtree(folder, ignore_errors=True)
+        raise
 
 
 def _more_page_path(hass, foldername, filename):
@@ -193,14 +204,13 @@ async def ws_handle_edit_more_page(
     if not existing_foldername and await hass.async_add_executor_job(
         file_has_content, page_path
     ):
-        foldername += datetime.now().strftime("%Y%m%d%H%M%S%f")
+        foldername = os.path.basename(
+            await hass.async_add_executor_job(
+                unique_path, hass.config.path(MORE_PAGES_PATH), foldername
+            )
+        )
         page_path = _more_page_path(hass, foldername, "page.yaml")
 
-    await hass.async_add_executor_job(
-        dump_and_verify_json_normalized_yaml_file,
-        page_path,
-        card_data,
-    )
     # Keep settings which this form does not edit (sort_order), otherwise
     # saving a page silently moved it to the end of the navigation.
     config = OrderedDict()
@@ -215,7 +225,19 @@ async def ws_handle_edit_more_page(
             ("show_in_navbar", msg.get("showInNavbar", config.get("show_in_navbar", False))),
         )
     )
-    await _save_more_page_config(hass, foldername, config)
+    # Page and settings are saved together: a failure leaves both as before.
+    await hass.async_add_executor_job(
+        _replace_page_files,
+        os.path.dirname(page_path),
+        {
+            page_path: lambda target: dump_and_verify_json_normalized_yaml_file(
+                target, card_data
+            ),
+            _more_page_path(hass, foldername, "config.yaml"): lambda target: dump_yaml_file(
+                target, config
+            ),
+        },
+    )
     await reload_configuration(hass)
     hass.bus.async_fire("dwains_dashboard_navigation_card_reload")
     hass.bus.async_fire("dwains_dashboard_more_pages_reload")
@@ -349,13 +371,15 @@ async def ws_handle_sort_more_page(
         connection.send_error(msg["id"], "invalid_foldername", str(error))
         return
 
-    configs = []
-    for foldername in sort_data:
+    writes = {}
+    for position, foldername in enumerate(sort_data, start=1):
         config = await _load_more_page_config(hass, foldername)
-        configs.append((foldername, config))
-    for position, (foldername, config) in enumerate(configs, start=1):
         config["sort_order"] = position
-        await _save_more_page_config(hass, foldername, config)
+        writes[_more_page_path(hass, foldername, "config.yaml")] = (
+            lambda target, config=config: dump_yaml_file(target, config)
+        )
+    # All positions are saved together, never a half-sorted navigation.
+    await hass.async_add_executor_job(replace_files, writes)
     processor = get_yaml_processor(hass)
     for position, foldername in enumerate(sort_data, start=1):
         page = processor.more_pages.get(foldername)

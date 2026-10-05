@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -14,7 +13,7 @@ from .input_validation import (
     parse_json_object,
     safe_path_segment,
 )
-from .mutation_files import file_has_content, remove_file_if_exists
+from .mutation_files import file_has_content, remove_file_if_exists, unique_path
 from .yaml_files import dump_and_verify_json_normalized_yaml_file
 
 SPAN_FIELDS = (
@@ -79,8 +78,9 @@ async def ws_handle_add_card(
     if not msg["filename"] and await hass.async_add_executor_job(
         file_has_content, filename
     ):
-        suffix = datetime.now().strftime("%Y%m%d%H%M%S")
-        filename = hass.config.path(f"{directory}/{card_type}{suffix}.yaml")
+        filename = await hass.async_add_executor_job(
+            unique_path, hass.config.path(directory), card_type, ".yaml"
+        )
     persisted_card = await hass.async_add_executor_job(
         dump_and_verify_json_normalized_yaml_file,
         filename,

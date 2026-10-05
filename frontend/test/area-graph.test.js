@@ -134,3 +134,55 @@ test("a failed request is not cached", async () => {
   flushes[1]();
   assert.equal((await second).length, 2);
 });
+
+function historyHass() {
+  return fakeHass({
+    "history/history_during_period": (m) => Object.fromEntries(m.entity_ids.map((id) => [id, [{ s: "1", lu: 1 }, { s: "2", lu: 2 }]])),
+  });
+}
+
+test("each connection has its own cache", async () => {
+  const flushes = [];
+  const loader = createAreaGraphLoader({ now: () => 10_000_000, schedule: (fn) => flushes.push(fn) });
+  const connection = {};
+  const first = { ...historyHass(), connection };
+  const load = loader.load(first, "sensor.a", 6);
+  flushes.shift()();
+  await load;
+  // A new hass object of the same connection uses the cache.
+  const sameConnection = { ...historyHass(), connection };
+  await loader.load(sameConnection, "sensor.a", 6);
+  assert.equal(sameConnection.calls.length, 0);
+  // Another connection (other user, new login) loads its own data.
+  const other = { ...historyHass(), connection: {} };
+  const otherLoad = loader.load(other, "sensor.a", 6);
+  flushes.shift()();
+  await otherLoad;
+  assert.equal(other.calls.length, 1);
+});
+
+test("the cache keeps only the most recently used series", async () => {
+  let time = 10_000_000;
+  const flushes = [];
+  const loader = createAreaGraphLoader({ now: () => time, schedule: (fn) => flushes.push(fn), maxEntries: 3 });
+  const hass = historyHass();
+  const loadAll = async (ids) => {
+    const loads = ids.map((id) => loader.load(hass, id, 6));
+    while (flushes.length) flushes.shift()();
+    await Promise.all(loads);
+  };
+  await loadAll(["sensor.a", "sensor.b", "sensor.c"]);
+  await loadAll(["sensor.a"]); // a is used again, b is now the oldest
+  await loadAll(["sensor.d"]);
+  assert.equal(loader.cacheSize(hass), 3);
+  assert.equal(hass.calls.length, 2);
+  await loadAll(["sensor.a", "sensor.c", "sensor.d"]);
+  assert.equal(hass.calls.length, 2, "a, c and d are still cached");
+  await loadAll(["sensor.b"]);
+  assert.equal(hass.calls.length, 3, "b was dropped");
+
+  // Expired series go first, before any still fresh one.
+  time += 6 * 60 * 1000;
+  await loadAll(["sensor.e"]);
+  assert.equal(loader.cacheSize(hass), 1);
+});

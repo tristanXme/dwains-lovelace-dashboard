@@ -1,0 +1,4 @@
+# The oldest Home Assistant release the integration supports ("homeassistant"
+# in hacs.json). CI runs the tests against it as well.
+pytest-homeassistant-custom-component==0.13.329
+home-assistant-frontend==20260429.3

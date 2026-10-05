@@ -26,6 +26,8 @@ def _summary(hass: HomeAssistant, configs_path: str) -> dict[str, Any]:
             "area_card_folders": len(snapshot["area_cards"]),
             "more_pages": len(snapshot["more_pages"]),
         },
+        # File names and parser messages only, no file content.
+        "load_errors": snapshot["load_errors"],
     }
 
 

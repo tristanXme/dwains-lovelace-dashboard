@@ -1,6 +1,7 @@
 import { css, html, LitElement } from 'lit';
 import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import translateEngine from './translate-engine';
+import { showSaveError } from './save-error-toast';
 import { closePopup } from "./helpers";
 const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
@@ -135,7 +136,7 @@ class DwainsEditAreaButtonCard extends LitElement {
               closePopup();
           },
           (err) => {
-              console.error('Message failed!', err);
+              showSaveError(this.hass, err);
           }
       );
     }
