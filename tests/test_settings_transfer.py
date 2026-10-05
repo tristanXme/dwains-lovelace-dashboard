@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import zipfile
 from http import HTTPStatus
 from pathlib import Path
@@ -11,15 +12,20 @@ from pathlib import Path
 import aiohttp
 import pytest
 
+from homeassistant.components import frontend
 from homeassistant.core import HomeAssistant
 
+from custom_components.dwains_dashboard import settings_transfer
 from custom_components.dwains_dashboard.settings_transfer import (
     KEEP_EXPORTS,
     MANIFEST_NAME,
+    ExportError,
     InvalidArchive,
     export_archive,
     import_archive,
     read_archive,
+    remove_path,
+    transferable_path,
 )
 
 
@@ -187,6 +193,20 @@ async def test_export_and_download(
         assert response.status in (HTTPStatus.BAD_REQUEST, HTTPStatus.NOT_FOUND), name
 
 
+async def test_export_that_could_not_be_imported_is_refused(
+    hass: HomeAssistant, setup_dashboard, config_path
+) -> None:
+    base = config_path("dwains-dashboard")
+    _dashboard(base)
+    (base / "configs/latin1.yaml").write_bytes("name: Küche\n".encode("latin-1"))
+
+    result = await _open(hass, setup_dashboard.entry_id, "export_settings")
+    assert result["type"] == "abort"
+    assert result["reason"] == "export_failed"
+    assert "configs/latin1.yaml" in result["description_placeholders"]["error"]
+    assert not (base / "backups/exports").exists()
+
+
 async def test_download_requires_login(
     hass: HomeAssistant, setup_dashboard, hass_client_no_auth
 ) -> None:
@@ -252,4 +272,167 @@ async def test_import_through_the_options_flow(
     assert (backup / "configs/areas.yaml").read_text().startswith("kitchen")
     assert setup_dashboard.options["sidepanel_title"] == "Imported"
     assert "unknown" not in setup_dashboard.options
+    # The sidebar shows the imported title right away.
+    assert hass.data[frontend.DATA_PANELS]["dwains-dashboard"].sidebar_title == "Imported"
     assert events
+
+
+def _tree(base: Path) -> dict[str, str]:
+    """Every file, symlink and folder below base with its content or target."""
+    tree = {}
+    for path in sorted(base.rglob("*")):
+        relative = path.relative_to(base).as_posix()
+        if path.is_symlink():
+            tree[relative] = f"-> {path.readlink()}"
+        elif path.is_dir():
+            tree[relative] = "/"
+        else:
+            tree[relative] = path.read_bytes().decode("utf-8", "replace")
+    return tree
+
+
+def _export(base: Path, stamp: str = "20260101-000000") -> bytes:
+    filename, _count = export_archive(str(base), stamp, {})
+    return (base / "backups/exports" / filename).read_bytes()
+
+
+def test_transferable_paths() -> None:
+    assert transferable_path("configs/areas.yaml")
+    assert transferable_path("blueprints/test.yml")
+    for path in (
+        "configs/.DS_Store",
+        ".DS_Store",
+        "configs/notes.txt",
+        "configs/areas.yaml.bak",
+        ".git/config.yaml",
+        "configs/.hidden/areas.yaml",
+        "backups/import-1/configs/areas.yaml",
+        "configs//areas.yaml",
+    ):
+        assert not transferable_path(path), path
+
+
+def test_an_export_is_always_importable(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    _dashboard(source)
+    _write(source / ".DS_Store", "finder")
+    _write(source / "configs/.DS_Store", "finder")
+    _write(source / "configs/notes.txt", "my notes")
+    _write(source / ".git/config.yaml", "core: {}\n")
+    _write(source / "configs/.drafts/areas.yaml", "draft: {}\n")
+    outside = tmp_path / "outside"
+    _write(outside / "secret.yaml", "password: x\n")
+    (source / "configs/linked.yaml").symlink_to(outside / "secret.yaml")
+    (source / "blueprints/linked").symlink_to(outside, target_is_directory=True)
+
+    content = _export(source)
+    _manifest, files = read_archive(content)
+    assert sorted(files) == [
+        "blueprints/test.yaml",
+        "configs/areas.yaml",
+        "configs/cards/areas/kitchen/markdown.yaml",
+        "configs/more_pages/energy/page.yaml",
+    ]
+
+    target = tmp_path / "target"
+    _write(target / "configs/areas.yaml", "other: {}\n")
+    import_archive(str(target), content, "20260101-000001")
+    for relative, data in files.items():
+        assert (target / relative).read_bytes() == data
+    assert (target / "configs/areas.yaml").read_text().startswith("kitchen")
+
+
+def test_export_refuses_what_an_import_would_reject(tmp_path: Path, monkeypatch) -> None:
+    _dashboard(tmp_path)
+    (tmp_path / "configs/latin1.yaml").write_bytes("name: Küche\n".encode("latin-1"))
+    with pytest.raises(ExportError, match="UTF-8"):
+        export_archive(str(tmp_path), "20260101-000000", {})
+    (tmp_path / "configs/latin1.yaml").unlink()
+
+    monkeypatch.setattr(settings_transfer, "MAX_FILES", 3)
+    with pytest.raises(ExportError, match="too many files"):
+        export_archive(str(tmp_path), "20260101-000000", {})
+    assert not (tmp_path / "backups/exports").exists()
+
+
+def test_remove_path_handles_files_links_and_folders(tmp_path: Path) -> None:
+    base = tmp_path / "work"
+    _write(base / "file.yaml", "a: 1\n")
+    _write(base / "folder/inner.yaml", "a: 1\n")
+    _write(base / "target/keep.yaml", "a: 1\n")
+    (base / "link").symlink_to(base / "target", target_is_directory=True)
+    for name in ("file.yaml", "folder", "link", "missing"):
+        remove_path(str(base / name))
+    assert sorted(p.name for p in base.iterdir()) == ["target"]
+    assert (base / "target/keep.yaml").exists()
+
+
+def _failing_move(fail_on: int, moves: list[tuple[str, str]]):
+    def move(source, target):
+        moves.append((source, target))
+        if len(moves) == fail_on:
+            raise OSError("disk full")
+        return os.replace(source, target)
+
+    return move
+
+
+@pytest.mark.parametrize(
+    ("fail_on", "phase"),
+    [
+        (1, "backup"),  # first move of the current content into the backup
+        (2, "backup"),  # after one entry was moved
+        (4, "import"),  # first move of the import into place
+        (5, "import"),  # after one entry (a folder) was placed
+        (6, "import"),  # after a plain file was placed
+    ],
+)
+def test_failed_import_restores_everything(
+    tmp_path: Path, monkeypatch, fail_on: int, phase: str
+) -> None:
+    base = tmp_path / "dashboard"
+    _dashboard(base)
+    _write(base / "settings.yaml", "top: level file\n")
+    before = _tree(base)
+    # Current content: blueprints, configs, settings.yaml (moves 1-3 into the
+    # backup); the import: a.yaml, configs, settings.yaml (moves 4-6).
+    content = _zip(
+        {
+            "a.yaml": "first: file\n",
+            "configs/areas.yaml": "living_room: {}\n",
+            "settings.yaml": "imported: true\n",
+        }
+    )
+    moves: list[tuple[str, str]] = []
+    monkeypatch.setattr(settings_transfer, "_move", _failing_move(fail_on, moves))
+    with pytest.raises(OSError, match="disk full"):
+        import_archive(str(base), content, "20260101-000000")
+
+    failed_target = moves[-1][1]
+    assert ("/backups/import-" in failed_target) == (phase == "backup")
+    # Exactly as before: nothing of the import left, no backup or staging
+    # folder, every previous file back in place.
+    assert _tree(base) == before
+
+
+def test_two_imports_in_the_same_second_keep_both_backups(tmp_path: Path) -> None:
+    tmp_path = tmp_path / "dashboard"
+    _dashboard(tmp_path)
+    first = import_archive(str(tmp_path), _zip({"configs/areas.yaml": "first: {}\n"}), "20260101-000000")
+    second = import_archive(str(tmp_path), _zip({"configs/areas.yaml": "second: {}\n"}), "20260101-000000")
+    assert first.backup == "import-20260101-000000"
+    assert second.backup == "import-20260101-000000-2"
+    backups = tmp_path / "backups"
+    assert (backups / first.backup / "configs/areas.yaml").read_text().startswith("kitchen")
+    assert (backups / second.backup / "configs/areas.yaml").read_text().startswith("first")
+    assert (tmp_path / "configs/areas.yaml").read_text().startswith("second")
+
+
+def test_an_existing_backup_is_never_overwritten(tmp_path: Path) -> None:
+    tmp_path = tmp_path / "dashboard"
+    _dashboard(tmp_path)
+    _write(tmp_path / "backups/import-20260101-000000/configs/areas.yaml", "older backup\n")
+    result = import_archive(str(tmp_path), _zip({"configs/areas.yaml": "new: {}\n"}), "20260101-000000")
+    assert result.backup != "import-20260101-000000"
+    assert (tmp_path / "backups/import-20260101-000000/configs/areas.yaml").read_text() == "older backup\n"
+    assert (tmp_path / "backups" / result.backup / "configs/areas.yaml").read_text().startswith("kitchen")

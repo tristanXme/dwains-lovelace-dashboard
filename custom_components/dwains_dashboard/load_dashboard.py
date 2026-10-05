@@ -23,19 +23,55 @@ def invalidate_dashboard_cache(hass) -> None:
         dashboard.invalidate_cache()
 
 
+DEFAULT_SIDEPANEL_TITLE = "Dwains Dashboard"
+DEFAULT_SIDEPANEL_ICON = "mdi:alpha-d-box"
+
+
+def _sidebar_settings(config_entry) -> tuple[str, str]:
+    """Sidebar title and icon from the entry options."""
+    options = config_entry.options
+    return (
+        options.get("sidepanel_title") or DEFAULT_SIDEPANEL_TITLE,
+        options.get("sidepanel_icon") or DEFAULT_SIDEPANEL_ICON,
+    )
+
+
+def _register_panel(hass, dashboard_config, *, update: bool) -> None:
+    frontend.async_register_built_in_panel(
+        hass,
+        LOVELACE_DOMAIN,
+        frontend_url_path=DASHBOARD_URL,
+        require_admin=dashboard_config["require_admin"],
+        show_in_sidebar=dashboard_config["show_in_sidebar"],
+        sidebar_title=dashboard_config["title"],
+        sidebar_icon=dashboard_config["icon"],
+        config={"mode": "yaml"},
+        update=update,
+    )
+
+
+def update_dashboard_panel(hass, config_entry) -> bool:
+    """Show a changed sidebar title or icon right away.
+
+    Replaces the panel registered by load_dashboard under the same URL
+    (Home Assistant then refreshes the sidebar). Returns whether it changed.
+    """
+    domain_data = find_domain_data(hass) or {}
+    dashboard = domain_data.get(DASHBOARD_REGISTRATION_KEY)
+    panel = hass.data.get(frontend.DATA_PANELS, {}).get(DASHBOARD_URL)
+    if dashboard is None or panel is None:
+        return False
+    title, icon = _sidebar_settings(config_entry)
+    if panel.sidebar_title == title and panel.sidebar_icon == icon:
+        return False
+    dashboard.config["title"] = title
+    dashboard.config["icon"] = icon
+    _register_panel(hass, dashboard.config, update=True)
+    return True
+
+
 def load_dashboard(hass, config_entry):
-
-    #_LOGGER.warning(config_entry.options)
-    #_LOGGER.warning(config_entry.options["sidepanel_title"])
-
-    sidepanel_title = "Dwains Dashboard"
-    sidepanel_icon = "mdi:alpha-d-box"
-
-    if("sidepanel_title" in config_entry.options):
-        sidepanel_title = config_entry.options["sidepanel_title"]
-
-    if("sidepanel_icon" in config_entry.options):
-        sidepanel_icon = config_entry.options["sidepanel_icon"]
+    sidepanel_title, sidepanel_icon = _sidebar_settings(config_entry)
 
     dashboard_config = {
         "mode": "yaml",
@@ -74,17 +110,7 @@ def load_dashboard(hass, config_entry):
     )
     lovelace_data.dashboards[DASHBOARD_URL] = dashboard
     try:
-        frontend.async_register_built_in_panel(
-            hass,
-            LOVELACE_DOMAIN,
-            frontend_url_path=DASHBOARD_URL,
-            require_admin=dashboard_config["require_admin"],
-            show_in_sidebar=dashboard_config["show_in_sidebar"],
-            sidebar_title=dashboard_config["title"],
-            sidebar_icon=dashboard_config["icon"],
-            config={"mode": "yaml"},
-            update=False,
-        )
+        _register_panel(hass, dashboard_config, update=False)
     except Exception:
         if lovelace_data.dashboards.get(DASHBOARD_URL) is dashboard:
             lovelace_data.dashboards.pop(DASHBOARD_URL, None)

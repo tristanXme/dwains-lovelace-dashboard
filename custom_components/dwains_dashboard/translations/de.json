@@ -60,7 +60,7 @@
       },
       "cleanup": {
         "title": "Verwaiste Einstellungen aufräumen",
-        "description": "Diese {count} Einträge verweisen auf Entitäten oder Räume, die es in Home Assistant nicht mehr gibt – meist nachdem ein Gerät oder eine Integration entfernt wurde:\n\n- Entitäts-Einstellungen: {entities}\n- Eigene Karten und Popups: {cards}\n- Raum-Einstellungen und Raum-Karten: {areas}\n- Sensoren unter dem Raumnamen: {settings}\n\n{items}\n\nEntitäten, die nur deaktiviert oder nicht verfügbar sind oder zu einer nicht geladenen Integration gehören, sind **nicht** betroffen. Umbenannte Entitäten nehmen ihre Einstellungen automatisch mit und erscheinen hier nie.\n\nAlle betroffenen Dateien werden vor dem Entfernen nach `dwains-dashboard/backups/` kopiert.",
+        "description": "Diese {count} Einträge verweisen auf Entitäten oder Räume, die es in Home Assistant nicht mehr gibt – meist nachdem ein Gerät oder eine Integration entfernt wurde:\n\n- Entitäts-Einstellungen: {entities}\n- Eigene Karten und Popups: {cards}\n- Raum-Einstellungen und Raum-Karten: {areas}\n- Sensoren unter dem Raumnamen, Raum-Graphen, Wetter- und Alarm-Entität: {settings}\n\n{items}\n\nEntitäten, die nur deaktiviert oder nicht verfügbar sind oder zu einer nicht geladenen Integration gehören, sind **nicht** betroffen. Umbenannte Entitäten nehmen ihre Einstellungen automatisch mit und erscheinen hier nie.\n\nAlle betroffenen Dateien werden vor dem Entfernen nach `dwains-dashboard/backups/` kopiert.",
         "data": {
           "confirm": "Diese Einträge sichern und entfernen"
         }
@@ -84,6 +84,7 @@
       "nothing_to_clean": "Keine verwaisten Dashboard-Einstellungen gefunden. Alles sauber.",
       "cleanup_done": "{removed} Einträge entfernt. Eine Sicherung aller betroffenen Dateien liegt in `{backup}`.",
       "export_done": "{files} Dateien exportiert.\n\nHerunterladen: **{download}**\n\nDer Link ist 10 Minuten gültig. Das Archiv liegt außerdem in `{folder}` (die fünf neuesten Exporte bleiben erhalten).",
+      "export_failed": "Die Einstellungen können nicht exportiert werden: {error}. Es wurde nichts geschrieben.",
       "import_done": "{files} Dateien importiert. Das Dashboard lädt mit den importierten Einstellungen neu. Die bisherigen Einstellungen liegen in `{backup}`."
     }
   },

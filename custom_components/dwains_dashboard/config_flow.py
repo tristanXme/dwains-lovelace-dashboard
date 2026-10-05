@@ -13,7 +13,7 @@ from .maintenance import (
 )
 from .runtime_data import get_domain_data
 from .settings_export import EXPORTED_OPTIONS, async_export, async_import
-from .settings_transfer import InvalidArchive
+from .settings_transfer import ExportError, InvalidArchive
 from .yaml_files import dump_yaml_file, load_yaml_file
 
 from homeassistant import config_entries
@@ -434,7 +434,13 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
 
     async def async_step_export_settings(self, user_input=None):
         """Pack all dashboard settings into a zip and offer it for download."""
-        filename, files, link = await async_export(self.hass, self.config_entry.options)
+        try:
+            filename, files, link = await async_export(self.hass, self.config_entry.options)
+        except ExportError as err:
+            _LOGGER.warning("Dashboard settings export not possible: %s", err)
+            return self.async_abort(
+                reason="export_failed", description_placeholders={"error": str(err)}
+            )
         return self.async_abort(
             reason="export_done",
             description_placeholders={

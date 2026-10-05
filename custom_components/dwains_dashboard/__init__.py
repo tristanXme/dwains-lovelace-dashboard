@@ -5,7 +5,7 @@ from .load_plugins import (
     register_frontend_plugins,
     remove_frontend_plugins,
 )
-from .load_dashboard import load_dashboard, unload_dashboard
+from .load_dashboard import load_dashboard, unload_dashboard, update_dashboard_panel
 from .const import BACKEND_BUILD_REVISION, DOMAIN
 from .process_yaml import (
     process_yaml,
@@ -154,6 +154,8 @@ async def _update_listener(hass, config_entry):
     _LOGGER.info("Dwains Dashboard options changed; reloading configuration")
 
     await process_yaml(hass, config_entry)
+    # Sidebar title and icon (saved settings or an imported export).
+    update_dashboard_panel(hass, config_entry)
 
     hass.bus.async_fire("dwains_dashboard_reload")
 
