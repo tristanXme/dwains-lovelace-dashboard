@@ -1,0 +1,6 @@
+# Requirements of the "conversation" integration, which Home Assistant imports
+# while answering get_services (the frontend needs that for card helpers).
+# Versions from homeassistant/components/conversation/manifest.json.
+gazetteer-matcher==1.1.0
+hassil==3.12.1
+home-assistant-intents==2026.8.28

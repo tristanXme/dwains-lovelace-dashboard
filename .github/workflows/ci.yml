@@ -74,7 +74,7 @@ jobs:
       - name: Install Home Assistant and Playwright
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements_test.txt
+          pip install -r requirements_test.txt -r tests/e2e/requirements.txt
           npm ci
           npx playwright install --with-deps chromium
       - name: Start Home Assistant with the dashboard
