@@ -371,6 +371,20 @@ async def ws_handle_sort_more_page(
         connection.send_error(msg["id"], "invalid_foldername", str(error))
         return
 
+    # Only existing pages; saving a position must not create a folder.
+    missing = [
+        foldername
+        for foldername in sort_data
+        if not await hass.async_add_executor_job(
+            os.path.isfile, _more_page_path(hass, foldername, "page.yaml")
+        )
+    ]
+    if missing:
+        connection.send_error(
+            msg["id"], "not_found", f"More page not found: {', '.join(missing)}"
+        )
+        return
+
     writes = {}
     for position, foldername in enumerate(sort_data, start=1):
         config = await _load_more_page_config(hass, foldername)
