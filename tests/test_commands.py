@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
+import pytest
 import yaml
 
 from homeassistant.core import HomeAssistant
@@ -287,3 +291,103 @@ async def test_install_blueprint_without_card_reports_it(
     )
     assert response["success"], response
     assert response["result"] == {"error": "Blueprint has no card"}
+
+
+BLUEPRINT_WITH_TEMPLATES = (
+    "blueprint:\n  name: Fancy\n"
+    "card:\n  type: custom:button-card\n  template: fancy\n"
+    "button_card_templates:\n  fancy:\n    color: red\n"
+    "apexcharts_card_templates:\n  fancy_chart:\n    header: {show: true}\n"
+)
+
+
+def _blueprint_files(config_path) -> dict[str, bool]:
+    return {
+        folder: config_path(f"dwains-dashboard/{folder}/fancy.yaml").exists()
+        for folder in (
+            "blueprints",
+            "button_card_templates/blueprints",
+            "apexcharts_card_templates/blueprints",
+        )
+    }
+
+
+async def test_blueprint_files_are_installed_replaced_and_removed_together(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client, config_path
+) -> None:
+    client = await hass_ws_client(hass)
+    response = await _call(client, "dwains_dashboard/install_blueprint", yamlCode=BLUEPRINT_WITH_TEMPLATES)
+    assert response["result"] == {"succesfull": "fancy.yaml"}
+    assert all(_blueprint_files(config_path).values())
+    assert yaml.safe_load(
+        config_path("dwains-dashboard/button_card_templates/blueprints/fancy.yaml").read_text()
+    ) == {"fancy": {"color": "red"}}
+    blueprint = yaml.safe_load(config_path("dwains-dashboard/blueprints/fancy.yaml").read_text())
+    assert "button_card_templates" not in blueprint
+
+    # A new version without templates removes the old ones.
+    response = await _call(
+        client,
+        "dwains_dashboard/install_blueprint",
+        yamlCode="blueprint:\n  name: Fancy\ncard:\n  type: markdown\n",
+    )
+    assert response["result"] == {"succesfull": "fancy.yaml"}
+    assert _blueprint_files(config_path) == {
+        "blueprints": True,
+        "button_card_templates/blueprints": False,
+        "apexcharts_card_templates/blueprints": False,
+    }
+
+    await _call(client, "dwains_dashboard/install_blueprint", yamlCode=BLUEPRINT_WITH_TEMPLATES)
+    response = await _call(client, "dwains_dashboard/delete_blueprint", blueprint="fancy.yaml")
+    assert response["success"], response
+    assert not any(_blueprint_files(config_path).values())
+
+
+def test_a_failed_blueprint_write_restores_the_previous_files(tmp_path, monkeypatch) -> None:
+    from custom_components.dwains_dashboard import blueprint_files
+
+    base = tmp_path / "dashboard"
+    paths = blueprint_files.blueprint_file_paths(str(base), "fancy.yaml")
+    for folder, path in paths.items():
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text(f"old: {folder}\n")
+    before = {path: Path(path).read_text() for path in paths.values()}
+
+    calls = []
+
+    def failing_dump(path, content):
+        calls.append(path)
+        if len(calls) == 2:
+            raise OSError("disk full")
+        Path(path).write_text(yaml.safe_dump(content))
+
+    monkeypatch.setattr(blueprint_files, "dump_yaml_file", failing_dump)
+    with pytest.raises(OSError, match="disk full"):
+        blueprint_files.replace_blueprint_files({path: {"new": True} for path in paths.values()})
+
+    assert {path: Path(path).read_text() for path in paths.values()} == before
+    leftovers = [p.name for p in base.rglob("*") if p.is_file() and not p.name.endswith("fancy.yaml")]
+    assert leftovers == []
+
+
+def test_a_failed_move_aside_restores_the_previous_files(tmp_path, monkeypatch) -> None:
+    from custom_components.dwains_dashboard import blueprint_files
+
+    base = tmp_path / "dashboard"
+    paths = blueprint_files.blueprint_file_paths(str(base), "fancy.yaml")
+    for path in paths.values():
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text("old: true\n")
+    moves = []
+
+    def failing_move(source, target):
+        moves.append(source)
+        if len(moves) == 2:
+            raise OSError("busy")
+        os.replace(source, target)
+
+    monkeypatch.setattr(blueprint_files, "_move", failing_move)
+    with pytest.raises(OSError, match="busy"):
+        blueprint_files.replace_blueprint_files({path: None for path in paths.values()})
+    assert all(Path(path).read_text() == "old: true\n" for path in paths.values())
