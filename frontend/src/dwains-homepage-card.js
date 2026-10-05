@@ -283,6 +283,7 @@ function getDwainsHass() {
 	      if(this.__masonryLayoutRaf) return;
 	      this.__masonryLayoutRaf = requestAnimationFrame(() => {
 	        this.__masonryLayoutRaf = 0;
+	        this._fitAreaBadges();
 	        this._layoutMasonry();
 	      });
 	    }

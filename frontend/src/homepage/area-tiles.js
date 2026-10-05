@@ -6,8 +6,6 @@ const { collectAreaBinarySensorValues, entityBelongsToArea, summaryTranslationKe
 const { collectAreaSensorValues } = require('../area-sensors');
 require('../dwains-area-graph');
 
-// Badges that fit next to the area icon without covering the name.
-const MAX_AREA_BADGES = 3;
 
 // Area tiles on the homepage: values, badges, graph and grouping by floor.
 export const AreaTilesMixin = (Base) => class extends Base {
@@ -148,28 +146,28 @@ export const AreaTilesMixin = (Base) => class extends Base {
         .map((entity) => entity.entity_id);
     }
 
-    // Status badges in the top right corner of an area tile, most important
-    // first: safety alerts, the toggles, other sensors, covers, devices. At
-    // most MAX_AREA_BADGES fit next to the area icon; the rest is summed up
-    // in a "+N" badge whose tooltip names them.
+    // Status badges in the top right corner of an area tile, in columns from
+    // right to left like before: the light badge on top, then safety alerts,
+    // the other toggles, sensors, covers and devices. _fitAreaBadges() keeps
+    // them to two columns and sums up the rest in a "+N" badge.
     _renderAreaBadges(data, entitiesByDomain) {
       const badges = [];
       const add = (priority, icon, count, title, toggle) => badges.push({ priority, icon, count, title, toggle });
+      for (const domain of TOGGLE_DOMAINS) {
+        if (!(domain in entitiesByDomain)) continue;
+        const count = this._isOn(entitiesByDomain, domain);
+        if (domain == 'light' || count) {
+          add(domain == 'light' ? 0 : 2, DOMAIN_STATE_ICONS[domain][count ? "on" : "off"], count, this._badgeTitle(domain, count), domain);
+        }
+      }
       for (const domain of ALERT_DOMAINS) {
         if (!(domain in entitiesByDomain)) continue;
         for (const deviceClass of DEVICE_CLASSES[domain]) {
           const count = this._isOn(entitiesByDomain, domain, deviceClass);
           const icon = DOMAIN_STATE_ICONS[domain][deviceClass];
           if (count && icon) {
-            add(DETECTED_DEVICE_CLASSES.includes(deviceClass) ? 0 : 2, icon, count, this._badgeTitle(deviceClass, count));
+            add(DETECTED_DEVICE_CLASSES.includes(deviceClass) ? 1 : 3, icon, count, this._badgeTitle(deviceClass, count));
           }
-        }
-      }
-      for (const domain of TOGGLE_DOMAINS) {
-        if (!(domain in entitiesByDomain)) continue;
-        const count = this._isOn(entitiesByDomain, domain);
-        if (domain == 'light' || count) {
-          add(1, DOMAIN_STATE_ICONS[domain][count ? "on" : "off"], count, this._badgeTitle(domain, count), domain);
         }
       }
       for (const domain of COVER_DOMAINS) {
@@ -177,33 +175,24 @@ export const AreaTilesMixin = (Base) => class extends Base {
         for (const deviceClass of DEVICE_CLASSES[domain]) {
           const count = this._coverOpenCount(entitiesByDomain, deviceClass);
           const icon = DOMAIN_STATE_ICONS[domain][deviceClass];
-          if (count && icon) add(3, icon, count, this._badgeTitle(deviceClass, count));
+          if (count && icon) add(4, icon, count, this._badgeTitle(deviceClass, count));
         }
       }
       for (const domain of OTHER_DOMAINS) {
         if (!(domain in entitiesByDomain)) continue;
         const count = this._isOn(entitiesByDomain, domain);
-        if (count) add(4, DOMAIN_STATE_ICONS[domain].on, count, this._badgeTitle(domain, count));
+        if (count) add(5, DOMAIN_STATE_ICONS[domain].on, count, this._badgeTitle(domain, count));
       }
       // Stable sort: within a priority the order of DEVICE_CLASSES and the
       // domain lists is kept.
       badges.sort((a, b) => a.priority - b.priority);
-      let visible = badges;
-      let hidden = [];
-      if (badges.length > MAX_AREA_BADGES) {
-        // The light badge is a switch, not only a status: it always stays.
-        const light = badges.find((badge) => badge.toggle === 'light');
-        const others = badges.filter((badge) => badge !== light);
-        const slots = MAX_AREA_BADGES - 1 - (light ? 1 : 0);
-        visible = badges.filter((badge) => badge === light || others.indexOf(badge) < slots);
-        hidden = badges.filter((badge) => !visible.includes(badge));
-      }
       return html`
         <div class="row-span-2 text-right space-y-0.5 info">
-          ${visible.map((badge) => badge.toggle ? html`
+          ${badges.map((badge) => badge.toggle ? html`
             <span
               class="info-badge toggle-badge badge-${badge.toggle} inline-flex items-center px-1 py-0.5 rounded text-xs font-medium"
               title=${translateEngine(this._hass, badge.count ? 'area.toggle_all_off' : 'area.toggle_all_on').replace('{domain}', translateEngine(this._hass, 'device.' + badge.toggle))}
+              data-summary=${badge.title}
               role="button"
               .domain=${badge.toggle}
               .area_id=${data.area.area_id}
@@ -214,17 +203,51 @@ export const AreaTilesMixin = (Base) => class extends Base {
               ${badge.count}
             </span>
           ` : html`
-            <span class="info-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium" title=${badge.title}>
+            <span class="info-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium" title=${badge.title} data-summary=${badge.title}>
               <ha-icon class="w-6 h-6 mr-0.5" .icon=${badge.icon}></ha-icon> ${badge.count}
             </span>
           `)}
-          ${hidden.length ? html`
-            <span class="info-badge more-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium" title=${hidden.map((badge) => badge.title).join(" · ")}>
-              +${hidden.length}
-            </span>
-          ` : ""}
+          <span class="info-badge more-badge inline-flex items-center px-1 py-0.5 rounded text-xs font-medium" style="display: none"></span>
         </div>
       `;
+    }
+
+    // Badges flow in columns from right to left; how many fit in a column
+    // depends on the tile height. Keep at most two columns: if more would be
+    // needed, the last place shows "+N" and its tooltip names the others.
+    _fitAreaBadges() {
+      if (!this.shadowRoot) return;
+      this.shadowRoot.querySelectorAll('.area-button .info').forEach((info) => {
+        const more = info.querySelector('.more-badge');
+        if (!more) return;
+        const badges = Array.from(info.children).filter((child) => child !== more);
+        badges.forEach((badge) => { if (badge.style.display) badge.style.display = ''; });
+        more.style.display = 'none';
+        // Columns end above the area name and its values (on tiles with a
+        // graph the name sits higher than the bottom of the badge area).
+        const text = info.closest('.area-button')?.querySelector('h3')?.parentElement;
+        if (text && badges.length) {
+          const available = text.getBoundingClientRect().top - info.getBoundingClientRect().top - 4;
+          const height = `${Math.max(available, badges[0].offsetHeight)}px`;
+          if (info.style.maxHeight !== height) info.style.maxHeight = height;
+        }
+        // A new column starts where a badge is not below its predecessor.
+        let columns = badges.length ? 1 : 0;
+        let perColumn = badges.length;
+        for (let index = 1; index < badges.length; index++) {
+          if (badges[index].offsetTop <= badges[index - 1].offsetTop) {
+            if (columns === 1) perColumn = index;
+            columns++;
+          }
+        }
+        if (columns <= 2) return;
+        const visibleCount = Math.max(1, perColumn * 2 - 1);
+        const hidden = badges.slice(visibleCount);
+        hidden.forEach((badge) => { badge.style.display = 'none'; });
+        more.textContent = `+${hidden.length}`;
+        more.title = hidden.map((badge) => badge.dataset.summary).join(' · ');
+        more.style.display = '';
+      });
     }
 
     // Tooltip of a status badge: "2 windows open", "Vacuum: active".

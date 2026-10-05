@@ -155,10 +155,9 @@ export const homepageCardStyles = (css) => css`
           cursor: pointer;
           pointer-events: auto;
         }
-        /* Refresh: rounder badges */
+        /* Refresh: rounder badges, same size as before */
         .area-button .info-badge {
           border-radius: 999px;
-          padding: 0.125rem 0.5rem 0.125rem 0.375rem;
         }
 
         @media (min-width: 1024px) {
