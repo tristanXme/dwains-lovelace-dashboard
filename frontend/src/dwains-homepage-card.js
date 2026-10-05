@@ -20,6 +20,8 @@ const { resolveHass } = require('./hass-provider');
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { loadSortable } = require('./lazy-modules');
 const { RegistryChangeWatcher } = require('./registry-change-watcher');
+const { homepageEmptyReason, initialSelection } = require('./empty-state');
+import { emptyStateStyles, renderEmptyState } from './empty-state-view';
 const { entityIdsIn, hassChangeIsRelevant, relevanceFilter } = require('./state-relevance');
 const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
@@ -473,6 +475,15 @@ function getDwainsHass() {
       || this.entities == null || this.entities.length === 0
       || this.configuration == null || this.configuration.length === 0
       ){
+        // Nothing to build areas from yet (no areas, devices or entities):
+        // show the page with its empty state instead of nothing.
+        if (this.configuration != null) {
+          this.data = [];
+          this.disabledAreas = [];
+          this.favorites = [];
+          this.selectedArea = "";
+          this.startedUp = true;
+        }
       } else {
         const [notificationCard, badgesCard] = await Promise.all([
           this.createCardElement2({
@@ -979,10 +990,8 @@ function getDwainsHass() {
         });
 
         if (!isCurrent()) return;
-	        //Check if selectedArea is empty (no hash and this is first area to loop throug so set it)
-	        if(this.selectedArea.length === 0){
-	          this.selectedArea = data[0]['area']['area_id'];
-	        }
+	        // Without a hash the first area is selected; "" when there is none.
+	        this.selectedArea = initialSelection(this.selectedArea, data.map((item) => item.area.area_id));
 	        this.data = data;
         this.disabledAreas = disabledAreas;
         this._isShownEntity = relevanceFilter({
@@ -1662,8 +1671,8 @@ function getDwainsHass() {
     }
 
     render() {
-      //console.log('render()');
-      if(this.data == null || this.data.length === 0 ){
+      // null while loading; an empty list renders the page with its empty state.
+      if(this.data == null){
         return html``;
       } else {
         //Clock
@@ -1839,7 +1848,9 @@ function getDwainsHass() {
                     </div>
                   </div>
 
-                  ${this._renderAreaButtons(this.data)}
+                  ${this.data.length
+                    ? this._renderAreaButtons(this.data)
+                    : renderEmptyState(this._hass, 'homepage', homepageEmptyReason(this))}
 
                   ${this.areaEditMode ? html `
                     ${this.disabledAreas.length ? html`
@@ -1874,7 +1885,7 @@ function getDwainsHass() {
     }
 
     static get styles() {
-      return [homepageCardStyles(css), subtleHomepageStyles(css), subtleDetailViewStyles(css)]
+      return [homepageCardStyles(css), subtleHomepageStyles(css), subtleDetailViewStyles(css), emptyStateStyles]
     }
 
 

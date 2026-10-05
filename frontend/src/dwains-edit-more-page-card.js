@@ -4,6 +4,7 @@ import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import translateEngine from './translate-engine';
 import { closePopup } from "./helpers";
 const { websocketReadStore } = require('./websocket-read-store');
+const { installBlueprint } = require('./blueprint-install');
 const { ConnectedLoadOwner } = require('./connected-load-owner');
 const { hassConnectionIdentity, hasHassConnectionChanged } = require('./hass-connection');
 const { defineDwainsElement } = require('./custom-element-registration');
@@ -542,27 +543,16 @@ class DwainsEditMorePageCard extends LitElement {
     this.installBlueprintYaml = e.target.value;
     }
     _handleInstallBlueprintClicked(ev) {
-    if(!this.installBlueprintYaml){
-        alert(translateEngine(this._hass, 'blueprint.yaml_required'));
-    }
-    this._hass.callWS({
-        type: 'dwains_dashboard/install_blueprint',
-        yamlCode: JSON.stringify(this.installBlueprintYaml),
-    }).then(
-        (resp) => {
-            if(resp["succesfull"]){
-            alert(this._hass.localize("ui.common.successfully_saved"));
-            websocketReadStore.invalidate(this._hass);
-            this._loadBlueprints();
-            this.requestUpdate();
-            } else {
-            alert(resp["error"]);
-            }
+      void installBlueprint({
+        hass: this._hass,
+        yamlCode: this.installBlueprintYaml,
+        translate: (key) => translateEngine(this._hass, key),
+        onInstalled: () => {
+          websocketReadStore.invalidate(this._hass);
+          this._loadBlueprints();
+          this.requestUpdate();
         },
-        (err) => {
-            console.error('Message failed!', err);
-        }
-    );
+      });
     }
 
     _checkCustomCard(card) {

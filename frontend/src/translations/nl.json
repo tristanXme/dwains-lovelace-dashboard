@@ -94,7 +94,13 @@
     "no_floor": "Geen verdieping",
     "disable": "Schakel gebied uit in DD",
     "disabled": "De volgende gebieden zijn uitgeschakeld:",
-    "enable": "Gebied inschakelen"
+    "enable": "Gebied inschakelen",
+    "empty_no_areas": "Nog geen ruimtes",
+    "empty_no_areas_hint": "Maak ruimtes aan in Home Assistant (Instellingen → Ruimtes, labels & zones) en wijs er apparaten of entiteiten aan toe.",
+    "empty_all_disabled": "Alle ruimtes zijn uitgeschakeld",
+    "empty_all_disabled_hint": "Schakel in het menu (⋮) de bewerkmodus in om ruimtes weer in te schakelen.",
+    "empty_no_entities": "Geen entiteiten in je ruimtes",
+    "empty_no_entities_hint": "Wijs in Home Assistant apparaten of entiteiten toe aan je ruimtes."
   },
   "area_binary_sensor": {
     "summary": {
@@ -268,7 +274,11 @@
     "alarm_control_panel": "Alarm bedieningspaneel",
     "automation": "Automatisering",
     "group": "Groeperen op gebied",
-    "ungroup": "Groepering opheffen op gebied"
+    "ungroup": "Groepering opheffen op gebied",
+    "empty_all_hidden": "Alle apparaattypen zijn verborgen",
+    "empty_all_hidden_hint": "Schakel in het menu (⋮) de bewerkmodus in om apparaattypen weer te tonen.",
+    "empty_no_entities": "Geen apparaten om te tonen",
+    "empty_no_entities_hint": "De apparatenpagina toont entiteiten die bij een ruimte horen, plus personen, weer en alarm. Wijs in Home Assistant apparaten of entiteiten toe aan ruimtes."
   },
   "more": {
     "title": "Meer",
@@ -286,6 +296,7 @@
     "title": "Blueprint",
     "title_plural": "Blueprints",
     "yaml_required": "Geen YAML-code ingevoerd!",
+    "install_failed": "Installeren van de blueprint mislukt",
     "installed": "Geïnstalleerd",
     "no_blueprints_installed": "Geen blueprints geïnstalleerd",
     "not_installed": "Niet geïnstalleerd",

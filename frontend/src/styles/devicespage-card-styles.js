@@ -1,4 +1,5 @@
 import { css } from 'lit';
+import { emptyStateStyles } from '../empty-state-view';
 import {
   subtleBackButtonStyles,
   subtleDetailViewStyles,
@@ -420,4 +421,5 @@ export const devicesPageCardStyles = [
   subtleBackButtonStyles(css),
   subtleDevicesPageStyles(css),
   subtleDetailViewStyles(css),
+  emptyStateStyles,
 ];

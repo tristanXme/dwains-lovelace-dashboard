@@ -94,7 +94,13 @@
     "no_floor": "Sem piso",
     "disable": "Disable area in DD",
     "disabled": "The following areas are disabled:",
-    "enable": "Enable area"
+    "enable": "Enable area",
+    "empty_no_areas": "Ainda não há áreas",
+    "empty_no_areas_hint": "Crie áreas no Home Assistant (Configurações → Áreas, etiquetas e zonas) e atribua-lhes dispositivos ou entidades.",
+    "empty_all_disabled": "Todas as áreas estão desativadas",
+    "empty_all_disabled_hint": "Ative o modo de edição no menu (⋮) para voltar a ativar áreas.",
+    "empty_no_entities": "Nenhuma entidade nas suas áreas",
+    "empty_no_entities_hint": "Atribua dispositivos ou entidades às suas áreas no Home Assistant."
   },
   "area_binary_sensor": {
     "summary": {
@@ -263,7 +269,11 @@
     "safety": "Segurança",
     "smoke": "Fumo",
     "tamper": "Adulterar",
-    "update": "Update"
+    "update": "Update",
+    "empty_all_hidden": "Todos os tipos de dispositivo estão ocultos",
+    "empty_all_hidden_hint": "Ative o modo de edição no menu (⋮) para voltar a mostrar tipos de dispositivo.",
+    "empty_no_entities": "Nenhum dispositivo para mostrar",
+    "empty_no_entities_hint": "A página de dispositivos mostra entidades que pertencem a uma área, além de pessoas, meteorologia e alarme. Atribua dispositivos ou entidades a áreas no Home Assistant."
   },
   "more": {
     "title": "Mais",
@@ -281,6 +291,7 @@
     "title": "Esquema",
     "title_plural": "Esquemas",
     "yaml_required": "Nenhum código YAML inserido!",
+    "install_failed": "A instalação do blueprint falhou",
     "installed": "Instalado",
     "no_blueprints_installed": "Nenhum esquema instalada",
     "not_installed": "Não instalado",
