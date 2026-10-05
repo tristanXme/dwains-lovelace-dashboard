@@ -23,7 +23,7 @@ from .configuration_runtime import (
     register_configuration_cache_listeners,
 )
 from .runtime_data import get_domain_data
-from .legacy_entities import async_remove_legacy_latest_version_sensor
+from .legacy_entities import async_remove_retired_entities
 from .maintenance import async_migrate_area_sensor_entities, async_setup_maintenance
 from .settings_export import async_register_export_view
 
@@ -49,14 +49,14 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     domain_data = get_domain_data(hass)
     domain_data.setdefault("notifications", {})
     domain_data.setdefault("commands", {})
-    await async_remove_legacy_latest_version_sensor(hass)
+    await async_remove_retired_entities(hass)
     if not hass.is_running:
-        async def remove_legacy_sensor_after_start(_event) -> None:
-            await async_remove_legacy_latest_version_sensor(hass)
+        async def remove_retired_entities_after_start(_event) -> None:
+            await async_remove_retired_entities(hass)
 
         hass.bus.async_listen_once(
             EVENT_HOMEASSISTANT_STARTED,
-            remove_legacy_sensor_after_start,
+            remove_retired_entities_after_start,
         )
     configuration_runtime = get_configuration_runtime(hass)
     configuration_runtime.clear_cache()
@@ -74,7 +74,7 @@ async def async_setup_entry(hass, config_entry):
     # Clear any leftover "restart required" banner from a previous disable: we're
     # being (re-)enabled, so it no longer applies.
     ir.async_delete_issue(hass, DOMAIN, "restart_required")
-    await async_remove_legacy_latest_version_sensor(hass)
+    await async_remove_retired_entities(hass)
     try:
         await async_migrate_area_sensor_entities(hass)
     except Exception:
@@ -87,7 +87,6 @@ async def async_setup_entry(hass, config_entry):
         load_dashboard(hass, config_entry)
         async_register_export_view(hass)
         notifications(hass, DOMAIN)
-        await hass.config_entries.async_forward_entry_setups(config_entry, ["update"])
     except Exception:
         await _rollback_entry_setup(hass, config_entry)
         raise
@@ -104,11 +103,6 @@ async def async_setup_entry(hass, config_entry):
 
 async def _rollback_entry_setup(hass, config_entry) -> None:
     """Best-effort rollback that preserves the original setup exception."""
-    try:
-        await hass.config_entries.async_unload_platforms(config_entry, ["update"])
-    except Exception:
-        _LOGGER.exception("Failed to roll back the Dwains Dashboard update platform")
-
     for cleanup in (
         remove_notifications,
         unload_dashboard,
@@ -125,8 +119,7 @@ async def _rollback_entry_setup(hass, config_entry) -> None:
 async def async_unload_entry(hass, config_entry):
     """Unload the entry.
 
-    We can cleanly unload the per-entry update entity and sidebar panel. The
-    per-entry frontend URLs are removable, while the static path and
+    The sidebar panel and the per-entry frontend URLs are removable, while the static path and
     websocket commands registered in async_setup remain integration-scoped.
     Therefore a real disable still raises the Settings "Restart required"
     repair banner to fully clear that remaining footprint.
@@ -135,11 +128,6 @@ async def async_unload_entry(hass, config_entry):
     (where config_entry.disabled_by is None and async_setup_entry will run again
     on next start anyway).
     """
-    unload_ok = await hass.config_entries.async_unload_platforms(
-        config_entry,
-        ["update"],
-    )
-
     if config_entry.disabled_by is not None:
         ir.async_create_issue(
             hass,
@@ -150,7 +138,7 @@ async def async_unload_entry(hass, config_entry):
             translation_key="restart_required",
         )
 
-    return unload_ok
+    return True
 
 async def async_remove_entry(hass, config_entry):
     _LOGGER.info("Dwains Dashboard is now uninstalled")

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -33,16 +32,6 @@ def hass_config_dir(tmp_path: Path) -> str:
 def auto_enable_custom_integrations(enable_custom_integrations):
     """Allow loading the integration under test."""
     return
-
-
-@pytest.fixture(autouse=True)
-def no_version_check():
-    """Never contact the version endpoint from tests."""
-    with patch(
-        "custom_components.dwains_dashboard.update."
-        "DwainsDashboardUpdateEntity.async_update"
-    ):
-        yield
 
 
 @pytest.fixture
