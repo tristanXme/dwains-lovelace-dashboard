@@ -1,7 +1,9 @@
 // Browser tests against a real Home Assistant (see tests/e2e/prepare.py).
 // Usage: node tests/e2e/dashboard.e2e.mjs <config dir>
+// For a failed step a screenshot, the Playwright trace and the browser
+// console end up in <config dir>/artifacts (or $E2E_ARTIFACTS).
 import { chromium } from "playwright";
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import assert from "node:assert/strict";
 
@@ -9,6 +11,8 @@ const configDir = process.argv[2];
 const token = JSON.parse(readFileSync(join(configDir, "e2e-token.json"), "utf8"));
 const BASE = token.hassUrl;
 const executablePath = process.env.E2E_CHROMIUM || undefined;
+const artifacts = process.env.E2E_ARTIFACTS || join(configDir, "artifacts");
+mkdirSync(artifacts, { recursive: true });
 
 // Collect every element, including those inside shadow roots.
 const DEEP = `(() => { const all = []; const walk = (root) => root.querySelectorAll("*").forEach((el) => { all.push(el); if (el.shadowRoot) walk(el.shadowRoot); }); walk(document); return all; })()`;
@@ -26,6 +30,8 @@ async function poll(check, what, timeout = 60000) {
 }
 
 const results = [];
+// The page of the color scheme being tested, for screenshots of failures.
+const current = { page: undefined, scheme: "", failed: false };
 async function step(name, fn) {
   try {
     await fn();
@@ -33,7 +39,12 @@ async function step(name, fn) {
     console.log("ok   ", name);
   } catch (error) {
     results.push(["FAIL", name]);
+    current.failed = true;
     console.log("FAIL ", name, "\n     ", error.message);
+    const file = `${String(results.length).padStart(2, "0")}-${name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.png`;
+    await current.page?.screenshot({ path: join(artifacts, file), fullPage: true }).catch((screenshotError) => {
+      console.log("      (no screenshot:", screenshotError.message, ")");
+    });
   }
 }
 
@@ -87,7 +98,12 @@ for (const colorScheme of ["light", "dark"]) {
       }
     }, 5);
   }, token);
+  await context.tracing.start({ screenshots: true, snapshots: true, sources: false });
   const page = await context.newPage();
+  Object.assign(current, { page, scheme: colorScheme, failed: false });
+  const consoleLog = [];
+  page.on("console", (message) => consoleLog.push(`${new Date().toISOString()} ${message.type()}: ${message.text()}`));
+  page.on("pageerror", (error) => consoleLog.push(`${new Date().toISOString()} pageerror: ${error.stack || error.message}`));
   const registryLists = [];
   page.on("websocket", (socket) => socket.on("framesent", (frame) => {
     const type = /"type":"(config\/[a-z_]+_registry\/list)"/.exec(String(frame.payload))?.[1];
@@ -256,6 +272,13 @@ for (const colorScheme of ["light", "dark"]) {
     await step("only changes to shown entities re-render the homepage", async () => {
       await page.goto(BASE + "/dwains-dashboard/home");
       await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("°C"))), "homepage");
+      const setState = (entityId, state) => page.evaluate(([entityId, state]) => document.querySelector("home-assistant").hass.callApi("POST", `states/${entityId}`, { state }), [entityId, state]);
+      // Create the unrelated entity before counting, and keep clear of a
+      // full minute: the living room temperature (a template on now().minute)
+      // changes then and rightly re-renders the homepage.
+      await setState("sensor.e2e_not_on_the_dashboard", "0");
+      const seconds = new Date().getSeconds();
+      if (seconds > 45) await page.waitForTimeout((62 - seconds) * 1000);
       await page.waitForTimeout(1500);
       await deep(page, (all) => {
         const card = all.find((el) => el.localName === "homepage-card");
@@ -263,7 +286,6 @@ for (const colorScheme of ["light", "dark"]) {
         const updated = card.updated.bind(card);
         card.updated = (...args) => { window.__ddRenders += 1; return updated(...args); };
       });
-      const setState = (entityId, state) => page.evaluate(([entityId, state]) => document.querySelector("home-assistant").hass.callApi("POST", `states/${entityId}`, { state }), [entityId, state]);
       for (const value of ["1", "2", "3"]) {
         await setState("sensor.e2e_not_on_the_dashboard", value);
         await page.waitForTimeout(400);
@@ -272,6 +294,39 @@ for (const colorScheme of ["light", "dark"]) {
       await page.evaluate(() => document.querySelector("home-assistant").hass.callService("input_boolean", "toggle", { entity_id: "input_boolean.e2e_lamp" }));
       await poll(() => page.evaluate(() => window.__ddRenders > 0), "render after the lamp changed", 5000);
       await page.evaluate(() => document.querySelector("home-assistant").hass.callService("input_boolean", "toggle", { entity_id: "input_boolean.e2e_lamp" }));
+    });
+
+    await step("empty pages show why they are empty", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const emptyReason = (host) => deep(page, (all, host) => all.find((el) => el.localName === host)?.shadowRoot?.querySelector(".dd-empty-state")?.dataset.reason, host);
+      // Areas without entities are shown too, so disable every area. The
+      // living room keeps its icon and graph settings.
+      const areas = await ws({ type: "config/area_registry/list" });
+      const setDisabled = (disableArea) => Promise.all(areas.map((area) => ws({
+        type: "dwains_dashboard/edit_area_button",
+        areaId: area.area_id,
+        disableArea,
+        ...(area.area_id === token.areaId ? { icon: "mdi:sofa", graphEntity: "sensor.temperatur_wohnzimmer", graphHours: 24 } : {}),
+      })));
+      await setDisabled(true);
+      try {
+        await page.goto(BASE + "/dwains-dashboard/home");
+        assert.equal(await poll(() => emptyReason("homepage-card"), "homepage empty state"), "all_areas_disabled");
+      } finally {
+        await setDisabled(false);
+      }
+
+      const domains = ["sensor", "binary_sensor", "person", "input_boolean"];
+      const hide = (value) => Promise.all(domains.map((device) => ws({ type: "dwains_dashboard/edit_device_bool_value", device, key: "hidden", value })));
+      await hide(true);
+      try {
+        await page.goto(BASE + "/dwains-dashboard/devices");
+        assert.equal(await poll(() => emptyReason("devices-card"), "devices empty state"), "all_domains_hidden");
+      } finally {
+        await hide(false);
+      }
+      await page.goto(BASE + "/dwains-dashboard/home");
+      await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("Wohnzimmer"))), "living room back");
     });
 
     await step("more pages: the create dialog opens", async () => {
@@ -287,6 +342,9 @@ for (const colorScheme of ["light", "dark"]) {
   await step(`${colorScheme}: no dashboard errors in the console`, async () => {
     assert.deepEqual(errors, []);
   });
+  writeFileSync(join(artifacts, `${colorScheme}-console.log`), consoleLog.join("\n") + "\n");
+  // The trace is large; keep it only when a step of this scheme failed.
+  await context.tracing.stop(current.failed ? { path: join(artifacts, `${colorScheme}-trace.zip`) } : {});
   await context.close();
 }
 await browser.close();

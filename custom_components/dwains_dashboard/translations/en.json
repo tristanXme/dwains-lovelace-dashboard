@@ -60,7 +60,7 @@
       },
       "cleanup": {
         "title": "Clean up orphaned settings",
-        "description": "These {count} entries point to entities or areas that no longer exist in Home Assistant, usually after a device or integration was removed:\n\n- Entity settings: {entities}\n- Custom cards and popups: {cards}\n- Area settings and area cards: {areas}\n- Sensors below the area name: {settings}\n\n{items}\n\nEntities that are only disabled, unavailable or belong to an integration that is not loaded are **not** affected. Renamed entities take their settings along automatically and never show up here.\n\nAll touched files are copied to `dwains-dashboard/backups/` before anything is removed.",
+        "description": "These {count} entries point to entities or areas that no longer exist in Home Assistant, usually after a device or integration was removed:\n\n- Entity settings: {entities}\n- Custom cards and popups: {cards}\n- Area settings and area cards: {areas}\n- Sensors below the area name, area graphs, weather and alarm entity: {settings}\n\n{items}\n\nEntities that are only disabled, unavailable or belong to an integration that is not loaded are **not** affected. Renamed entities take their settings along automatically and never show up here.\n\nAll touched files are copied to `dwains-dashboard/backups/` before anything is removed.",
         "data": {
           "confirm": "Back up and remove these entries"
         }
@@ -84,6 +84,7 @@
       "nothing_to_clean": "No orphaned dashboard settings found. Everything is clean.",
       "cleanup_done": "Removed {removed} entries. A backup of all touched files is in `{backup}`.",
       "export_done": "Exported {files} files.\n\nDownload: **{download}**\n\nThe link is valid for 10 minutes. The archive also stays in `{folder}` (the five newest exports are kept).",
+      "export_failed": "The settings cannot be exported: {error}. Nothing was written.",
       "import_done": "Imported {files} files. The dashboard reloads with the imported settings. The previous settings are in `{backup}`."
     }
   },

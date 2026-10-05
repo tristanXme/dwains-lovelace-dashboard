@@ -107,6 +107,18 @@ jobs:
       - name: Home Assistant log
         if: failure()
         run: tail -n 200 "$RUNNER_TEMP/e2e/hass.out"
+      # Screenshots of failed steps, Playwright traces (open with
+      # `npx playwright show-trace`), browser console and Home Assistant log.
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.ha }}
+          path: |
+            ${{ runner.temp }}/e2e/artifacts/
+            ${{ runner.temp }}/e2e/hass.out
+          retention-days: 14
+          if-no-files-found: warn
 
   hassfest:
     name: hassfest

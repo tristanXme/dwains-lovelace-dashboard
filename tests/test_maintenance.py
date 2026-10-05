@@ -82,6 +82,7 @@ def _orphan_fixture(hass: HomeAssistant, configs: Path) -> None:
         disabled_by=er.RegistryEntryDisabler.USER,
     )
     hass.states.async_set("sensor.yaml_only", "1")
+    hass.states.async_set("alarm_control_panel.home", "disarmed")
     ar.async_get(hass).async_create("Kitchen")
     _write(
         configs / "entities.yaml",
@@ -91,12 +92,17 @@ def _orphan_fixture(hass: HomeAssistant, configs: Path) -> None:
     )
     _write(configs / "cards/entities/light.gone.yaml", "type: tile\n")
     _write(configs / "cards/entities/sensor.yaml_only.yaml", "type: tile\n")
-    _write(configs / "areas.yaml", "kitchen:\n  icon: mdi:fridge\nwhirlpool:\n  disabled: true\n")
+    _write(
+        configs / "areas.yaml",
+        "kitchen:\n  icon: mdi:fridge\n  graph_entity: sensor.kitchen_gone\n  graph_hours: 48\n"
+        "whirlpool:\n  disabled: true\n",
+    )
     _write(configs / "cards/areas/whirlpool/markdown.yaml", "type: markdown\ncontent: x\n")
     _write(configs / "cards/areas/kitchen/markdown.yaml", "type: markdown\ncontent: x\n")
     _write(
         configs / "settings.yaml",
-        "area_sensor_entities: [sensor.yaml_only, sensor.gone]\nweather_entity: weather.gone\n",
+        "area_sensor_entities: [sensor.yaml_only, sensor.gone]\n"
+        "weather_entity: weather.gone\nalarm_entity: alarm_control_panel.home\n",
     )
 
 
@@ -107,10 +113,12 @@ async def test_orphan_rules(hass: HomeAssistant, setup_dashboard, config_path) -
         "entities": ["light.gone"],
         "entity_cards": ["light.gone"],
         "entity_popups": [],
-        "settings_entities": ["sensor.gone"],
+        # Single choices count too: the weather entity is gone, the alarm
+        # entity still exists.
+        "settings_entities": ["sensor.gone", "weather.gone"],
         "areas": ["whirlpool"],
         "area_card_folders": ["whirlpool"],
-        "area_entities": [],
+        "area_entities": ["sensor.kitchen_gone"],
     }
     # No repair issue: the cleanup lives in the dashboard settings.
     assert not [
@@ -133,13 +141,13 @@ async def test_cleanup_in_dashboard_settings(
     _orphan_fixture(hass, configs)
 
     result = await hass.config_entries.options.async_init(setup_dashboard.entry_id)
-    assert result["description_placeholders"] == {"orphans": "5"}
+    assert result["description_placeholders"] == {"orphans": "7"}
 
     result = await _open_cleanup(hass, setup_dashboard.entry_id)
     assert result["type"] == "form"
     assert result["step_id"] == "cleanup"
     placeholders = result["description_placeholders"]
-    assert placeholders["count"] == "5"
+    assert placeholders["count"] == "7"
     assert "`light.gone` – entities.yaml, cards/entities/" in placeholders["items"]
     assert "`whirlpool` – areas.yaml, cards/areas/" in placeholders["items"]
 
@@ -155,19 +163,23 @@ async def test_cleanup_in_dashboard_settings(
     )
     assert result["type"] == "abort"
     assert result["reason"] == "cleanup_done"
-    assert result["description_placeholders"]["removed"] == "5"
+    assert result["description_placeholders"]["removed"] == "7"
     await hass.async_block_till_done()
 
     entities = _read(configs / "entities.yaml")
     assert set(entities) == {"light.disabled", "sensor.yaml_only"}
     assert not (configs / "cards/entities/light.gone.yaml").exists()
     assert (configs / "cards/entities/sensor.yaml_only.yaml").exists()
-    assert list(_read(configs / "areas.yaml")) == ["kitchen"]
+    # The graph of a gone sensor is removed like in the area dialog.
+    assert _read(configs / "areas.yaml") == {"kitchen": {"icon": "mdi:fridge"}}
     assert not (configs / "cards/areas/whirlpool").exists()
     assert (configs / "cards/areas/kitchen/markdown.yaml").exists()
     settings = _read(configs / "settings.yaml")
     assert settings["area_sensor_entities"] == ["sensor.yaml_only"]
-    assert settings["weather_entity"] == "weather.gone"  # single choices stay
+    # A gone single choice is cleared to what the settings form saves for
+    # "none"; one that still exists stays.
+    assert settings["weather_entity"] == ""
+    assert settings["alarm_entity"] == "alarm_control_panel.home"
 
     backups = list(config_path("dwains-dashboard/backups").iterdir())
     assert len(backups) == 1
@@ -177,6 +189,8 @@ async def test_cleanup_in_dashboard_settings(
     assert (backup / "cards/entities/light.gone.yaml").exists()
     assert (backup / "cards/areas/whirlpool/markdown.yaml").exists()
     assert "whirlpool" in _read(backup / "areas.yaml")
+    assert _read(backup / "areas.yaml")["kitchen"]["graph_entity"] == "sensor.kitchen_gone"
+    assert _read(backup / "settings.yaml")["weather_entity"] == "weather.gone"
     # The options themselves are untouched by a cleanup.
     assert setup_dashboard.options == {}
 

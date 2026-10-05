@@ -27,7 +27,13 @@ from .yaml_files import dump_yaml_file, load_yaml_file_or_default
 
 ENTITY_CARD_DIRECTORIES = ("entities", "entities_popup")
 SETTINGS_ENTITY_LISTS = ("area_sensor_entities", "area_binary_sensor_entities")
+# Single entity settings. Like the lists they follow a rename and are cleaned
+# up once the entity is gone: the homepage already ignores them then, and the
+# settings form would offer an entity that no longer exists. A cleared value
+# is "" (what the form saves for "none").
 SETTINGS_ENTITY_VALUES = ("weather_entity", "alarm_entity")
+# The sensor drawn as graph on an area tile (areas.yaml, with graph_hours).
+AREA_GRAPH_ENTITY = "graph_entity"
 # Sensors shown below the area name, per area in areas.yaml. They used to be
 # global lists in settings.yaml (SETTINGS_ENTITY_LISTS, same order).
 AREA_ENTITY_LISTS = ("sensor_entities", "binary_sensor_entities")
@@ -110,19 +116,36 @@ def find_orphans(
             for entity_id in (settings.get(key) or [])
             if isinstance(entity_id, str) and not entity_exists(entity_id)
         }
+        | {
+            entity_id
+            for key in SETTINGS_ENTITY_VALUES
+            if isinstance(entity_id := settings.get(key), str)
+            and entity_id
+            and not entity_exists(entity_id)
+        }
     )
     areas = _mapping(os.path.join(configs_path, "areas.yaml"))
     report.areas = sorted(
         area_id for area_id in areas if not area_exists(str(area_id))
     )
+    existing_areas = [
+        area for area_id, area in areas.items()
+        if area_exists(str(area_id)) and isinstance(area, dict)
+    ]
     report.area_entities = sorted(
         {
             entity_id
-            for area_id, area in areas.items()
-            if area_exists(str(area_id)) and isinstance(area, dict)
+            for area in existing_areas
             for key in AREA_ENTITY_LISTS
             for entity_id in (area.get(key) or [])
             if isinstance(entity_id, str) and not entity_exists(entity_id)
+        }
+        | {
+            entity_id
+            for area in existing_areas
+            if isinstance(entity_id := area.get(AREA_GRAPH_ENTITY), str)
+            and entity_id
+            and not entity_exists(entity_id)
         }
     )
     area_cards = _cards_path(configs_path, "areas")
@@ -188,8 +211,8 @@ def rename_entity(configs_path: str, old_entity_id: str, new_entity_id: str) -> 
     for area in areas.values():
         if not isinstance(area, dict):
             continue
-        if area.get("graph_entity") == old_entity_id:
-            area["graph_entity"] = new_entity_id
+        if area.get(AREA_GRAPH_ENTITY) == old_entity_id:
+            area[AREA_GRAPH_ENTITY] = new_entity_id
             areas_changed = True
         for key in AREA_ENTITY_LISTS:
             values = area.get(key)
@@ -254,6 +277,11 @@ def remove_orphans(configs_path: str, report: OrphanReport, backup_dir: str) -> 
                     kept = [value for value in values if value not in stale]
                     pruned += len(values) - len(kept)
                     area[key] = kept
+            if area.get(AREA_GRAPH_ENTITY) in stale:
+                # As when the graph sensor is cleared in the area dialog.
+                area.pop(AREA_GRAPH_ENTITY)
+                area.pop("graph_hours", None)
+                pruned += 1
         if pruned:
             _backup(path, backup_dir, configs_path)
             dump_yaml_file(path, areas)
@@ -281,15 +309,20 @@ def remove_orphans(configs_path: str, report: OrphanReport, backup_dir: str) -> 
         path = os.path.join(configs_path, "settings.yaml")
         settings = _mapping(path)
         stale = set(report.settings_entities)
-        before = sum(len(settings.get(key) or []) for key in SETTINGS_ENTITY_LISTS)
+        pruned = 0
         for key in SETTINGS_ENTITY_LISTS:
-            if isinstance(settings.get(key), list):
-                settings[key] = [value for value in settings[key] if value not in stale]
-        after = sum(len(settings.get(key) or []) for key in SETTINGS_ENTITY_LISTS)
-        if after != before:
+            values = settings.get(key)
+            if isinstance(values, list):
+                settings[key] = [value for value in values if value not in stale]
+                pruned += len(values) - len(settings[key])
+        for key in SETTINGS_ENTITY_VALUES:
+            if settings.get(key) in stale:
+                settings[key] = ""
+                pruned += 1
+        if pruned:
             _backup(path, backup_dir, configs_path)
             dump_yaml_file(path, settings)
-            removed += before - after
+            removed += pruned
 
     return removed
 

@@ -238,3 +238,52 @@ async def test_area_sensors_below_the_name(
             client, "dwains_dashboard/edit_area_button", areaId="living", **{field: value}
         )
         assert not response["success"], (field, value)
+
+
+BLUEPRINT_YAML = "blueprint:\n  name: Test Blueprint\ncard:\n  type: markdown\n  content: hi\n"
+
+
+async def test_install_blueprint_writes_the_pasted_yaml(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client, config_path
+) -> None:
+    client = await hass_ws_client(hass)
+    response = await _call(client, "dwains_dashboard/install_blueprint", yamlCode=BLUEPRINT_YAML)
+    assert response["success"], response
+    assert response["result"] == {"succesfull": "test_blueprint.yaml"}
+    installed = yaml.safe_load(
+        config_path("dwains-dashboard/blueprints/test_blueprint.yaml").read_text()
+    )
+    assert installed == yaml.safe_load(BLUEPRINT_YAML)
+
+
+async def test_install_blueprint_rejects_unusable_yaml(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client, config_path
+) -> None:
+    client = await hass_ws_client(hass)
+    cases = {
+        "empty": "",
+        "only whitespace": "  \n",
+        "invalid syntax": "blueprint: [unclosed",
+        "list at the top": "- blueprint\n- card\n",
+        "scalar at the top": "just text",
+        # What the frontend sent before: the YAML as a JSON string literal.
+        "JSON string of the YAML": '"blueprint:\\n  name: Test Blueprint\\ncard:\\n  type: markdown\\n"',
+    }
+    for case, code in cases.items():
+        response = await _call(client, "dwains_dashboard/install_blueprint", yamlCode=code)
+        assert not response["success"], case
+        assert response["error"]["code"] == "invalid_format", (case, response)
+    assert not config_path("dwains-dashboard/blueprints").exists() or not any(
+        config_path("dwains-dashboard/blueprints").iterdir()
+    )
+
+
+async def test_install_blueprint_without_card_reports_it(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client
+) -> None:
+    client = await hass_ws_client(hass)
+    response = await _call(
+        client, "dwains_dashboard/install_blueprint", yamlCode="blueprint:\n  name: Test\n"
+    )
+    assert response["success"], response
+    assert response["result"] == {"error": "Blueprint has no card"}

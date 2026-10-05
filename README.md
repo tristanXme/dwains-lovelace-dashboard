@@ -62,14 +62,18 @@ Security, stability and performance release of DD3.
   settings, custom card and popup along automatically.
 - **New:** *Clean up orphaned settings* in the dashboard settings (Settings →
   Devices & services → Dwains Dashboard → Configure) lists dashboard settings
-  for entities or areas that no longer exist and removes them on confirmation,
-  after copying them to `dwains-dashboard/backups/`. Disabled or unavailable
-  entities and entities of integrations that are not loaded are never affected.
+  for entities or areas that no longer exist (including the weather and alarm
+  entity and area graphs) and removes them on confirmation, after copying them
+  to `dwains-dashboard/backups/`. Disabled or unavailable entities and entities
+  of integrations that are not loaded are never affected.
 - **New:** *Export settings* and *Import settings* in the same menu. The
   export packs all dashboard settings (areas, entities, cards, more pages,
   blueprints, sidebar title and icon) into a zip that is downloaded right from
   the dialog. The import replaces the settings with such a file; the previous
-  settings are moved to `dwains-dashboard/backups/` first.
+  settings are moved to `dwains-dashboard/backups/` first and restored if the
+  import fails. Both take the YAML files of the dashboard folder only: hidden
+  files and folders (such as `.DS_Store`), other file types, symlinks and the
+  backups are left out, so every export can be imported again.
 - **New:** choose the entries of the house status bar (persons, lights,
   climate, smoke, doors, …) in the dashboard settings. The bar stays one row
   and scrolls sideways when it is full, also with the mouse wheel.

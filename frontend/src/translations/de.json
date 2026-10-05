@@ -101,7 +101,13 @@
     "no_floor": "Keine Etagen",
     "disable": "Deaktiviere Bereich in DD",
     "disabled": "Folgende Bereiche sind deaktiviert:",
-    "enable": "Aktiviere Bereich"
+    "enable": "Aktiviere Bereich",
+    "empty_no_areas": "Noch keine Bereiche",
+    "empty_no_areas_hint": "Lege in Home Assistant Bereiche an (Einstellungen → Bereiche, Labels & Zonen) und ordne ihnen Geräte oder Entitäten zu.",
+    "empty_all_disabled": "Alle Bereiche sind deaktiviert",
+    "empty_all_disabled_hint": "Aktiviere im Menü (⋮) den Bearbeitungsmodus, um Bereiche wieder einzuschalten.",
+    "empty_no_entities": "Keine Entitäten in deinen Bereichen",
+    "empty_no_entities_hint": "Ordne deinen Bereichen in Home Assistant Geräte oder Entitäten zu."
   },
   "area_binary_sensor": {
     "summary": {
@@ -279,7 +285,11 @@
     "alarm_control_panel": "Alarmanlage",
     "automation": "Automation",
     "group": "Gruppierung nach Bereichen",
-    "ungroup": "Gruppierung nach Bereichen aufheben"
+    "ungroup": "Gruppierung nach Bereichen aufheben",
+    "empty_all_hidden": "Alle Gerätetypen sind ausgeblendet",
+    "empty_all_hidden_hint": "Aktiviere im Menü (⋮) den Bearbeitungsmodus, um Gerätetypen wieder einzublenden.",
+    "empty_no_entities": "Keine Geräte zum Anzeigen",
+    "empty_no_entities_hint": "Die Geräteseite zeigt Entitäten, die zu einem Bereich gehören, dazu Personen, Wetter und Alarm. Ordne in Home Assistant Geräte oder Entitäten Bereichen zu."
   },
   "more": {
     "title": "Weitere",
@@ -298,6 +308,7 @@
     "title": "Blueprint",
     "title_plural": "Blueprints",
     "yaml_required": "Kein YAML Code eingegeben!",
+    "install_failed": "Installation des Blueprints fehlgeschlagen",
     "installed": "Installiert",
     "no_blueprints_installed": "Keine Blueprints installiert",
     "not_installed": "Nicht installiert",

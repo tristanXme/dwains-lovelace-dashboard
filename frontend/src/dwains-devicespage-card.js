@@ -24,6 +24,8 @@ const { loadCardHelpers } = require('./card-helpers-loader');
 const { defineDwainsElement } = require('./custom-element-registration');
 const { DisconnectGrace } = require('./disconnect-grace');
 const { RegistryChangeWatcher } = require('./registry-change-watcher');
+const { devicesEmptyReason, initialSelection } = require('./empty-state');
+import { emptyStateStyles, renderEmptyState } from './empty-state-view';
 const { entityIdsIn, hassChangeIsRelevant, relevanceFilter } = require('./state-relevance');
 const { attachDeferredCard } = require('./deferred-card');
 
@@ -178,9 +180,10 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
             this.selectedDevice = newstate;
           } else {
             //The tab/page itself is clicked so fallback on first device button
-            if(this.data != null && Object.keys(this.data).length != 0){
-              this.selectedDevice = Object.values(this.data)[0]['domain'];
-            }
+            this.selectedDevice = initialSelection(
+              "",
+              Object.values(this.data || {}).map((item) => item.domain),
+            );
           }
         }
 
@@ -267,6 +270,13 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           || this.entities == null || this.entities.length === 0
           || this.configuration == null || this.configuration.length === 0
           ){
+            // Nothing to build the page from yet: show its empty state.
+            if (this.configuration != null) {
+              this.data = [];
+              this.disabledDevices = [];
+              this.selectedDevice = "";
+              this.startedUp = true;
+            }
           } else {
             const data = [];
             const disabledDevices = [];
@@ -594,10 +604,12 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
             });
             this.startedUp = true;
 
-            //Set first selected device
-            if(this.selectedDevice.length === 0){
-              this.selectedDevice = Object.values(sortedData)[0]['domain'];
-            }
+            // Without a hash the first device type is selected; "" when
+            // there is none.
+            this.selectedDevice = initialSelection(
+              this.selectedDevice,
+              Object.values(sortedData).map((item) => item.domain),
+            );
           }
         }
 
@@ -648,7 +660,9 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
         render() {
           //console.log('render()');
 
-          if(this.data == null || Object.keys(this.data).length === 0){
+          // null while loading; an empty list renders the page with its
+          // empty state.
+          if(this.data == null){
             return html``;
           } else {
             return html`
@@ -700,6 +714,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                       <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4" id="sortable">
                         ${Object.values(this.data).map((i) => this._renderDeviceButton(i))}
                       </div>
+                      ${renderEmptyState(this._hass, 'devices', devicesEmptyReason(this))}
 
                       ${this.deviceEditMode ? html `
                         ${this.disabledDevices.length ? html`

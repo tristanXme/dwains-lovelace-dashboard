@@ -101,7 +101,13 @@
     "no_floor": "No floor",
     "disable": "Disable area in DD",
     "disabled": "The following areas are disabled:",
-    "enable": "Enable area"
+    "enable": "Enable area",
+    "empty_no_areas": "No areas yet",
+    "empty_no_areas_hint": "Create areas in Home Assistant (Settings → Areas, labels & zones) and assign devices or entities to them.",
+    "empty_all_disabled": "All areas are disabled",
+    "empty_all_disabled_hint": "Turn on edit mode in the menu (⋮) to enable areas again.",
+    "empty_no_entities": "No entities in your areas",
+    "empty_no_entities_hint": "Assign devices or entities to your areas in Home Assistant."
   },
   "area_binary_sensor": {
     "summary": {
@@ -279,7 +285,11 @@
     "script": "Script",
     "time": "Time",
     "event": "Event",
-    "text": "Text"
+    "text": "Text",
+    "empty_all_hidden": "All device types are hidden",
+    "empty_all_hidden_hint": "Turn on edit mode in the menu (⋮) to show device types again.",
+    "empty_no_entities": "No devices to show",
+    "empty_no_entities_hint": "The devices page lists entities that belong to an area, plus people, weather and alarm. Assign devices or entities to areas in Home Assistant."
   },
   "more": {
     "title": "More",
@@ -298,6 +308,7 @@
     "title": "Blueprint",
     "title_plural": "Blueprints",
     "yaml_required": "No YAML code entered!",
+    "install_failed": "Installing the blueprint failed",
     "installed": "Installed",
     "no_blueprints_installed": "No blueprints installed",
     "not_installed": "Not installed",

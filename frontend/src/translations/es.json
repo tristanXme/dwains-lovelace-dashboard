@@ -94,7 +94,13 @@
     "no_floor": "Sin piso",
     "disable": "Disable area in DD",
     "disabled": "The following areas are disabled:",
-    "enable": "Enable area"
+    "enable": "Enable area",
+    "empty_no_areas": "Todavía no hay áreas",
+    "empty_no_areas_hint": "Crea áreas en Home Assistant (Ajustes → Áreas, etiquetas y zonas) y asígnales dispositivos o entidades.",
+    "empty_all_disabled": "Todas las áreas están desactivadas",
+    "empty_all_disabled_hint": "Activa el modo de edición en el menú (⋮) para volver a activar áreas.",
+    "empty_no_entities": "No hay entidades en tus áreas",
+    "empty_no_entities_hint": "Asigna dispositivos o entidades a tus áreas en Home Assistant."
   },
   "area_binary_sensor": {
     "summary": {
@@ -268,7 +274,11 @@
     "alarm_control_panel": "Panel de control de Alarma",
     "automation": "Automation",
     "group": "Group by areas",
-    "ungroup": "Ungroup by areas"
+    "ungroup": "Ungroup by areas",
+    "empty_all_hidden": "Todos los tipos de dispositivo están ocultos",
+    "empty_all_hidden_hint": "Activa el modo de edición en el menú (⋮) para volver a mostrar tipos de dispositivo.",
+    "empty_no_entities": "No hay dispositivos que mostrar",
+    "empty_no_entities_hint": "La página de dispositivos muestra las entidades que pertenecen a un área, además de personas, tiempo y alarma. Asigna dispositivos o entidades a áreas en Home Assistant."
   },
   "more": {
     "title": "Más",
@@ -286,6 +296,7 @@
     "title": "Blueprint",
     "title_plural": "Blueprints",
     "yaml_required": "¡No se ingresó ningún código YAML!",
+    "install_failed": "La instalación del blueprint falló",
     "installed": "Instalado",
     "no_blueprints_installed": "No hay blueprints instalados",
     "not_installed": "No instalado",

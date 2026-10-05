@@ -94,7 +94,13 @@
     "no_floor": "没有楼层",
     "disable": "在 DD 中禁用区域",
     "disabled": "以下区域已禁用：",
-    "enable": "启用区域"
+    "enable": "启用区域",
+    "empty_no_areas": "还没有区域",
+    "empty_no_areas_hint": "在 Home Assistant 中创建区域（设置 → 区域、标签和地区），并为其分配设备或实体。",
+    "empty_all_disabled": "所有区域都已禁用",
+    "empty_all_disabled_hint": "在菜单（⋮）中开启编辑模式以重新启用区域。",
+    "empty_no_entities": "你的区域中没有实体",
+    "empty_no_entities_hint": "在 Home Assistant 中为你的区域分配设备或实体。"
   },
   "area_binary_sensor": {
     "summary": {
@@ -272,7 +278,11 @@
     "script": "脚本",
     "time": "时间",
     "event": "事件",
-    "text": "文本"
+    "text": "文本",
+    "empty_all_hidden": "所有设备类型都已隐藏",
+    "empty_all_hidden_hint": "在菜单（⋮）中开启编辑模式以重新显示设备类型。",
+    "empty_no_entities": "没有可显示的设备",
+    "empty_no_entities_hint": "设备页面显示属于某个区域的实体，以及人员、天气和警报。请在 Home Assistant 中为区域分配设备或实体。"
   },
   "more": {
     "title": "更多",
@@ -290,6 +300,7 @@
     "title": "蓝图",
     "title_plural": "蓝图",
     "yaml_required": "未输入 YAML 代码！",
+    "install_failed": "安装蓝图失败",
     "installed": "已安装",
     "no_blueprints_installed": "未安装蓝图",
     "not_installed": "未安装",
