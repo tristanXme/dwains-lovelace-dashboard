@@ -33,7 +33,6 @@ export const DeviceViewMixin = (Base) => class extends Base {
         class="col-span-${data.colSpan} row-span-${data.rowSpan} lg-col-span-${data.colSpanLg} lg-row-span-${data.rowSpanLg} xl-col-span-${data.colSpanXl} xl-row-span-${data.rowSpanXl} relative"
       >
 	            <div>
-	              <span class="hidden">${translateEngine(this._hass, 'device.'+data.domain)}<br></span>
 	              <dd-lazy-card .card=${data.card} .cardFactory=${data.cardFactory} .hass=${this._hass}></dd-lazy-card>
 	            </div>
         ${this.deviceViewEditMode ? html`

@@ -1392,7 +1392,7 @@ function getDwainsHass() {
       const value = ev.currentTarget.ddValue;
 
       if(value){
-        this._attachSortables('.sortable', 'data-entity', 'dwains_dashboard/sort_entity',
+        this._attachSortables('.favorites-sortable', 'data-entity', 'dwains_dashboard/sort_entity',
           'favorite_sort_order', () => this.favoriteEditMode);
       } else {
         this._destroySortables();
@@ -1406,7 +1406,7 @@ function getDwainsHass() {
       const value = ev.currentTarget.ddValue;
 
       if(value){
-        this._attachSortables('.sortable', 'data-area-id', 'dwains_dashboard/sort_area_button',
+        this._attachSortables('.area-sortable', 'data-area-id', 'dwains_dashboard/sort_area_button',
           this.areaDisplayGrouped ? 'grouped_sort_order' : 'sort_order', () => this.areaEditMode);
       } else {
         this._destroySortables();
@@ -1652,7 +1652,7 @@ function getDwainsHass() {
               `: ""}
             </div>
           </div>
-          <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4 sortable ${this.favoriteEditMode || !this._masonryEnabled() ? "" : "dd-fav-masonry"}">
+          <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4 sortable favorites-sortable ${this.favoriteEditMode || !this._masonryEnabled() ? "" : "dd-fav-masonry"}">
             ${this.favorites.map((i) =>
               html`${this._renderFavoriteViewCard(i)}`
             )}

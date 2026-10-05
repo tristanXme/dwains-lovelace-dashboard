@@ -29,10 +29,30 @@ Security, stability and performance release of DD3.
 - **Stability:** removed or unavailable entities (favorites, alarm, weather) no
   longer break the homepage; blueprint input fields work again on Home
   Assistant 2026.9+; clear error messages instead of `unknown_error`.
-- **Performance:** the bundle is served gzip-compressed (584 KB → 120 KB);
-  registry and dashboard data are reused across navigations instead of being
-  downloaded on every page change; opening an area causes far less layout work;
-  the bundle URL is versioned so browsers never keep an outdated copy.
+- **Performance:**
+  - The main bundle shrank from 584 KB in 3.10.1 to about 360 KB (82 KB
+    gzip-compressed).
+    Edit dialogs, drag and drop and the strings of other languages load only
+    when needed; the strings of your language arrive before the first render.
+  - Areas, devices and entities come from the registries Home Assistant
+    already keeps in the browser instead of downloading the full lists (the
+    entity list is several MB on large installations).
+  - The homepage, devices page and status bar render only when something
+    they show changed, not on every state change in the house.
+  - Pages are built once: before, the layout rebuilt them while Home
+    Assistant set up the view, creating every card twice.
+  - File names of the bundle parts carry a version or content hash, so
+    browsers never keep an outdated copy.
+- **Live updates:** moving an entity to another area, adding an area or
+  renaming something in Home Assistant shows up without reloading the page.
+- **Removed:** the own update entity, which checked a server of the original
+  author (HACS reports new versions); it is removed from the entity registry
+  on the first start.
+- **Fixed:** content no longer slides under the iPhone notch and status bar;
+  camera entities in the house information popup and `input_datetime`
+  entities in the status bar no longer cause errors; menus and dialogs use the
+  current Home Assistant components (a click on the text next to a checkbox
+  toggles it).
 - **New:** sensors and binary sensors below the area name are chosen per area
   under *Edit* of the area tile (only the entities of that area are offered).
   A chosen sensor replaces the average of its device class on that tile. The
@@ -79,17 +99,25 @@ Security, stability and performance release of DD3.
 ```bash
 # Frontend (Node 22, see .nvmrc): sources in frontend/src
 npm ci
+npm run lint      # names used but never defined
 npm test          # unit tests
 npm run build     # writes custom_components/dwains_dashboard/js/* (+ .gz) and const.py revision
 
 # Backend (Python 3.14)
 pip install -r requirements_test.txt
 pytest
+
+# Browser tests against a real Home Assistant (port 8124)
+pip install $(python tests/e2e/base_requirements.py)
+npm run e2e
 ```
 
+Strings live in `frontend/src/translations/<language>.json`; English is
+bundled, the build writes the others to `js/lang/`.
+
 CI rebuilds the bundle and fails if the committed files differ from the sources,
-runs the tests against the pinned Home Assistant release and the newest beta,
-and validates the integration with hassfest and HACS.
+runs the unit and browser tests against the pinned Home Assistant release and
+the newest beta, and validates the integration with hassfest and HACS.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
 

@@ -21,7 +21,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
       const withGraphs = data.some((item) => this._areaGraph(item.area.area_id)) ? "with-graphs" : "";
       if(!this.areaDisplayGrouped){
         return html`
-          <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable ${withGraphs}">
+          <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable area-sortable ${withGraphs}">
             ${data.map((i) => this._renderAreaButton(i))}
           </div>`;
       } else {
@@ -53,7 +53,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
           html`
             <div class="mb-5">
               <h3 class="font-semibold capitalize text-gray">${key.replace(/_/g, " ")}</h3>
-              <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable ${withGraphs}">
+              <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable area-sortable ${withGraphs}">
               ${Object.entries(group[key]).map(([k,v]) => html`${this._renderAreaButton(v)}`)}
               </div>
             </div>
