@@ -26,6 +26,14 @@ Security, stability and performance release of DD3.
 - **Security:** file names sent by the dashboard editor are validated (no more
   `../` paths), more-page names can no longer break the dashboard or reveal
   `secrets.yaml` values, dashboard templates run in a Jinja sandbox.
+  `!include` and Jinja includes only read files inside the dashboard folders
+  (`dwains-dashboard/` without its backups, `hki-user/` and the bundled
+  views).
+- **Changed: `!secret` is no longer supported in dashboard files.** Every
+  value in the dashboard is visible to every user who can open it, so a
+  secret resolved there was not secret anymore. A dashboard file that still
+  uses `!secret` does not load; the error names the file and the secret. Put
+  the value into the file itself or leave it out.
 - **Stability:** removed or unavailable entities (favorites, alarm, weather) no
   longer break the homepage; blueprint input fields work again on Home
   Assistant 2026.9+; clear error messages instead of `unknown_error`.
@@ -73,7 +81,12 @@ Security, stability and performance release of DD3.
   settings are moved to `dwains-dashboard/backups/` first and restored if the
   import fails. Both take the YAML files of the dashboard folder only: hidden
   files and folders (such as `.DS_Store`), other file types, symlinks and the
-  backups are left out, so every export can be imported again.
+  backups are left out, so every export can be imported again. An export holds
+  at most 5000 files, 50 MB and 5 MB per file; an import checks the same
+  limits before it unpacks anything.
+- **Backups:** `dwains-dashboard/backups/` keeps the 10 newest backups of each
+  kind (import, cleanup, migration) and the 5 newest exports; older ones are
+  removed when a new one is made. Copy a backup elsewhere to keep it longer.
 - **New:** choose the entries of the house status bar (persons, lights,
   climate, smoke, doors, …) in the dashboard settings. The bar stays one row
   and scrolls sideways when it is full, also with the mouse wheel.
@@ -117,7 +130,9 @@ npm run e2e
 ```
 
 Strings live in `frontend/src/translations/<language>.json`; English is
-bundled, the build writes the others to `js/lang/`.
+bundled, the build writes the others to `js/lang/`. The settings dialogs and
+repair messages use `custom_components/dwains_dashboard/translations/`; a test
+checks that every language there has all English strings and placeholders.
 
 CI rebuilds the bundle and fails if the committed files differ from the sources,
 runs the unit and browser tests against the oldest supported Home Assistant
