@@ -44,12 +44,12 @@ test("empty input stops after the message", async () => {
   }
 });
 
-test("invalid YAML shows the backend's reason", async () => {
+test("invalid YAML shows the backend's reason, translated", async () => {
   const { messages, installed, run } = setup(() => {
     throw { code: "invalid_format", message: "Blueprint is not valid YAML: mapping values are not allowed here" };
   });
   assert.equal(await run("a: [unclosed"), false);
-  assert.deepEqual(messages, ["<blueprint.install_failed>: Blueprint is not valid YAML: mapping values are not allowed here"]);
+  assert.deepEqual(messages, ["<blueprint.install_failed>: <blueprint.error_invalid_yaml>: mapping values are not allowed here"]);
   assert.deepEqual(installed, []);
 });
 
@@ -58,13 +58,13 @@ test("a wrong top-level structure shows the backend's reason", async () => {
     throw { code: "invalid_format", message: "Blueprint must be a YAML mapping" };
   });
   assert.equal(await run("- a list"), false);
-  assert.deepEqual(messages, ["<blueprint.install_failed>: Blueprint must be a YAML mapping"]);
+  assert.deepEqual(messages, ["<blueprint.install_failed>: <blueprint.error_not_mapping>"]);
 });
 
 test("a blueprint without card is reported", async () => {
   const { messages, installed, run } = setup(() => ({ error: "Blueprint has no card" }));
   assert.equal(await run("blueprint:\n  name: Test\n"), false);
-  assert.deepEqual(messages, ["<blueprint.install_failed>: Blueprint has no card"]);
+  assert.deepEqual(messages, ["<blueprint.install_failed>: <blueprint.error_no_card>"]);
   assert.deepEqual(installed, []);
 });
 
@@ -98,4 +98,12 @@ test("the install finishes only after the list is reloaded", async () => {
   });
   assert.equal(result, true);
   assert.equal(reloaded, true);
+});
+
+test("an unknown reason is shown as it is", async () => {
+  const { messages, run } = setup(() => {
+    throw { code: "unauthorized", message: "Unauthorized" };
+  });
+  assert.equal(await run(BLUEPRINT), false);
+  assert.deepEqual(messages, ["<blueprint.install_failed>: Unauthorized"]);
 });
