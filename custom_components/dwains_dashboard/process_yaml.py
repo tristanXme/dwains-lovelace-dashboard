@@ -28,6 +28,46 @@ def fromjson(value):
 _YAML_PROCESSOR_KEY = "yaml_processor"
 _RELOAD_SERVICE_REGISTERED_KEY = "reload_service_registered"
 
+# The only folders (relative to the HA config folder) dashboard YAML and
+# templates may be read from: the bundled views, the dashboard folder and the
+# HKI user configuration. Backups are left out, so is everything else (such
+# as secrets.yaml or other integrations' files).
+INCLUDE_ROOTS = (
+    "custom_components/dwains_dashboard/lovelace",
+    "dwains-dashboard",
+    "hki-user",
+)
+EXCLUDED_ROOTS = ("dwains-dashboard/backups",)
+
+
+class DashboardPathError(HomeAssistantError):
+    """A dashboard file tried to read a file outside the dashboard folders."""
+
+
+def _within(path: str, root: str) -> bool:
+    try:
+        return os.path.commonpath([path, root]) == root
+    except ValueError:  # different drives on Windows
+        return False
+
+
+class _DashboardTemplateLoader(jinja2.BaseLoader):
+    """Jinja loader for template names that are file paths, like the former
+    FileSystemLoader("/"), restricted to the processor's folders."""
+
+    def __init__(self, processor: "DashboardYamlProcessor") -> None:
+        self._processor = processor
+
+    def get_source(self, environment, template):
+        path = self._processor.checked_path(os.path.join("/", template))
+        try:
+            mtime = os.path.getmtime(path)
+            with open(path, encoding="utf-8") as template_file:
+                source = template_file.read()
+        except FileNotFoundError as err:
+            raise jinja2.TemplateNotFound(template) from err
+        return source, path, lambda: os.path.isfile(path) and os.path.getmtime(path) == mtime
+
 
 def _find_yaml_files(directory: str) -> Iterator[str]:
     """Yield visible YAML files recursively in deterministic order."""
@@ -94,10 +134,15 @@ class _DwainsDashboardLoader(loader.PythonSafeLoader):
 class DashboardYamlProcessor:
     """Own template state and YAML loading for one Home Assistant instance."""
 
-    def __init__(self):
+    def __init__(self, allowed_roots=(), excluded_roots=()):
+        # Canonical paths (symlinks resolved) of the folders files may be
+        # read from; see checked_path().
+        self.allowed_roots = [os.path.realpath(root) for root in allowed_roots]
+        self.excluded_roots = [os.path.realpath(root) for root in excluded_roots]
         # Sandboxed: templates only format data, they never need Python
-        # attribute access, so block it as defense in depth.
-        self.jinja = SandboxedEnvironment(loader=jinja2.FileSystemLoader("/"))
+        # attribute access, so block it as defense in depth. Template files
+        # are only loaded from the allowed folders.
+        self.jinja = SandboxedEnvironment(loader=_DashboardTemplateLoader(self))
         # `tojson` must not emit \uXXXX surrogate pairs (emoji): PyYAML does not
         # recombine them and the dashboard JSON encoder rejects lone surrogates.
         self.jinja.policies["json.dumps_kwargs"] = {
@@ -108,6 +153,21 @@ class DashboardYamlProcessor:
         self.more_pages = {}
         self.global_config = {}
 
+    def checked_path(self, path: str) -> str:
+        """Canonical path of a file the dashboard may read.
+
+        Raises DashboardPathError for anything outside the allowed folders,
+        including `..`, absolute paths and symlinks that point outside.
+        """
+        real = os.path.realpath(path)
+        if not any(_within(real, root) for root in self.allowed_roots) or any(
+            _within(real, root) for root in self.excluded_roots
+        ):
+            raise DashboardPathError(
+                f"{path} is outside the Dwains Dashboard folders"
+            )
+        return real
+
     def load_yaml(self, fname, secrets=None, args=None):
         return load_yamll(self, fname, secrets, args)
 
@@ -117,7 +177,10 @@ def get_yaml_processor(hass: HomeAssistant) -> DashboardYamlProcessor:
     domain_data = get_domain_data(hass)
     processor = domain_data.get(_YAML_PROCESSOR_KEY)
     if processor is None:
-        processor = domain_data[_YAML_PROCESSOR_KEY] = DashboardYamlProcessor()
+        processor = domain_data[_YAML_PROCESSOR_KEY] = DashboardYamlProcessor(
+            [hass.config.path(root) for root in INCLUDE_ROOTS],
+            [hass.config.path(root) for root in EXCLUDED_ROOTS],
+        )
     return processor
 
 
@@ -156,6 +219,10 @@ def _load_hki_configuration(processor, config_path):
     return configuration
 
 def load_yamll(processor, fname, secrets=None, args=None):
+    # Relative includes resolve against fname as written (the loader takes
+    # its name from the opened file), so open it by that name; the check uses
+    # the canonical path so a symlink cannot point outside the allowed folders.
+    processor.checked_path(fname)
     try:
         template_args = {} if args is None else args
         process_yaml = False
