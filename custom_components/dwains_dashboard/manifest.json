@@ -12,7 +12,7 @@
     "lovelace"
   ],
   "documentation": "https://dwainscheeren.github.io/dwains-lovelace-dashboard/",
-  "iot_class": "cloud_polling",
+  "iot_class": "calculated",
   "issue_tracker": "https://github.com/dwainscheeren/dwains-lovelace-dashboard/issues",
   "single_config_entry": true,
   "version": "3.11.0"

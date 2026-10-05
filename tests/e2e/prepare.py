@@ -135,11 +135,22 @@ async def _setup(config_dir: Path) -> None:
         )
 
 
+def _has_setup_port() -> bool:
+    from homeassistant.components.http import const
+
+    return hasattr(const, "ENV_SETUP_PORT")
+
+
 def main() -> None:
     config_dir = Path(sys.argv[1]).resolve()
     shutil.rmtree(config_dir, ignore_errors=True)
     (config_dir / "custom_components").mkdir(parents=True)
     shutil.copy(Path(__file__).with_name("configuration.yaml"), config_dir / "configuration.yaml")
+    if not _has_setup_port():
+        # Before SETUP_PORT (the oldest supported releases) the port comes
+        # from configuration.yaml and is kept.
+        with open(config_dir / "configuration.yaml", "a", encoding="utf-8") as config:
+            config.write("http:\n  server_port: 8124\n")
     os.symlink(
         ROOT / "custom_components" / "dwains_dashboard",
         config_dir / "custom_components" / "dwains_dashboard",
