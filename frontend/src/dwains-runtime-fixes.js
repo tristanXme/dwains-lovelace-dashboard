@@ -24,5 +24,4 @@ const { getDwainsRuntimeState } = require('./runtime-state');
   window.addEventListener('error', reportRuntimeWindowError, true);
   window.addEventListener('unhandledrejection', reportUnhandledRejection);
 
-  console.log('Dwains runtime support loaded');
 })();

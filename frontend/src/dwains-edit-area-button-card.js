@@ -134,7 +134,6 @@ class DwainsEditAreaButtonCard extends LitElement {
         binarySensorEntities: this.binarySensorEntities,
       }).then(
           (resp) => {
-              console.log(resp);
               closePopup();
           },
           (err) => {

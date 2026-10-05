@@ -264,7 +264,6 @@ class DwainsEditDeviceCardCard extends LitElement {
           domain: this.domain,
         }).then(
             (resp) => {
-                console.log(resp);
                 closePopup();
             },
             (err) => {
@@ -279,7 +278,6 @@ class DwainsEditDeviceCardCard extends LitElement {
           blueprint: blueprint
         }).then(
             (resp) => {
-              console.log(resp);
               websocketReadStore.invalidate(this.hass);
               this._loadBlueprints();
               this.requestUpdate();
@@ -305,7 +303,6 @@ class DwainsEditDeviceCardCard extends LitElement {
           domain: this.domain,
         }).then(
             (resp) => {
-                console.log(resp);
                 closePopup();
             },
             (err) => {
@@ -322,7 +319,6 @@ class DwainsEditDeviceCardCard extends LitElement {
           yamlCode: JSON.stringify(this.installBlueprintYaml),
         }).then(
             (resp) => {
-              console.log(resp);
               if(resp["succesfull"]){
                 alert(this.hass.localize("ui.common.successfully_saved"));
                 websocketReadStore.invalidate(this.hass);

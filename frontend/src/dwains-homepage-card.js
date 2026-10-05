@@ -1030,14 +1030,7 @@ function getDwainsHass() {
         entities: JSON.stringify([...data.entities]),
         key: key,
         value: value,
-      }).then(
-          (resp) => {
-              console.log(resp);
-          },
-          (err) => {
-              console.error('Message failed!', err);
-          }
-      );
+      }).catch((err) => console.error('Message failed!', err));
     }
 
     _handleAreaClick(event){
@@ -1251,14 +1244,7 @@ function getDwainsHass() {
         areaId: areaId,
         key: key,
         value: value,
-      }).then(
-          (resp) => {
-              console.log(resp);
-          },
-          (err) => {
-              console.error('Message failed!', err);
-          }
-      );
+      }).catch((err) => console.error('Message failed!', err));
 
     }
 
@@ -1321,14 +1307,7 @@ function getDwainsHass() {
         type: 'dwains_dashboard/edit_entity_favorite',
         entityId: entityId,
         favorite: true,
-      }).then(
-          (resp) => {
-              console.log(resp);
-          },
-          (err) => {
-              console.error('Message failed!', err);
-          }
-      );
+      }).catch((err) => console.error('Message failed!', err));
     }
 
     _handleEntityRemoveFromFavoritesClick(ev){
@@ -1340,14 +1319,7 @@ function getDwainsHass() {
         type: 'dwains_dashboard/edit_entity_favorite',
         entityId: entityId,
         favorite: false,
-      }).then(
-          (resp) => {
-              console.log(resp);
-          },
-          (err) => {
-              console.error('Message failed!', err);
-          }
-      );
+      }).catch((err) => console.error('Message failed!', err));
 
     }
 
@@ -1438,10 +1410,7 @@ function getDwainsHass() {
             type: type,
             sortData: JSON.stringify(this.toArray()),
             sortType: sortType,
-          }).then(
-            (resp) => console.log(resp),
-            (err) => console.error('Message failed!', err),
-          );
+          }).catch((err) => console.error('Message failed!', err));
         }
       }));
     }

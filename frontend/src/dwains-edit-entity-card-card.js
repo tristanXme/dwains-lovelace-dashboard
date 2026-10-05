@@ -305,7 +305,6 @@ class DwainsEditEntityCardCard extends LitElement {
         entityId: this.entity_id,
       }).then(
           (resp) => {
-              console.log(resp);
               closePopup();
           },
           (err) => {
@@ -320,7 +319,6 @@ class DwainsEditEntityCardCard extends LitElement {
         blueprint: blueprint
       }).then(
           (resp) => {
-            console.log(resp);
             websocketReadStore.invalidate(this.hass);
             this._loadBlueprints();
             this.requestUpdate();
@@ -352,7 +350,6 @@ class DwainsEditEntityCardCard extends LitElement {
         yamlCode: JSON.stringify(this.installBlueprintYaml),
       }).then(
           (resp) => {
-            console.log(resp);
             if(resp["succesfull"]){
               alert(this.hass.localize("ui.common.successfully_saved"));
               websocketReadStore.invalidate(this.hass);

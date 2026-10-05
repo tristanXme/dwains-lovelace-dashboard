@@ -82,7 +82,6 @@ class DwainsEditDeviceButtonCard extends LitElement {
           showInNavbar: this.showInNavbar,
         }).then(
             (resp) => {
-                console.log(resp);
                 closePopup();
             },
             (err) => {

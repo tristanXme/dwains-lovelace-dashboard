@@ -10,6 +10,7 @@
     "build": "webpack --mode production && node scripts/postbuild.mjs",
     "watch": "webpack --mode development --watch",
     "test": "node --test \"frontend/test/*.test.js\"",
+    "lint": "eslint",
     "e2e": "python tests/e2e/prepare.py .e2e && node tests/e2e/dashboard.e2e.mjs .e2e"
   },
   "dependencies": {
@@ -19,6 +20,8 @@
     "sortablejs": "1.15.7"
   },
   "devDependencies": {
+    "eslint": "9.39.5",
+    "globals": "15.15.0",
     "playwright": "1.56.1",
     "terser-webpack-plugin": "5.6.1",
     "webpack": "5.111.1",

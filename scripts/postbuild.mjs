@@ -1,6 +1,6 @@
 // Post-build steps that must run after every production build.
 import { createHash } from "node:crypto";
-import { copyFileSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { gzipSync, constants } from "node:zlib";
 
 const out = "custom_components/dwains_dashboard/js";
@@ -24,12 +24,25 @@ for (const file of readdirSync(translations).filter((name) => name.endsWith(".js
 }
 
 // Small modules registered globally by the integration; not bundled. The
-// loader learns the language file names here.
-copyFileSync(`${standalone}/dwains-dashboard-layout-preload.js`, `${out}/dwains-dashboard-layout.js`);
-const loader = readFileSync(`${standalone}/dwains-dashboard-loader.js`, "utf8");
-const placeholder = "/*DD_LANGUAGE_FILES*/{}";
-if (!loader.includes(placeholder)) throw new Error(`${placeholder} not found in the loader`);
-writeFileSync(`${out}/dwains-dashboard-loader.js`, loader.replace(placeholder, JSON.stringify(languageFiles)));
+// preloaded layout gets the layout styles the bundle uses, the loader the
+// language file names.
+const fillIn = (source, placeholder, value) => {
+  if (!source.includes(placeholder)) throw new Error(`${placeholder} not found`);
+  return source.replace(placeholder, () => JSON.stringify(value));
+};
+const layoutCss = readFileSync("frontend/src/styles/dashboard-layout.css", "utf8")
+  .replace(/\/\*[\s\S]*?\*\//g, "")
+  .replace(/\s+/g, " ")
+  .replace(/\s*([{};])\s*/g, "$1")
+  .trim();
+writeFileSync(
+  `${out}/dwains-dashboard-layout.js`,
+  fillIn(readFileSync(`${standalone}/dwains-dashboard-layout-preload.js`, "utf8"), '/*DD_LAYOUT_CSS*/""', layoutCss),
+);
+writeFileSync(
+  `${out}/dwains-dashboard-loader.js`,
+  fillIn(readFileSync(`${standalone}/dwains-dashboard-loader.js`, "utf8"), "/*DD_LANGUAGE_FILES*/{}", languageFiles),
+);
 
 const served = [
   "dwains-dashboard.js",

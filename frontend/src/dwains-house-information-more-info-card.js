@@ -314,12 +314,6 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
                 type: "picture-entity",
                 camera_view: "auto"
                 };
-                rowSpan = "2";
-                colSpan = "2";
-                rowSpanLg = "2";
-                colSpanLg = "2";
-                rowSpanXl = "2";
-                colSpanXl = "2";
                 break;
             case "climate":
                 // cardConfig = {

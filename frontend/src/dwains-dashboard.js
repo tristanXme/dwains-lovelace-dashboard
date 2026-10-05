@@ -239,7 +239,7 @@ class DwainsDashboard {
         if(this.configuration["entities_popup"] && this.configuration["entities_popup"][ev.detail.entityId]){
             //This specific entity has a own popup
             if(this.configuration['entities'][ev.detail.entityId] && !this.configuration['entities'][ev.detail.entityId]['custom_popup']){
-                console.log('Please enable custom popup for this entity');
+                // Its own popup card exists but is switched off.
             } else {
                 const friendlyName = this._entityDisplayName(ev.detail.entityId);
 
@@ -271,14 +271,12 @@ class DwainsDashboard {
     }
 
     async startDwainsDashboard() {
-        console.log('Starting Dwains Dashboard');
         const lovelace = await this.getLovelace();
         if (this._destroyed || !lovelace) return;
         if (lovelace.config.dwains_dashboard) {
             await this.loadData();
             if (this._destroyed) return;
             this._ensurePopupListener();
-            console.log('Dwains Dashboard Started');
             this.applyDwainsTheme();
         }
     }

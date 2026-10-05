@@ -351,7 +351,6 @@ class DwainsNavigationCard extends LitElement {
       }
 
       async _reloadCard(){
-        console.log('Reloading navigation card');
 
         await this._loads.reload();
         this.requestUpdate();

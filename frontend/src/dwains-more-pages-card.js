@@ -223,7 +223,6 @@ class MorePagesCard extends LitElement {
             foldername: morePage,
           }).then(
               async (resp) => {
-                  console.log(resp);
                   if(this.configuration && this.configuration.more_pages && this.configuration.more_pages[morePage]){
                     const morePages = {...this.configuration.more_pages};
                     delete morePages[morePage];

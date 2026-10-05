@@ -62,6 +62,12 @@ module.exports = (_env, argv) => ({
       }),
     ],
   },
+  module: {
+    rules: [
+      // Plain stylesheets are imported as text (see dwains-dashboard-layout.js).
+      { test: /\.css$/, type: "asset/source" },
+    ],
+  },
   plugins: [
     new webpack.DefinePlugin({ __DD_VERSION__: JSON.stringify(version) }),
   ],

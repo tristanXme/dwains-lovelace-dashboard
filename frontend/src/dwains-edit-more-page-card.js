@@ -517,7 +517,6 @@ class DwainsEditMorePageCard extends LitElement {
         blueprint: blueprint
     }).then(
         (resp) => {
-            console.log(resp);
             websocketReadStore.invalidate(this._hass);
             this._loadBlueprints();
             this.requestUpdate();
@@ -551,7 +550,6 @@ class DwainsEditMorePageCard extends LitElement {
         yamlCode: JSON.stringify(this.installBlueprintYaml),
     }).then(
         (resp) => {
-            console.log(resp);
             if(resp["succesfull"]){
             alert(this._hass.localize("ui.common.successfully_saved"));
             websocketReadStore.invalidate(this._hass);

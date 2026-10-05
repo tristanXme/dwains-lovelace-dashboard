@@ -129,41 +129,19 @@ export function resolveEntityName(
 const UNAVAILABLE = 'unavailable';
 const UNKNOWN = 'unknown';
 
-function legacyComputeStateDisplay(localize, stateObj) {
-  let display;
-  const domain = computeDomain(stateObj.entity_id);
-
-  if (domain === 'binary_sensor') {
-    // Try device class translation, then default binary sensor translation
-    if (stateObj.attributes.device_class) {
-      display = localize(`state.${domain}.${stateObj.attributes.device_class}.${stateObj.state}`);
-    }
-
-    if (!display) {
-      display = localize(`state.${domain}.default.${stateObj.state}`);
-    }
-  } else if (stateObj.attributes.unit_of_measurement && !['unknown', 'unavailable'].includes(stateObj.state)) {
-    display = stateObj.state;
-  } else if (domain === 'zwave') {
-    if (['initializing', 'dead'].includes(stateObj.state)) {
-      display = localize(`state.zwave.query_stage.${stateObj.state}`, 'query_stage', stateObj.attributes.query_stage);
-    } else {
-      display = localize(`state.zwave.default.${stateObj.state}`);
-    }
-  } else {
-    display = localize(`state.${domain}.${stateObj.state}`);
+// Dates and times of input_datetime entities, in the user's language
+// (a language code or hass.locale).
+const formatDateParts = (date, language, options) => {
+  try {
+    const locale = typeof language === 'string' ? language : language?.language;
+    return new Intl.DateTimeFormat(locale, options).format(date);
+  } catch (error) {
+    return new Intl.DateTimeFormat(undefined, options).format(date);
   }
-
-  // Fall back to default, component backend translation, or raw state if nothing else matches.
-  if (!display) {
-    display =
-      localize(`state.default.${stateObj.state}`) ||
-      localize(`component.${domain}.state.${stateObj.state}`) ||
-      stateObj.state;
-  }
-
-  return display;
-}
+};
+const formatDate = (date, language) => formatDateParts(date, language, { dateStyle: 'medium' });
+const formatTime = (date, language) => formatDateParts(date, language, { timeStyle: 'short' });
+const formatDateTime = (date, language) => formatDateParts(date, language, { dateStyle: 'medium', timeStyle: 'short' });
 
 export const myComputeStateDisplay = (
   localize,
