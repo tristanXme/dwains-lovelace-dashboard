@@ -250,6 +250,27 @@ for (const colorScheme of ["light", "dark"]) {
       await poll(() => deep(page, (all) => !all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("E2E Werkstatt"))), "removed area gone", 15000);
     });
 
+    await step("only changes to shown entities re-render the homepage", async () => {
+      await page.goto(BASE + "/dwains-dashboard/home");
+      await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("°C"))), "homepage");
+      await page.waitForTimeout(1500);
+      await deep(page, (all) => {
+        const card = all.find((el) => el.localName === "homepage-card");
+        window.__ddRenders = 0;
+        const updated = card.updated.bind(card);
+        card.updated = (...args) => { window.__ddRenders += 1; return updated(...args); };
+      });
+      const setState = (entityId, state) => page.evaluate(([entityId, state]) => document.querySelector("home-assistant").hass.callApi("POST", `states/${entityId}`, { state }), [entityId, state]);
+      for (const value of ["1", "2", "3"]) {
+        await setState("sensor.e2e_not_on_the_dashboard", value);
+        await page.waitForTimeout(400);
+      }
+      assert.equal(await page.evaluate(() => window.__ddRenders), 0, "re-rendered for an entity it does not show");
+      await page.evaluate(() => document.querySelector("home-assistant").hass.callService("input_boolean", "toggle", { entity_id: "input_boolean.e2e_lamp" }));
+      await poll(() => page.evaluate(() => window.__ddRenders > 0), "render after the lamp changed", 5000);
+      await page.evaluate(() => document.querySelector("home-assistant").hass.callService("input_boolean", "toggle", { entity_id: "input_boolean.e2e_lamp" }));
+    });
+
     await step("more pages: the create dialog opens", async () => {
       await page.goto(BASE + "/dwains-dashboard/more_page");
       await poll(() => deep(page, (all) => all.find((el) => el.localName === "more-pages-card")?.shadowRoot?.querySelector("ha-dropdown")), "more pages");

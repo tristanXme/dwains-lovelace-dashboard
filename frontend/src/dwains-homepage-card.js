@@ -20,6 +20,7 @@ const { resolveHass } = require('./hass-provider');
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { loadSortable } = require('./lazy-modules');
 const { RegistryChangeWatcher } = require('./registry-change-watcher');
+const { entityIdsIn, hassChangeIsRelevant, relevanceFilter } = require('./state-relevance');
 const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
 const { attachDeferredCard } = require('./deferred-card');
@@ -84,11 +85,12 @@ function getDwainsHass() {
      */
     set hass(hass) {
       const connectionChanged = hasHassConnectionChanged(this._hass, hass);
+      const previous = this._hass;
       this._hass = hass;
       propagateHomepageHass(this, hass);
       if(this.startedUp){
         this._registryChanges.update(hass);
-        this._update_hass(hass);
+        this._update_hass(hass, hassChangeIsRelevant(previous, hass, this._isShownEntity));
       }
       if (connectionChanged && this.isConnected) {
         this._subscriptions.disconnect();
@@ -97,7 +99,9 @@ function getDwainsHass() {
       void this._startIfReady(connectionChanged);
     }
 
-	    _update_hass(hass){
+	    // render: false when only entities changed that the homepage does not
+	    // show; the cards inside still get the new hass.
+	    _update_hass(hass, render = true){
 	      this._hass = hass;
 	      propagateHomepageHass(this, hass);
 
@@ -125,6 +129,7 @@ function getDwainsHass() {
 	        })
 	      }
 	      if(this.badgesCard) this.badgesCard.hass = hass;
+	      if(!render) return;
 
 	      if(this.timeout) {
 	        this._pendingHassUpdate = true;
@@ -277,7 +282,9 @@ function getDwainsHass() {
 	    }
 
 	    updated(){
-	      this._scheduleIconRepoke();
+	      // The repeated checks run after loading (see _startIfReady); later
+	      // renders only add single icons, one check a second is enough.
+	      this._timers.schedule('icon-check', () => this._repokeIcons(), 1000, { replace: false });
 	      // updated() runs for every hass state change; one masonry pass per
 	      // animation frame is enough.
 	      this._scheduleMasonryLayout();
@@ -430,6 +437,7 @@ function getDwainsHass() {
     async _reloadCard(){
       await this._loads.reload();
       this.requestUpdate();
+      this._scheduleIconRepoke();
     }
 
     _loadData(){
@@ -970,6 +978,15 @@ function getDwainsHass() {
 	        }
 	        this.data = data;
         this.disabledAreas = disabledAreas;
+        this._isShownEntity = relevanceFilter({
+          entityIds: [
+            ...[...this.entitiesByAreaId.values()].flat().map((entity) => entity.entity_id),
+            ...entityIdsIn(this.configuration),
+          ],
+          // Header (weather, alarm) and greeting; usually named in the
+          // configuration as well.
+          domains: ['weather', 'alarm_control_panel', 'sun', 'person'],
+        });
 
         this.startedUp = true;
       }

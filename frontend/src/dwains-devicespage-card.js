@@ -23,6 +23,7 @@ const { resolveHass } = require('./hass-provider');
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { defineDwainsElement } = require('./custom-element-registration');
 const { RegistryChangeWatcher } = require('./registry-change-watcher');
+const { entityIdsIn, hassChangeIsRelevant, relevanceFilter } = require('./state-relevance');
 const { attachDeferredCard } = require('./deferred-card');
 
 function getDwainsHass() {
@@ -89,10 +90,11 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
          */
         set hass(hass) {
           const connectionChanged = hasHassConnectionChanged(this._hass, hass);
+          const previous = this._hass;
           this._hass = hass;
           if(this.startedUp){
             this._registryChanges.update(hass);
-            this._update_hass(hass);
+            this._update_hass(hass, hassChangeIsRelevant(previous, hass, this._isShownEntity));
           }
           if (connectionChanged && this.isConnected) {
             this._subscriptions.disconnect();
@@ -101,7 +103,9 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           void this._startIfReady(connectionChanged);
         }
 
-	        _update_hass(hass){
+	        // render: false when only entities changed that the page does not
+	        // show; the cards inside still get the new hass.
+	        _update_hass(hass, render = true){
 	          this._hass = hass;
 
 	          if(this.data == null || this.data.length === 0) return;
@@ -119,6 +123,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 	              });
 	            }
 	          });
+	          if(!render) return;
 
 	          if(this.timeout) {
 	            this._pendingHassUpdate = true;
@@ -574,6 +579,12 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                 if (!isCurrent()) return;
             this.data = sortedData;
             this.disabledDevices = disabledDevices;
+            this._isShownEntity = relevanceFilter({
+              entityIds: [
+                ...this.entities.map((entity) => entity.entity_id),
+                ...entityIdsIn(this.configuration),
+              ],
+            });
             this.startedUp = true;
 
             //Set first selected device

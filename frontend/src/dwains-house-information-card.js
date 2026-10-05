@@ -24,6 +24,7 @@ import { myComputeStateDisplay, resolveEntityName } from "./helpers";
 import { subtleHouseInformationStyles } from './styles/dwains-subtle-style';
 const { loadDashboardRegistrySnapshot } = require('./dashboard-registry-snapshot');
 const { RegistryChangeWatcher } = require('./registry-change-watcher');
+const { hassChangeIsRelevant, relevanceFilter } = require('./state-relevance');
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { TimerOwner } = require('./timer-owner');
 const { PopupOpenScheduler } = require('./popup-open-scheduler');
@@ -194,9 +195,10 @@ class DwainsHouseInformationCard extends LitElement {
 
     set hass(hass) {
       const connectionChanged = hasHassConnectionChanged(this._hass, hass);
+      const previous = this._hass;
       this._hass = hass;
       if (this._startedHass) this._registryChanges.update(hass);
-      this.requestUpdate();
+      if (hassChangeIsRelevant(previous, hass, this._isShownEntity)) this.requestUpdate();
       void this._startIfReady(connectionChanged);
     }
 
@@ -335,6 +337,15 @@ class DwainsHouseInformationCard extends LitElement {
             }
             this.domains = domains;
             this.persons = persons;
+            // The bar counts these; climate entities are also found in the
+            // states directly.
+            this._isShownEntity = relevanceFilter({
+                entityIds: [
+                    ...persons,
+                    ...Object.values(domains).flatMap((domain) => domain.entities.map((entity) => entity.entity_id)),
+                ],
+                domains: ['climate'],
+            });
         }
     }
 
