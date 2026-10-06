@@ -49,3 +49,30 @@ test("cards that are no longer shown are let go", async () => {
   await build(reuse, [["area:a", lamp]], created);
   assert.equal(created.length, 2);
 });
+
+test("a card still being created when the next build starts is not reused", async () => {
+  const reuse = new CardReuse();
+  const lamp = { type: "tile", entity: "light.lamp" };
+  const key = cardReuseKey("area:a", lamp);
+  // Build 1: the card is requested, its creation still runs.
+  reuse.startBuild();
+  let finishStale;
+  const stale = attachDeferredCard({}, () => new Promise((resolve) => { finishStale = resolve; }), { reuse, key });
+  const stalePending = stale.cardFactory();
+  // Build 2 shows its own card for the lamp, created a little later.
+  reuse.startBuild();
+  let finishShown;
+  const shown = attachDeferredCard({}, () => new Promise((resolve) => { finishShown = resolve; }), { reuse, key });
+  const shownPending = shown.cardFactory();
+  // Card factories start on the next microtask.
+  await Promise.resolve();
+  // The stale creation finishes first.
+  finishStale({ name: "stale" });
+  await stalePending;
+  finishShown({ name: "shown" });
+  await shownPending;
+  // Build 3 keeps the card build 2 shows.
+  reuse.startBuild();
+  const third = attachDeferredCard({}, () => assert.fail("no new card expected"), { reuse, key });
+  assert.equal(third.card.name, "shown");
+});
