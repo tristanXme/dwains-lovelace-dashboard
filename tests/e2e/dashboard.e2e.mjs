@@ -171,8 +171,13 @@ for (const colorScheme of ["light", "dark"]) {
         for (let node = element; node; node = node.parentElement || node.getRootNode()?.host) {
           if (node === badge) return badge.title;
         }
-        return `pointer lands on ${element?.localName}.${element?.className}`;
-      }), "area badge");
+        // Not yet: Home Assistant's launch screen fades out over the page
+        // for a moment after loading. Wait, and say what is on top.
+        window.__ddPointerTarget = `${element?.localName}.${element?.className}`;
+        return undefined;
+      }), "area badge").catch(async (error) => {
+        throw new Error(`${error.message}; pointer lands on ${await page.evaluate(() => window.__ddPointerTarget)}`);
+      });
       assert.match(hit, /Fenster offen/);
     });
 
