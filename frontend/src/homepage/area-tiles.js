@@ -4,6 +4,7 @@ import translateEngine from '../translate-engine';
 const { areaBinarySensorDeviceClasses, areaBinarySensorEntities, areaSensorDeviceClasses, areaSensorEntities } = require('../homepage-preferences');
 const { collectAreaBinarySensorValues, entityBelongsToArea, summaryTranslationKey } = require('../area-binary-sensors');
 const { collectAreaSensorValues } = require('../area-sensors');
+const { isEntityHiddenInArea } = require('../entity-aggregation');
 require('../dwains-area-graph');
 
 
@@ -138,10 +139,13 @@ export const AreaTilesMixin = (Base) => class extends Base {
       });
     }
 
+    // The same entities as the badges and averages of the tile: hidden in
+    // the area also leaves the summary below the area name.
     _areaEntityIdsForArea(areaId) {
       return (this.entitiesByAreaId?.get(areaId) || [])
         .filter((entity) => !entity.hidden_by)
         .filter((entity) => !(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['disabled']))
+        .filter((entity) => !isEntityHiddenInArea(this.configuration['entities'][entity.entity_id]))
         .filter((entity) => this._hass.states[entity.entity_id])
         .map((entity) => entity.entity_id);
     }
