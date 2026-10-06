@@ -142,6 +142,11 @@
         "one": "1 serratura sbloccata",
         "many": "{count} serrature sbloccate"
       },
+      "lock_sensor": {
+        "zero": "Sensori serratura bloccati",
+        "one": "1 sensore serratura sbloccato",
+        "many": "{count} sensori serratura sbloccati"
+      },
       "moisture": {
         "zero": "Asciutto",
         "one": "Umidità rilevata",
@@ -261,6 +266,7 @@
     "motion": "Movimento",
     "device_tracker": "Localizzatore di dispositivi",
     "lock": "Serratura",
+    "lock_sensor": "Sensore serratura",
     "siren": "Siren",
     "input_boolean": "Input booleano",
     "weather": "Condizioni meteo",

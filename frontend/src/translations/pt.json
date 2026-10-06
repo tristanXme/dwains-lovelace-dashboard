@@ -142,6 +142,11 @@
         "one": "1 fechadura destrancada",
         "many": "{count} fechaduras destrancadas"
       },
+      "lock_sensor": {
+        "zero": "Sensores de fechadura trancados",
+        "one": "1 sensor de fechadura destrancado",
+        "many": "{count} sensores de fechadura destrancados"
+      },
       "moisture": {
         "zero": "Seco",
         "one": "Humidade detetada",
@@ -261,6 +266,7 @@
     "motion": "Movimento",
     "device_tracker": "Rastreador de dispositivo",
     "lock": "Fechadura",
+    "lock_sensor": "Sensor de fechadura",
     "siren": "Siren",
     "input_boolean": "Booleano de entrada",
     "weather": "Clima",

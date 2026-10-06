@@ -32,6 +32,7 @@ const { PopupOpenScheduler } = require('./popup-open-scheduler');
 const { ReloadableLoadOwner } = require('./reloadable-load-owner');
 const { hassConnectionIdentity, hasHassConnectionChanged } = require('./hass-connection');
 const { isEntityHiddenInArea, isLockSensorOfLock, lockDeviceIds } = require('./entity-aggregation');
+const { binarySensorType } = require('./area-binary-sensors');
 //Herschreven
 class DwainsHouseInformationCard extends LitElement {
     constructor() {
@@ -508,7 +509,7 @@ class DwainsHouseInformationCard extends LitElement {
                 if (!this._showsEntry(deviceClass)) return;
                 const on = this._isOn(entitiesByDomain, domain.domain, deviceClass);
                 if (on) {
-                    return this._renderDomainBadgeCard(domain.domain, translateEngine(this._hass, 'device.' + deviceClass), DOMAIN_STATE_ICONS[domain.domain][deviceClass], on, deviceClass);
+                    return this._renderDomainBadgeCard(domain.domain, translateEngine(this._hass, 'device.' + binarySensorType(deviceClass)), DOMAIN_STATE_ICONS[domain.domain][deviceClass], on, deviceClass);
                 }
             });
         } else if (COVER_DOMAINS.includes(domain.domain)) {

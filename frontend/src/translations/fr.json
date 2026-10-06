@@ -142,6 +142,11 @@
         "one": "1 serrure déverrouillée",
         "many": "{count} serrures déverrouillées"
       },
+      "lock_sensor": {
+        "zero": "Capteurs de serrure verrouillés",
+        "one": "1 capteur de serrure déverrouillé",
+        "many": "{count} capteurs de serrure déverrouillés"
+      },
       "moisture": {
         "zero": "Sec",
         "one": "Humidité détectée",
@@ -260,6 +265,7 @@
     "motion": "Mouvement",
     "device_tracker": "Traqueur",
     "lock": "Serrure",
+    "lock_sensor": "Capteur de serrure",
     "siren": "Siren",
     "input_boolean": "Booléen",
     "weather": "Temps",

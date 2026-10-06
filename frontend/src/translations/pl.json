@@ -142,6 +142,11 @@
         "one": "1 zamek otwarty",
         "many": "Otwarte zamki: {count}"
       },
+      "lock_sensor": {
+        "zero": "Czujniki zamków zamknięte",
+        "one": "1 czujnik zamka otwarty",
+        "many": "Otwarte czujniki zamków: {count}"
+      },
       "moisture": {
         "zero": "Sucho",
         "one": "Wykryto wilgoć",
@@ -261,6 +266,7 @@
     "motion": "Ruch",
     "device_tracker": "Śledzenie urządzeń",
     "lock": "Zamek",
+    "lock_sensor": "Czujnik zamka",
     "siren": "Siren",
     "input_boolean": "Wybór przełącznika",
     "weather": "Pogoda",
