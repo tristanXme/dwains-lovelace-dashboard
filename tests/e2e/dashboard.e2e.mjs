@@ -198,6 +198,37 @@ for (const colorScheme of ["light", "dark"]) {
       assert.match(header, /°C/);
     });
 
+    await step("hiding an entity rebuilds only what changed", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const hideInArea = (value) => ws({ type: "dwains_dashboard/edit_entity_bool_value", entityId: "sensor.luftfeuchte_wohnzimmer", key: "hidden_in_area", value });
+      const cards = () => deep(page, (all) => all
+        .filter((el) => el.dataset?.entity && el.closest?.(".dd-area-view"))
+        .map((cell) => {
+          const card = cell.querySelector("dd-lazy-card")?.firstElementChild;
+          return { entity: cell.dataset.entity, mark: card?.__ddMark, rendered: Boolean(card?.shadowRoot?.childElementCount || card?.childElementCount) };
+        }));
+      await poll(async () => (await cards()).length >= 3 && (await cards()).every((card) => card.rendered), "area view cards");
+      // Mark the card elements to see which ones survive the change.
+      await deep(page, (all) => all
+        .filter((el) => el.dataset?.entity && el.closest?.(".dd-area-view"))
+        .forEach((cell) => { const card = cell.querySelector("dd-lazy-card")?.firstElementChild; if (card) card.__ddMark = cell.dataset.entity; }));
+      await hideInArea(true);
+      try {
+        const after = await poll(async () => {
+          const list = await cards();
+          return !list.some((card) => card.entity === "sensor.luftfeuchte_wohnzimmer") && list;
+        }, "card hidden");
+        assert.ok(after.length >= 2, JSON.stringify(after));
+        for (const card of after) {
+          assert.equal(card.mark, card.entity, `${card.entity} was created again`);
+          assert.ok(card.rendered, `${card.entity} still renders`);
+        }
+      } finally {
+        await hideInArea(false);
+      }
+      await poll(async () => (await cards()).some((card) => card.entity === "sensor.luftfeuchte_wohnzimmer" && card.rendered), "card back");
+    });
+
     await step("a card with a larger row span leaves no gap below it (masonry)", async () => {
       const setRowSpan = (span) => page.evaluate((span) => document.querySelector("home-assistant").hass.callWS({
         type: "dwains_dashboard/edit_entity", entity: "input_boolean.e2e_lamp",
@@ -499,7 +530,18 @@ for (const colorScheme of ["light", "dark"]) {
       await flow.locator("step-flow-form").waitFor();
       await flow.locator("input[type=file]").setInputFiles({ name: "export.zip", mimeType: "application/zip", buffer: exported });
       // Without the confirmation nothing happens; the uploaded file stays.
-      await poll(async () => (await flowText()).includes("export.zip"), "uploaded file");
+      // The name shows while the upload still runs; wait for its file id.
+      await poll(() => page.evaluate(() => {
+        const find = (root) => {
+          for (const el of root.querySelectorAll("*")) {
+            if (el.localName === "ha-selector-file") return el;
+            const found = el.shadowRoot && find(el.shadowRoot);
+            if (found) return found;
+          }
+          return undefined;
+        };
+        return /^[0-9a-f]{32}$/.test(find(document)?.value || "");
+      }), "uploaded file");
       await flow.getByRole("button", { name: "OK" }).click();
       await poll(async () => (await flowText()).includes("Schalter"), "confirmation required");
       assert.ok(!(await flowText()).includes("Pflichtfelder"), "file kept");

@@ -27,7 +27,7 @@ const { RegistryChangeWatcher } = require('./registry-change-watcher');
 const { devicesEmptyReason, initialSelection } = require('./empty-state');
 import { emptyStateStyles, renderEmptyState } from './empty-state-view';
 const { entityIdsIn, hassChangeIsRelevant, relevanceFilter } = require('./state-relevance');
-const { attachDeferredCard } = require('./deferred-card');
+const { CardReuse, attachDeferredCard, cardReuseKey } = require('./deferred-card');
 
 function getDwainsHass() {
   return resolveHass();
@@ -61,6 +61,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           this._timers = new TimerOwner();
           this._popupOpens = new PopupOpenScheduler(this._timers);
           this._loads = new ReloadableLoadOwner((context) => this._loadConfiguration(context));
+          this._cardReuse = new CardReuse();
           this._locationChangedHandler = () => this._syncSelectedDeviceFromLocation();
           this._listeners.listen(
             'location-changed',
@@ -279,6 +280,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
             }
           } else {
             const data = [];
+            this._cardReuse.startBuild();
             const disabledDevices = [];
 
             const areaEntities = new Set();
@@ -350,7 +352,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                                 colSpanLg: colSpanLg,
                                 rowSpanXl: rowSpanXl,
                                 colSpanXl: colSpanXl,
-                              }, () => this.createCardElement2(v)));
+                              }, () => this.createCardElement2(v), { reuse: this._cardReuse, key: cardReuseKey(`device-card:${domain}:${k}`, v) }));
                             } else {
                               deviceCustomCardsTop.push(attachDeferredCard({
                                 filename: k,
@@ -361,7 +363,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                                 colSpanLg: colSpanLg,
                                 rowSpanXl: rowSpanXl,
                                 colSpanXl: colSpanXl,
-                              }, () => this.createCardElement2(v)));
+                              }, () => this.createCardElement2(v), { reuse: this._cardReuse, key: cardReuseKey(`device-card:${domain}:${k}`, v) }));
                             }
                           });
                         }
@@ -578,7 +580,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                         customPopup: customPopup,
                         sort_order: (this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['devices_sort_order'] ? this.configuration['entities'][entity.entity_id]['devices_sort_order']: 99),
                         grouped_sort_order: (this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['devices_grouped_sort_order'] ? this.configuration['entities'][entity.entity_id]['devices_grouped_sort_order']: 99),
-                      }, () => this.createCardElement2(cardConfig)));
+                      }, () => this.createCardElement2(cardConfig), { reuse: this._cardReuse, key: cardReuseKey(`device:${domain}`, cardConfig) }));
                     }
                   }
                 }

@@ -28,7 +28,7 @@ const { entityIdsIn, hassChangeIsRelevant, relevanceFilter } = require('./state-
 const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
 const { DisconnectGrace } = require('./disconnect-grace');
-const { attachDeferredCard } = require('./deferred-card');
+const { CardReuse, attachDeferredCard, cardReuseKey } = require('./deferred-card');
 const { entitySettingsFromConfiguration } = require('./entity-settings-config');
 const { createHomepageCardElement, propagateHomepageHass } = require('./homepage-card-runtime');
 const { groupingMode, readBooleanCookie, resolveGroupingPreference } = require('./homepage-preferences');
@@ -66,6 +66,7 @@ function getDwainsHass() {
       this._popupOpens = new PopupOpenScheduler(this._timers);
       this._loads = new ReloadableLoadOwner((context) => this._loadConfiguration(context));
       this._startedHass = undefined;
+      this._cardReuse = new CardReuse();
     }
 
 	    async loadHelpers() {
@@ -449,6 +450,7 @@ function getDwainsHass() {
       const data = [];
       const disabledAreas = [];
       const favorites = [];
+      this._cardReuse.startBuild();
 
       if(this.areas == null || this.areas.length === 0
       || this.devices == null || this.devices.length === 0
@@ -465,16 +467,20 @@ function getDwainsHass() {
           this.startedUp = true;
         }
       } else {
+        // Kept across rebuilds; the status bar reads the changed settings.
         const [notificationCard, badgesCard] = await Promise.all([
-          this.createCardElement2({
+          this.notificationCard || this.createCardElement2({
             type: "custom:dwains-notification-card",
             hass: this._hass,
           }),
-          this.createCardElement2({
+          this.badgesCard || this.createCardElement2({
             type: "custom:dwains-house-information-card",
             hass: this._hass,
           }),
         ]);
+        if (badgesCard === this.badgesCard) {
+          badgesCard._reloadCard?.().catch((error) => console.error('Error reloading house information card:', error));
+        }
         if (!isCurrent()) return;
         this.notificationCard = notificationCard;
         this.badgesCard = badgesCard;
@@ -665,7 +671,7 @@ function getDwainsHass() {
                 customPopup: customPopup,
                 isFavorite: isFavorite,
                 favorite_sort_order: (this.configuration['entities'][entity] && this.configuration['entities'][entity]['favorite_sort_order'] ? this.configuration['entities'][entity]['favorite_sort_order']: 99),
-              }, () => this.createCardElement2(cardConfig)));
+              }, () => this.createCardElement2(cardConfig), { reuse: this._cardReuse, key: cardReuseKey('favorite', cardConfig) }));
             }
           }));
 
@@ -894,7 +900,7 @@ function getDwainsHass() {
                       isFavorite: isFavorite,
                       sort_order: (this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['sort_order'] ? this.configuration['entities'][entity.entity_id]['sort_order']: 99),
                       grouped_sort_order: (this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['grouped_sort_order'] ? this.configuration['entities'][entity.entity_id]['grouped_sort_order']: 99),
-                    }, () => this.createCardElement2(cardConfig)));
+                    }, () => this.createCardElement2(cardConfig), { reuse: this._cardReuse, key: cardReuseKey(`area:${area.area_id}`, cardConfig) }));
 
                     areaEntities.add(entity.entity_id);
                   }
@@ -925,7 +931,7 @@ function getDwainsHass() {
                       colSpanLg: colSpanLg,
                       rowSpanXl: rowSpanXl,
                       colSpanXl: colSpanXl,
-                    }, () => this.createCardElement2(v)));
+                    }, () => this.createCardElement2(v), { reuse: this._cardReuse, key: cardReuseKey(`area-card:${area.area_id}:${k}`, v) }));
                   } else {
                     areaCustomCardsTop.push(attachDeferredCard({
                       filename: k,
@@ -936,7 +942,7 @@ function getDwainsHass() {
                       colSpanLg: colSpanLg,
                       rowSpanXl: rowSpanXl,
                       colSpanXl: colSpanXl,
-                    }, () => this.createCardElement2(v)));
+                    }, () => this.createCardElement2(v), { reuse: this._cardReuse, key: cardReuseKey(`area-card:${area.area_id}:${k}`, v) }));
                   }
                 });
               }

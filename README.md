@@ -52,6 +52,9 @@ Security, stability and performance release of DD3.
     they show changed, not on every state change in the house.
   - Pages are built once: before, the layout rebuilt them while Home
     Assistant set up the view, creating every card twice.
+  - Editing, hiding or sorting an entity rebuilds only the cards that
+    changed; before, every card on the page was created again (graphs
+    loading their history again) after each change.
   - File names of the bundle parts carry a version or content hash, so
     browsers never keep an outdated copy.
 - **Live updates:** moving an entity to another area, adding an area or
