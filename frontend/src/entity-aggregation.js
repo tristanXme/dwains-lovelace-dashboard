@@ -91,6 +91,8 @@ function groupEntityStatesByDomain(entityIds, {
   domainGroups,
   deviceClasses,
   sensorDeviceClasses,
+  registryEntities,
+  unavailableStates = [],
 }) {
   const entitiesByDomain = {};
   const supportedDomains = new Set(Object.values(domainGroups).flat());
@@ -121,6 +123,11 @@ function groupEntityStatesByDomain(entityIds, {
     }
     (entitiesByDomain[domain] ||= []).push(state);
   }
+  if (entitiesByDomain.lock && entitiesByDomain.binary_sensor) {
+    const lockDevices = lockDeviceIds(entitiesByDomain.lock, registryEntities, unavailableStates);
+    entitiesByDomain.binary_sensor = entitiesByDomain.binary_sensor
+      .filter((state) => !isLockSensorOfLock(state, registryEntities, lockDevices));
+  }
   return entitiesByDomain;
 }
 
@@ -128,10 +135,38 @@ function isEntityHiddenInArea(entityConfig) {
   return entityConfig?.hidden_in_area === true;
 }
 
+// Devices of the given lock entities that are counted (available).
+function lockDeviceIds(lockStates, registryEntities, unavailableStates = []) {
+  const deviceIds = new Set();
+  for (const lock of lockStates) {
+    const deviceId = registryEntities?.[lock?.entity_id]?.device_id;
+    if (deviceId && !unavailableStates.includes(lock.state)) deviceIds.add(deviceId);
+  }
+  return deviceIds;
+}
+
+// Some integrations add a lock binary sensor to a lock device. It reports
+// the same lock again, so while that lock entity is counted (lockDevices,
+// from lockDeviceIds) the sensor is not. A lock entity left out of the
+// dashboard leaves its sensor counted.
+function isLockSensorOfLock(stateObj, registryEntities, lockDevices) {
+  if (
+    !lockDevices.size
+    || !stateObj?.entity_id?.startsWith("binary_sensor.")
+    || stateObj.attributes?.device_class !== "lock"
+  ) {
+    return false;
+  }
+  const deviceId = registryEntities?.[stateObj.entity_id]?.device_id;
+  return Boolean(deviceId) && lockDevices.has(deviceId);
+}
+
 module.exports = {
   averageEntityStates,
   countActiveEntities,
   groupEntityStatesByDomain,
   isEntityHiddenInArea,
+  isLockSensorOfLock,
   localizedClimateState,
+  lockDeviceIds,
 };

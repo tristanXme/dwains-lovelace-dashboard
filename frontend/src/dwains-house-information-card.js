@@ -31,7 +31,7 @@ const { TimerOwner } = require('./timer-owner');
 const { PopupOpenScheduler } = require('./popup-open-scheduler');
 const { ReloadableLoadOwner } = require('./reloadable-load-owner');
 const { hassConnectionIdentity, hasHassConnectionChanged } = require('./hass-connection');
-const { isEntityHiddenInArea } = require('./entity-aggregation');
+const { isEntityHiddenInArea, isLockSensorOfLock, lockDeviceIds } = require('./entity-aggregation');
 //Herschreven
 class DwainsHouseInformationCard extends LitElement {
     constructor() {
@@ -376,7 +376,9 @@ class DwainsHouseInformationCard extends LitElement {
                         area: {},
                         friendlyName: this._entityDisplayName(entityId),
                     }))
-                : (configured || []);
+                : (configured || []).filter((entity) => (
+                    !isLockSensorOfLock(this._hass.states[entity.entity_id], this._hass.entities, this._countedLockDevices())
+                ));
             this._popupOpens.schedule(() => {
                 fireEvent("hass-more-info", { entityId: "" }, this);
                 popUp(translateEngine(this._hass, 'device.' + domain), {
@@ -470,13 +472,23 @@ class DwainsHouseInformationCard extends LitElement {
     }
 
 
+    // Devices of the locks the bar counts: their lock sensors are left out.
+    _countedLockDevices() {
+        return lockDeviceIds(
+            (this.domains?.lock?.entities || []).map((entity) => this._hass.states[entity.entity_id]),
+            this._hass.entities,
+            UNAVAILABLE_STATES,
+        );
+    }
+
     _renderDomain(domain) {
         const entitiesByDomain = [];
+        const lockDevices = domain.domain === 'binary_sensor' ? this._countedLockDevices() : new Set();
 
         for (const entity of domain.entities) {
             const stateObj = this._hass.states[entity.entity_id];
 
-            if (!stateObj) {
+            if (!stateObj || isLockSensorOfLock(stateObj, this._hass.entities, lockDevices)) {
                 continue;
             }
 
