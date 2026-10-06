@@ -179,11 +179,6 @@
         "one": "1 lock unlocked",
         "many": "{count} locks unlocked"
       },
-      "lock_sensor": {
-        "zero": "Lock sensors secured",
-        "one": "1 lock sensor unlocked",
-        "many": "{count} lock sensors unlocked"
-      },
       "moisture": {
         "zero": "Dry",
         "one": "Moisture detected",
@@ -273,7 +268,6 @@
     "presence": "Presence",
     "device_tracker": "Device tracker",
     "lock": "Lock",
-    "lock_sensor": "Lock sensor",
     "siren": "Siren",
     "input_boolean": "Input boolean",
     "weather": "Weather",

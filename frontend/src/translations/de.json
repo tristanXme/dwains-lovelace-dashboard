@@ -179,11 +179,6 @@
         "one": "1 Schloss entriegelt",
         "many": "{count} Schlösser entriegelt"
       },
-      "lock_sensor": {
-        "zero": "Schlosssensoren verriegelt",
-        "one": "1 Schlosssensor entriegelt",
-        "many": "{count} Schlosssensoren entriegelt"
-      },
       "moisture": {
         "zero": "Trocken",
         "one": "Feuchtigkeit erkannt",
@@ -277,7 +272,6 @@
     "motion": "Bewegung",
     "device_tracker": "Geräte-Tracker",
     "lock": "Schloss",
-    "lock_sensor": "Schlosssensor",
     "siren": "Alarm",
     "input_boolean": "Input Boolean",
     "weather": "Wetter",

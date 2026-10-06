@@ -142,11 +142,6 @@
         "one": "1 cerradura desbloqueada",
         "many": "{count} cerraduras desbloqueadas"
       },
-      "lock_sensor": {
-        "zero": "Sensores de cerradura bloqueados",
-        "one": "1 sensor de cerradura desbloqueado",
-        "many": "{count} sensores de cerradura desbloqueados"
-      },
       "moisture": {
         "zero": "Seco",
         "one": "Humedad detectada",
@@ -266,7 +261,6 @@
     "motion": "Movimiento",
     "device_tracker": "Rastreador de dispositivo",
     "lock": "Bloquear",
-    "lock_sensor": "Sensor de cerradura",
     "siren": "Siren",
     "input_boolean": "Entrada booleana",
     "weather": "Clima",
