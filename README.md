@@ -94,7 +94,9 @@ Security, stability and performance release of DD3.
   climate, smoke, doors, …) in the dashboard settings. The bar stays one row
   and scrolls sideways when it is full, also with the mouse wheel.
 - **New:** *Cards in rows of equal height (no masonry)* in the dashboard
-  settings for favorites and the area view, as in earlier versions.
+  settings for favorites and the area view, as in earlier versions. Without
+  it every card takes its own height; the row span of a card only applies to
+  the rows of equal height.
 - **New:** diagnostics download (Settings → Devices & services → Dwains
   Dashboard → ⋮ → Download diagnostics), including the orphaned entries.
 - **New:** optional history graph at the bottom of an area tile. Pick a

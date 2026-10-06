@@ -151,9 +151,14 @@ export const homepageCardStyles = (css) => css`
           color: var( --dwains-info-badge-color, var(--primary-text-color) );
           background-color: var(--dwains-info-badge-background, var(--secondary-background-color));
         }
+        /* The badge column lets clicks through to the tile, the badges
+           themselves take the pointer: their tooltip says what they count,
+           and a click still reaches the tile. */
+        .area-button .info .info-badge {
+          pointer-events: auto;
+        }
         .area-button .info .toggle-badge {
           cursor: pointer;
-          pointer-events: auto;
         }
         /* Refresh: rounder badges, same size as before */
         .area-button .info-badge {
