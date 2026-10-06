@@ -91,6 +91,7 @@ function groupEntityStatesByDomain(entityIds, {
   domainGroups,
   deviceClasses,
   sensorDeviceClasses,
+  registryEntities,
 }) {
   const entitiesByDomain = {};
   const supportedDomains = new Set(Object.values(domainGroups).flat());
@@ -119,6 +120,7 @@ function groupEntityStatesByDomain(entityIds, {
     ) {
       continue;
     }
+    if (isLockSensorOfLock(state, registryEntities)) continue;
     (entitiesByDomain[domain] ||= []).push(state);
   }
   return entitiesByDomain;
@@ -128,10 +130,42 @@ function isEntityHiddenInArea(entityConfig) {
   return entityConfig?.hidden_in_area === true;
 }
 
+// Devices with a lock entity, per hass.entities (a new object on every
+// registry change).
+const lockDevicesByRegistry = new WeakMap();
+
+function lockDeviceIds(registryEntities) {
+  let deviceIds = lockDevicesByRegistry.get(registryEntities);
+  if (!deviceIds) {
+    deviceIds = new Set(
+      Object.values(registryEntities)
+        .filter((entry) => entry.entity_id.startsWith("lock.") && entry.device_id)
+        .map((entry) => entry.device_id),
+    );
+    lockDevicesByRegistry.set(registryEntities, deviceIds);
+  }
+  return deviceIds;
+}
+
+// Some integrations add a lock binary sensor to a lock device. It reports
+// the same lock again, so only the lock entity is counted.
+function isLockSensorOfLock(stateObj, registryEntities) {
+  if (
+    !registryEntities
+    || !stateObj?.entity_id?.startsWith("binary_sensor.")
+    || stateObj.attributes?.device_class !== "lock"
+  ) {
+    return false;
+  }
+  const deviceId = registryEntities[stateObj.entity_id]?.device_id;
+  return Boolean(deviceId) && lockDeviceIds(registryEntities).has(deviceId);
+}
+
 module.exports = {
   averageEntityStates,
   countActiveEntities,
   groupEntityStatesByDomain,
   isEntityHiddenInArea,
+  isLockSensorOfLock,
   localizedClimateState,
 };

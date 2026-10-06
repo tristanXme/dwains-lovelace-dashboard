@@ -1125,6 +1125,7 @@ function getDwainsHass() {
         },
         deviceClasses: DEVICE_CLASSES,
         sensorDeviceClasses: this._areaSensorDeviceClasses(),
+        registryEntities: this._hass.entities,
       });
     }
 

@@ -31,7 +31,7 @@ const { TimerOwner } = require('./timer-owner');
 const { PopupOpenScheduler } = require('./popup-open-scheduler');
 const { ReloadableLoadOwner } = require('./reloadable-load-owner');
 const { hassConnectionIdentity, hasHassConnectionChanged } = require('./hass-connection');
-const { isEntityHiddenInArea } = require('./entity-aggregation');
+const { isEntityHiddenInArea, isLockSensorOfLock } = require('./entity-aggregation');
 //Herschreven
 class DwainsHouseInformationCard extends LitElement {
     constructor() {
@@ -376,7 +376,9 @@ class DwainsHouseInformationCard extends LitElement {
                         area: {},
                         friendlyName: this._entityDisplayName(entityId),
                     }))
-                : (configured || []);
+                : (configured || []).filter((entity) => (
+                    !isLockSensorOfLock(this._hass.states[entity.entity_id], this._hass.entities)
+                ));
             this._popupOpens.schedule(() => {
                 fireEvent("hass-more-info", { entityId: "" }, this);
                 popUp(translateEngine(this._hass, 'device.' + domain), {
@@ -476,7 +478,7 @@ class DwainsHouseInformationCard extends LitElement {
         for (const entity of domain.entities) {
             const stateObj = this._hass.states[entity.entity_id];
 
-            if (!stateObj) {
+            if (!stateObj || isLockSensorOfLock(stateObj, this._hass.entities)) {
                 continue;
             }
 
