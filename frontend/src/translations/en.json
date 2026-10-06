@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Saving failed",
+    "reload_after_update": "Dwains Dashboard was updated. Reload the page to use all of it again.",
+    "reload": "Reload",
     "enable_edit_mode": "Enable edit mode",
     "disable_edit_mode": "Disable edit mode",
     "version": "Version",
@@ -310,6 +312,11 @@
     "title_plural": "Blueprints",
     "yaml_required": "No YAML code entered!",
     "install_failed": "Installing the blueprint failed",
+    "error_invalid_yaml": "The text is not valid YAML",
+    "error_not_mapping": "The blueprint must be a YAML mapping (key: value)",
+    "error_no_blueprint_section": "The blueprint section is missing or invalid",
+    "error_no_card": "The blueprint has no card",
+    "error_no_name": "The blueprint has no usable name",
     "installed": "Installed",
     "no_blueprints_installed": "No blueprints installed",
     "not_installed": "Not installed",

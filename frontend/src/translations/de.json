@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Speichern fehlgeschlagen",
+    "reload_after_update": "Dwains Dashboard wurde aktualisiert. Lade die Seite neu, um wieder alles nutzen zu können.",
+    "reload": "Neu laden",
     "invert_cover": "Rollläden umkehren",
     "enable_edit_mode": "Aktiviere Bearbeitungsmodus",
     "disable_edit_mode": "Deaktiviere Bearbeitungsmodus",
@@ -310,6 +312,11 @@
     "title_plural": "Blueprints",
     "yaml_required": "Kein YAML Code eingegeben!",
     "install_failed": "Installation des Blueprints fehlgeschlagen",
+    "error_invalid_yaml": "Der Text ist kein gültiges YAML",
+    "error_not_mapping": "Der Blueprint muss eine YAML-Zuordnung sein (Schlüssel: Wert)",
+    "error_no_blueprint_section": "Der Abschnitt blueprint fehlt oder ist ungültig",
+    "error_no_card": "Der Blueprint enthält keine Karte",
+    "error_no_name": "Der Blueprint hat keinen verwendbaren Namen",
     "installed": "Installiert",
     "no_blueprints_installed": "Keine Blueprints installiert",
     "not_installed": "Nicht installiert",

@@ -489,17 +489,22 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
                         },
                     )
 
+        schema = vol.Schema(
+            {
+                vol.Required("file"): selector.FileSelector(
+                    selector.FileSelectorConfig(accept=".zip")
+                ),
+                vol.Required("confirm", default=False): selector.BooleanSelector(),
+            }
+        )
+        if errors.get("base") == "confirm_required_import" and user_input.get("file"):
+            # Only the confirmation is missing: keep the uploaded file, it
+            # has not been read yet.
+            schema = self.add_suggested_values_to_schema(
+                schema, {"file": user_input["file"]}
+            )
         return self.async_show_form(
-            step_id="import_settings",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("file"): selector.FileSelector(
-                        selector.FileSelectorConfig(accept=".zip")
-                    ),
-                    vol.Required("confirm", default=False): selector.BooleanSelector(),
-                }
-            ),
-            errors=errors,
+            step_id="import_settings", data_schema=schema, errors=errors
         )
 
     async def async_step_settings(self, user_input=None):

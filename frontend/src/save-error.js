@@ -21,4 +21,27 @@ function reportSaveError(error, { translate, target = globalThis.document?.query
   return message;
 }
 
-module.exports = { errorText, reportSaveError };
+let reloadHintShown = false;
+
+// Once per page: the dashboard was updated while this page kept running the
+// old version, so parts of it cannot be loaded until the page is reloaded.
+function reportOutdatedPage({
+  translate,
+  refreshText = translate("global.reload"),
+  target = globalThis.document?.querySelector("home-assistant"),
+  reload = () => globalThis.location.reload(),
+}) {
+  if (reloadHintShown || !target) return false;
+  reloadHintShown = true;
+  const event = new Event("hass-notification", { bubbles: true, composed: true });
+  event.detail = {
+    message: translate("global.reload_after_update"),
+    action: { text: refreshText, action: reload },
+    duration: 60000,
+    dismissable: true,
+  };
+  target.dispatchEvent(event);
+  return true;
+}
+
+module.exports = { errorText, reportOutdatedPage, reportSaveError };

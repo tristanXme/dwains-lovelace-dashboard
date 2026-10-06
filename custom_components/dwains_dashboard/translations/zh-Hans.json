@@ -1,0 +1,235 @@
+{
+  "title": "Dwains Dashboard",
+  "config": {
+    "step": {
+      "init": {
+        "title": "Dwains Dashboard 设置",
+        "description": "",
+        "data": {
+          "sidepanel_icon": "侧边栏图标",
+          "sidepanel_title": "侧边栏标题"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Dwains Dashboard 只允许一个配置。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dwains Dashboard",
+        "description": "选择要执行的操作。发现的孤立仪表盘设置：{orphans}。",
+        "menu_options": {
+          "settings": "设置",
+          "cleanup": "清理孤立设置",
+          "export_settings": "导出设置",
+          "import_settings": "导入设置"
+        }
+      },
+      "settings": {
+        "title": "Dwains Dashboard 设置",
+        "description": "这些设置保存在 dwains-dashboard/configs/settings.yaml 中。",
+        "data": {
+          "sidepanel_title": "侧边栏标题",
+          "sidepanel_icon": "侧边栏图标",
+          "disable_clock": "禁用时钟",
+          "am_pm_clock": "12 小时制时钟（AM/PM）",
+          "disable_welcome_message": "禁用欢迎消息",
+          "v2_mode": "启用 v2 模式（布局）",
+          "disable_sensor_graph": "禁用传感器图表",
+          "invert_cover": "反转窗帘状态",
+          "weather_entity": "天气实体",
+          "alarm_entity": "警报实体",
+          "hide_unavailable_entities": "隐藏不可用的实体",
+          "area_sensor_device_classes": "区域名称下方的传感器数值",
+          "area_binary_sensor_device_classes": "区域名称下方的二元传感器数值",
+          "area_view_grouping_mode": "实体分组",
+          "area_floor_grouping_mode": "按楼层对区域分组",
+          "disable_masonry": "卡片按等高行排列（不使用瀑布流）",
+          "house_information_entries": "状态栏条目"
+        },
+        "data_description": {
+          "area_sensor_device_classes": "选择在区域卡片上、区域名称下方显示的传感器设备类别。不选择则不显示任何内容。",
+          "area_binary_sensor_device_classes": "选择在普通传感器数值之后作为状态摘要显示的二元传感器设备类别。不选择则不显示任何内容。",
+          "area_view_grouping_mode": "“按客户端”保留当前浏览器或设备的设置。“启用”或“禁用”由服务器全局强制分组。",
+          "area_floor_grouping_mode": "“按客户端”保留当前浏览器或设备的设置。“启用”或“禁用”由服务器全局强制按楼层对区域分组。",
+          "disable_masonry": "收藏和区域视图通常按卡片的自然高度无间隙排列（瀑布流）。开启此项后，每行中的所有卡片高度相同，与早期版本一致。",
+          "house_information_entries": "选择主页顶部状态栏可以显示的内容。只有当该类事物处于打开、开启或被检测到的状态时，条目才会出现。"
+        }
+      },
+      "cleanup": {
+        "title": "清理孤立设置",
+        "description": "这 {count} 个条目指向 Home Assistant 中已不存在的实体或区域，通常是在删除设备或集成之后：\n\n- 实体设置：{entities}\n- 自定义卡片和弹窗：{cards}\n- 区域设置和区域卡片：{areas}\n- 区域名称下方的传感器、区域图表、天气和警报实体：{settings}\n\n{items}\n\n仅被禁用、不可用或属于未加载集成的实体**不会**受到影响。重命名的实体会自动带走其设置，绝不会出现在这里。\n\n在删除任何内容之前，所有涉及的文件都会复制到 `dwains-dashboard/backups/`。",
+        "data": {
+          "confirm": "备份并删除这些条目"
+        }
+      },
+      "import_settings": {
+        "title": "导入设置",
+        "description": "用通过*导出设置*创建的导出文件内容替换 Dwains Dashboard 的**全部**设置（区域、实体、卡片、附加页面、蓝图和仪表盘设置）。\n\n当前设置会先移动到 `dwains-dashboard/backups/`，因此不会丢失任何内容。",
+        "data": {
+          "file": "导出文件（.zip）",
+          "confirm": "替换当前设置"
+        }
+      }
+    },
+    "error": {
+      "confirm_required": "打开开关以确认清理。",
+      "confirm_required_import": "打开开关以确认导入。",
+      "invalid_archive": "此文件不是 Dwains Dashboard 导出文件或已损坏。未做任何更改。",
+      "upload_failed": "上传未成功。请重新选择文件。"
+    },
+    "abort": {
+      "nothing_to_clean": "未发现孤立的仪表盘设置。一切正常。",
+      "cleanup_done": "已删除 {removed} 个条目。所有涉及文件的备份位于 `{backup}`。",
+      "export_done": "已导出 {files} 个文件。\n\n下载：**{download}**\n\n链接 10 分钟内有效。归档文件也会保留在 `{folder}` 中（保留最新的五个导出）。",
+      "export_failed": "无法导出设置：{error}。未写入任何内容。",
+      "import_done": "已导入 {files} 个文件。仪表盘将使用导入的设置重新加载。之前的设置位于 `{backup}`。"
+    }
+  },
+  "selector": {
+    "area_grouping_mode": {
+      "options": {
+        "client": "按客户端",
+        "enabled": "启用",
+        "disabled": "禁用"
+      }
+    },
+    "area_sensor_device_class": {
+      "options": {
+        "apparent_power": "视在功率",
+        "aqi": "空气质量指数",
+        "atmospheric_pressure": "大气压",
+        "battery": "电池",
+        "carbon_dioxide": "二氧化碳",
+        "carbon_monoxide": "一氧化碳",
+        "current": "电流",
+        "data_rate": "数据速率",
+        "data_size": "数据大小",
+        "date": "日期",
+        "distance": "距离",
+        "duration": "时长",
+        "energy": "电力",
+        "energy_storage": "储存电力",
+        "enum": "传感器",
+        "frequency": "频率",
+        "gas": "燃气",
+        "humidity": "湿度",
+        "illuminance": "照度",
+        "irradiance": "辐照度",
+        "moisture": "潮度",
+        "monetary": "货币余额",
+        "nitrogen_dioxide": "二氧化氮",
+        "nitrogen_monoxide": "一氧化氮",
+        "nitrous_oxide": "一氧化二氮",
+        "ozone": "臭氧",
+        "pm1": "PM1",
+        "pm10": "PM10",
+        "pm25": "PM2.5",
+        "power": "电源",
+        "power_factor": "功率因数",
+        "precipitation": "降水量",
+        "precipitation_intensity": "降水强度",
+        "pressure": "压力",
+        "reactive_power": "无功功率",
+        "signal_strength": "信号强度",
+        "sound_pressure": "声压",
+        "speed": "速度",
+        "sulphur_dioxide": "二氧化硫",
+        "temperature": "温度",
+        "timestamp": "时间戳",
+        "volatile_organic_compounds": "挥发性有机化合物",
+        "volatile_organic_compounds_parts": "挥发性有机化合物成分",
+        "voltage": "电压",
+        "volume": "体积",
+        "volume_flow_rate": "总体流量",
+        "volume_storage": "存储容量",
+        "water": "水",
+        "weight": "重量",
+        "wind_speed": "风速"
+      }
+    },
+    "area_binary_sensor_device_class": {
+      "options": {
+        "battery": "电池",
+        "battery_charging": "充电",
+        "carbon_monoxide": "一氧化碳",
+        "cold": "过冷",
+        "connectivity": "连通性",
+        "door": "门",
+        "garage_door": "车库门",
+        "gas": "燃气",
+        "heat": "过热",
+        "light": "灯光",
+        "lock": "锁",
+        "moisture": "潮度",
+        "motion": "运动",
+        "moving": "移动",
+        "occupancy": "此处有人",
+        "opening": "打开",
+        "plug": "插头",
+        "power": "电源",
+        "presence": "人体存在",
+        "problem": "问题",
+        "running": "运行",
+        "safety": "安全性",
+        "smoke": "烟雾",
+        "sound": "声音",
+        "tamper": "篡改",
+        "update": "更新",
+        "vibration": "振动",
+        "window": "窗户"
+      }
+    },
+    "house_information_entries": {
+      "options": {
+        "person": "人员",
+        "light": "灯",
+        "switch": "开关",
+        "fan": "风扇",
+        "climate": "空调",
+        "cover": "窗帘",
+        "smoke": "烟雾",
+        "carbon_monoxide": "一氧化碳",
+        "gas": "燃气",
+        "moisture": "潮湿",
+        "problem": "问题",
+        "safety": "安全",
+        "door": "门",
+        "window": "窗",
+        "opening": "开合（触点）",
+        "garage_door": "车库门",
+        "lock": "门锁",
+        "motion": "运动",
+        "occupancy": "占用",
+        "presence": "在场",
+        "vibration": "振动",
+        "running": "运行中",
+        "vacuum": "扫地机",
+        "media_player": "媒体播放器",
+        "valve": "阀门",
+        "humidifier": "加湿器",
+        "lawn_mower": "割草机",
+        "siren": "警报器"
+      }
+    }
+  },
+  "issues": {
+    "restart_required": {
+      "title": "需要重启才能完成禁用 Dwains Dashboard",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "重启 Home Assistant",
+            "description": "Dwains Dashboard 注册了一个侧边栏仪表盘和前端资源，只有重启 Home Assistant 才能完全移除。\n\n选择**提交**立即重启。"
+          }
+        }
+      }
+    },
+    "broken_configuration_files": {
+      "title": "部分 Dwains Dashboard 文件无法读取",
+      "description": "`dwains-dashboard/configs/` 中的这些文件已损坏或不是有效的 YAML。在修复或删除之前，仪表盘会在没有它们的情况下运行：\n\n{files}\n\n文件可以再次读取后，此消息将消失。"
+    }
+  }
+}

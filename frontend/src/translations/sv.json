@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Det gick inte att spara",
+    "reload_after_update": "Dwains Dashboard har uppdaterats. Ladda om sidan för att kunna använda allt igen.",
+    "reload": "Ladda om",
     "enable_edit_mode": "Aktivera redigeringsläge",
     "disable_edit_mode": "Inaktivera redigeringsläge",
     "version": "Version",
@@ -298,6 +300,11 @@
     "title_plural": "Blueprints",
     "yaml_required": "Ingen YAML-kod inmatad!",
     "install_failed": "Installationen av blueprinten misslyckades",
+    "error_invalid_yaml": "Texten är inte giltig YAML",
+    "error_not_mapping": "Blueprinten måste vara en YAML-mappning (nyckel: värde)",
+    "error_no_blueprint_section": "Avsnittet blueprint saknas eller är ogiltigt",
+    "error_no_card": "Blueprinten har inget kort",
+    "error_no_name": "Blueprinten har inget användbart namn",
     "installed": "Installerad",
     "no_blueprints_installed": "Inga blueprints installerade",
     "not_installed": "Inte installerad",

@@ -83,6 +83,25 @@ async def test_editing_more_page_keeps_sort_order(
     assert sorted(pages, key=lambda folder: pages[folder]["sort_order"]) == ["beta", "alpha"]
 
 
+async def test_sorting_an_unknown_more_page_changes_nothing(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client, config_path
+) -> None:
+    client = await hass_ws_client(hass)
+    response = await _call(
+        client, "dwains_dashboard/edit_more_page", name="Alpha", card_data='{"type":"markdown"}'
+    )
+    assert response["success"], response
+    pages = config_path("dwains-dashboard/configs/more_pages")
+    before = (pages / "alpha/config.yaml").read_text()
+
+    response = await _call(client, "dwains_dashboard/sort_more_page", sortData='["ghost", "alpha"]')
+    assert not response["success"]
+    assert response["error"]["code"] == "not_found"
+    assert "ghost" in response["error"]["message"]
+    assert not (pages / "ghost").exists()
+    assert (pages / "alpha/config.yaml").read_text() == before
+
+
 async def test_more_page_config_without_name_does_not_break_reload(
     hass: HomeAssistant, setup_dashboard, hass_ws_client, config_path
 ) -> None:

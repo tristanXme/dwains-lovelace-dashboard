@@ -1,0 +1,235 @@
+{
+  "title": "Dwains Dashboard",
+  "config": {
+    "step": {
+      "init": {
+        "title": "Instellingen van Dwains Dashboard",
+        "description": "",
+        "data": {
+          "sidepanel_icon": "Pictogram in de zijbalk",
+          "sidepanel_title": "Titel in de zijbalk"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Er is maar één configuratie van Dwains Dashboard toegestaan."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dwains Dashboard",
+        "description": "Kies wat je wilt doen. Gevonden verweesde dashboardinstellingen: {orphans}.",
+        "menu_options": {
+          "settings": "Instellingen",
+          "cleanup": "Verweesde instellingen opruimen",
+          "export_settings": "Instellingen exporteren",
+          "import_settings": "Instellingen importeren"
+        }
+      },
+      "settings": {
+        "title": "Instellingen van Dwains Dashboard",
+        "description": "Deze instellingen worden opgeslagen in dwains-dashboard/configs/settings.yaml.",
+        "data": {
+          "sidepanel_title": "Titel in de zijbalk",
+          "sidepanel_icon": "Pictogram in de zijbalk",
+          "disable_clock": "Klok uitschakelen",
+          "am_pm_clock": "12-uursklok (AM/PM)",
+          "disable_welcome_message": "Welkomstbericht uitschakelen",
+          "v2_mode": "v2-modus inschakelen (indeling)",
+          "disable_sensor_graph": "Sensorgrafiek uitschakelen",
+          "invert_cover": "Status van rolluiken omkeren",
+          "weather_entity": "Weerentiteit",
+          "alarm_entity": "Alarmentiteit",
+          "hide_unavailable_entities": "Onbeschikbare entiteiten verbergen",
+          "area_sensor_device_classes": "Sensorwaarden onder de ruimtenaam",
+          "area_binary_sensor_device_classes": "Binaire sensorwaarden onder de ruimtenaam",
+          "area_view_grouping_mode": "Entiteiten groeperen",
+          "area_floor_grouping_mode": "Ruimtes per verdieping groeperen",
+          "disable_masonry": "Kaarten in rijen van gelijke hoogte (geen masonry)",
+          "house_information_entries": "Items in de statusbalk"
+        },
+        "data_description": {
+          "area_sensor_device_classes": "Kies de apparaatklassen van sensoren die op de ruimtetegels onder de ruimtenaam worden getoond. Kies niets om niets te tonen.",
+          "area_binary_sensor_device_classes": "Kies de apparaatklassen van binaire sensoren die als statusoverzicht na de gewone sensorwaarden worden getoond. Kies niets om niets te tonen.",
+          "area_view_grouping_mode": "Per client behoudt de huidige instelling van de browser of het apparaat. Ingeschakeld of uitgeschakeld legt de groepering centraal vanaf de server vast.",
+          "area_floor_grouping_mode": "Per client behoudt de huidige instelling van de browser of het apparaat. Ingeschakeld of uitgeschakeld legt het groeperen van ruimtes per verdieping centraal vanaf de server vast.",
+          "disable_masonry": "Favorieten en de ruimteweergave plaatsen elke kaart normaal op haar natuurlijke hoogte, zonder gaten (masonry). Zet dit aan voor rijen waarin alle kaarten even hoog zijn, zoals in eerdere versies.",
+          "house_information_entries": "Kies wat de statusbalk boven aan de startpagina mag tonen. Een item verschijnt alleen zolang iets van dat soort aan, open of gedetecteerd is."
+        }
+      },
+      "cleanup": {
+        "title": "Verweesde instellingen opruimen",
+        "description": "Deze {count} items verwijzen naar entiteiten of ruimtes die niet meer bestaan in Home Assistant, meestal nadat een apparaat of integratie is verwijderd:\n\n- Entiteitinstellingen: {entities}\n- Eigen kaarten en pop-ups: {cards}\n- Ruimte-instellingen en ruimtekaarten: {areas}\n- Sensoren onder de ruimtenaam, ruimtegrafieken, weer- en alarmentiteit: {settings}\n\n{items}\n\nEntiteiten die alleen uitgeschakeld of onbeschikbaar zijn of bij een niet geladen integratie horen, worden **niet** geraakt. Hernoemde entiteiten nemen hun instellingen automatisch mee en verschijnen hier nooit.\n\nAlle betrokken bestanden worden naar `dwains-dashboard/backups/` gekopieerd voordat er iets wordt verwijderd.",
+        "data": {
+          "confirm": "Back-up maken en deze items verwijderen"
+        }
+      },
+      "import_settings": {
+        "title": "Instellingen importeren",
+        "description": "Vervangt **alle** instellingen van Dwains Dashboard (ruimtes, entiteiten, kaarten, extra pagina's, blueprints en de dashboardinstellingen) door de inhoud van een exportbestand dat met *Instellingen exporteren* is gemaakt.\n\nDe huidige instellingen worden eerst naar `dwains-dashboard/backups/` verplaatst, er gaat dus niets verloren.",
+        "data": {
+          "file": "Exportbestand (.zip)",
+          "confirm": "De huidige instellingen vervangen"
+        }
+      }
+    },
+    "error": {
+      "confirm_required": "Zet de schakelaar aan om het opruimen te bevestigen.",
+      "confirm_required_import": "Zet de schakelaar aan om het importeren te bevestigen.",
+      "invalid_archive": "Dit bestand is geen export van Dwains Dashboard of het is beschadigd. Er is niets gewijzigd.",
+      "upload_failed": "De upload is niet aangekomen. Kies het bestand opnieuw."
+    },
+    "abort": {
+      "nothing_to_clean": "Geen verweesde dashboardinstellingen gevonden. Alles is opgeruimd.",
+      "cleanup_done": "{removed} items verwijderd. Een back-up van alle betrokken bestanden staat in `{backup}`.",
+      "export_done": "{files} bestanden geëxporteerd.\n\nDownload: **{download}**\n\nDe link is 10 minuten geldig. Het archief blijft ook in `{folder}` staan (de vijf nieuwste exports worden bewaard).",
+      "export_failed": "De instellingen kunnen niet worden geëxporteerd: {error}. Er is niets geschreven.",
+      "import_done": "{files} bestanden geïmporteerd. Het dashboard wordt opnieuw geladen met de geïmporteerde instellingen. De vorige instellingen staan in `{backup}`."
+    }
+  },
+  "selector": {
+    "area_grouping_mode": {
+      "options": {
+        "client": "Per client",
+        "enabled": "Ingeschakeld",
+        "disabled": "Uitgeschakeld"
+      }
+    },
+    "area_sensor_device_class": {
+      "options": {
+        "apparent_power": "Schijnbaar vermogen",
+        "aqi": "Luchtkwaliteitsindex",
+        "atmospheric_pressure": "Atmosferische druk",
+        "battery": "Batterij",
+        "carbon_dioxide": "Kooldioxide",
+        "carbon_monoxide": "Koolmonoxide",
+        "current": "Stroom",
+        "data_rate": "Datasnelheid",
+        "data_size": "Datagrootte",
+        "date": "Datum",
+        "distance": "Afstand",
+        "duration": "Duur",
+        "energy": "Energie",
+        "energy_storage": "Opgeslagen energie",
+        "enum": "Sensor",
+        "frequency": "Frequentie",
+        "gas": "Gas",
+        "humidity": "Luchtvochtigheid",
+        "illuminance": "Licht",
+        "irradiance": "Straling",
+        "moisture": "Vocht",
+        "monetary": "Geldbedrag",
+        "nitrogen_dioxide": "Stikstofdioxide",
+        "nitrogen_monoxide": "Stikstofmonoxide",
+        "nitrous_oxide": "Stikstofoxide",
+        "ozone": "Ozon",
+        "pm1": "PM1",
+        "pm10": "PM10",
+        "pm25": "PM2.5",
+        "power": "Vermogen",
+        "power_factor": "Vermogensfactor",
+        "precipitation": "Neerslag",
+        "precipitation_intensity": "Neerslagintensiteit",
+        "pressure": "Druk",
+        "reactive_power": "Reactief vermogen",
+        "signal_strength": "Signaalsterkte",
+        "sound_pressure": "Geluidsdruk",
+        "speed": "Snelheid",
+        "sulphur_dioxide": "Zwaveldioxide",
+        "temperature": "Temperatuur",
+        "timestamp": "Tijdstip",
+        "volatile_organic_compounds": "Vluchtige organische stoffen",
+        "volatile_organic_compounds_parts": "Vluchtige organische stoffen verhouding",
+        "voltage": "Spanning",
+        "volume": "Volume",
+        "volume_flow_rate": "Volumesnelheid",
+        "volume_storage": "Opgeslagen volume",
+        "water": "Water",
+        "weight": "Gewicht",
+        "wind_speed": "Windsnelheid"
+      }
+    },
+    "area_binary_sensor_device_class": {
+      "options": {
+        "battery": "Batterij",
+        "battery_charging": "Opladen",
+        "carbon_monoxide": "Koolmonoxide",
+        "cold": "Koude",
+        "connectivity": "Connectiviteit",
+        "door": "Deur",
+        "garage_door": "Garagedeur",
+        "gas": "Gas",
+        "heat": "Warmte",
+        "light": "Licht",
+        "lock": "Slot",
+        "moisture": "Vocht",
+        "motion": "Beweging",
+        "moving": "In beweging",
+        "occupancy": "Bezetting",
+        "opening": "Openen",
+        "plug": "Stekker",
+        "power": "Vermogen",
+        "presence": "Aanwezigheid",
+        "problem": "Probleem",
+        "running": "Actief",
+        "safety": "Veiligheid",
+        "smoke": "Rook",
+        "sound": "Geluid",
+        "tamper": "Sabotage",
+        "update": "Update",
+        "vibration": "Trilling",
+        "window": "Raam"
+      }
+    },
+    "house_information_entries": {
+      "options": {
+        "person": "Personen",
+        "light": "Lampen",
+        "switch": "Schakelaars",
+        "fan": "Ventilatoren",
+        "climate": "Klimaat",
+        "cover": "Rolluiken",
+        "smoke": "Rook",
+        "carbon_monoxide": "Koolmonoxide",
+        "gas": "Gas",
+        "moisture": "Vocht",
+        "problem": "Probleem",
+        "safety": "Veiligheid",
+        "door": "Deuren",
+        "window": "Ramen",
+        "opening": "Openingen (contacten)",
+        "garage_door": "Garagedeuren",
+        "lock": "Sloten",
+        "motion": "Beweging",
+        "occupancy": "Bezetting",
+        "presence": "Aanwezigheid",
+        "vibration": "Trilling",
+        "running": "In bedrijf",
+        "vacuum": "Stofzuigers",
+        "media_player": "Mediaspelers",
+        "valve": "Kranen",
+        "humidifier": "Luchtbevochtigers",
+        "lawn_mower": "Grasmaaiers",
+        "siren": "Sirenes"
+      }
+    }
+  },
+  "issues": {
+    "restart_required": {
+      "title": "Herstart nodig om het uitschakelen van Dwains Dashboard af te ronden",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Home Assistant herstarten",
+            "description": "Dwains Dashboard registreert een dashboard in de zijbalk en frontendbronnen die alleen volledig worden verwijderd door Home Assistant te herstarten.\n\nKies **Verzenden** om nu te herstarten."
+          }
+        }
+      }
+    },
+    "broken_configuration_files": {
+      "title": "Sommige bestanden van Dwains Dashboard kunnen niet worden gelezen",
+      "description": "Deze bestanden in `dwains-dashboard/configs/` zijn beschadigd of geen geldige YAML. Het dashboard werkt zonder deze bestanden totdat ze zijn hersteld of verwijderd:\n\n{files}\n\nDeze melding verdwijnt zodra de bestanden weer gelezen kunnen worden."
+    }
+  }
+}

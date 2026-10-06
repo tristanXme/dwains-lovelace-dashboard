@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Zapisywanie nie powiodło się",
+    "reload_after_update": "Dwains Dashboard został zaktualizowany. Odśwież stronę, aby znów korzystać ze wszystkich funkcji.",
+    "reload": "Odśwież",
     "enable_edit_mode": "Edytuj",
     "disable_edit_mode": "Wyłącz edycję",
     "version": "Wersja",
@@ -298,6 +300,11 @@
     "title_plural": "Schematy",
     "yaml_required": "Nie wprowadzono kodu YAML!",
     "install_failed": "Instalacja blueprintu nie powiodła się",
+    "error_invalid_yaml": "Tekst nie jest poprawnym YAML",
+    "error_not_mapping": "Blueprint musi być mapowaniem YAML (klucz: wartość)",
+    "error_no_blueprint_section": "Brak sekcji blueprint lub jest nieprawidłowa",
+    "error_no_card": "Blueprint nie zawiera karty",
+    "error_no_name": "Blueprint nie ma użytecznej nazwy",
     "installed": "Zainstalowane",
     "no_blueprints_installed": "Brak zainstalowanego schematu",
     "not_installed": "Nie zainstalowano",

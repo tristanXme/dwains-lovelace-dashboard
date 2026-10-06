@@ -1,6 +1,8 @@
 {
   "global": {
     "save_failed": "Opslaan mislukt",
+    "reload_after_update": "Dwains Dashboard is bijgewerkt. Laad de pagina opnieuw om alles weer te kunnen gebruiken.",
+    "reload": "Opnieuw laden",
     "enable_edit_mode": "Bewerkingsmodus inschakelen",
     "disable_edit_mode": "Bewerkingsmodus uitschakelen",
     "version": "Versie",
@@ -298,6 +300,11 @@
     "title_plural": "Blueprints",
     "yaml_required": "Geen YAML-code ingevoerd!",
     "install_failed": "Installeren van de blueprint mislukt",
+    "error_invalid_yaml": "De tekst is geen geldige YAML",
+    "error_not_mapping": "De blueprint moet een YAML-mapping zijn (sleutel: waarde)",
+    "error_no_blueprint_section": "De sectie blueprint ontbreekt of is ongeldig",
+    "error_no_card": "De blueprint bevat geen kaart",
+    "error_no_name": "De blueprint heeft geen bruikbare naam",
     "installed": "Geïnstalleerd",
     "no_blueprints_installed": "Geen blueprints geïnstalleerd",
     "not_installed": "Niet geïnstalleerd",

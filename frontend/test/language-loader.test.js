@@ -57,3 +57,36 @@ test("re-rendering reaches Dwains elements inside shadow roots", () => {
   rerenderDwainsElements(root);
   assert.deepEqual(updated, ["homepage-card", "dwains-area-graph"]);
 });
+
+const { stringsWhileLoading } = require("../src/language-loader");
+
+test("while a new language loads, the one shown before stays", async () => {
+  let deliver;
+  const window = fakeWindow(() => new Promise((resolve) => { deliver = resolve; }));
+  window[Symbol.for("dwains-dashboard.runtime")].languageFiles.fr = "/lang/fr.json";
+  window[Symbol.for("dwains-dashboard.runtime")].translations = { de: { area: { title: "Bereich" } } };
+  const options = { windowObject: window, onLoaded: () => {}, reportError: () => {} };
+
+  assert.equal(stringsWhileLoading(["de"], window), undefined, "German is there");
+  const request = requestLanguage("fr", options);
+  assert.deepEqual(stringsWhileLoading(["fr"], window), { area: { title: "Bereich" } });
+
+  deliver({ ok: true, json: async () => ({ area: { title: "Zone" } }) });
+  await request;
+  assert.equal(stringsWhileLoading(["fr"], window), undefined, "French is there");
+});
+
+test("a language without strings falls back to English, not to the previous one", async () => {
+  const window = fakeWindow(async () => ({ ok: false, status: 404 }));
+  window[Symbol.for("dwains-dashboard.runtime")].translations = { de: { area: { title: "Bereich" } } };
+  const options = { windowObject: window, onLoaded: () => {}, reportError: () => {} };
+  assert.equal(stringsWhileLoading(["de"], window), undefined);
+  // No file at all (e.g. Japanese): English right away.
+  assert.equal(stringsWhileLoading(["ja"], window), undefined);
+  // A file that fails to load: English once the failure is known.
+  window[Symbol.for("dwains-dashboard.runtime")].translations = { de: { area: { title: "Bereich" } } };
+  stringsWhileLoading(["de"], window);
+  window[Symbol.for("dwains-dashboard.runtime")].languageFiles.fr = "/lang/fr.json";
+  await requestLanguage("fr", options);
+  assert.equal(stringsWhileLoading(["fr"], window), undefined);
+});

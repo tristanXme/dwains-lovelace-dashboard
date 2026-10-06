@@ -249,6 +249,52 @@ for (const colorScheme of ["light", "dark"]) {
       }), "device edit mode with drag sorting");
     });
 
+    await step("dragging device types saves the order, a failed save puts it back", async () => {
+      // Sortable calls onStart/onEnd around a drag; calling them around
+      // sort() is the same without moving the mouse.
+      const drag = (order) => deep(page, async (all, order) => {
+        const sortable = all.find((el) => el.localName === "devices-card")._sortable[0];
+        sortable.options.onStart.call(sortable);
+        sortable.sort(order);
+        await sortable.options.onEnd.call(sortable);
+        return sortable.toArray();
+      }, order);
+      const shown = () => deep(page, (all) => [...(all.find((el) => el.localName === "devices-card")?.shadowRoot?.querySelectorAll(".device-button") || [])].map((button) => button.dataset.device));
+      const before = await shown();
+      assert.ok(before.length > 1, before.join(","));
+      const reversed = [...before].reverse();
+      assert.deepEqual(await drag(reversed), reversed);
+      await page.reload();
+      await poll(async () => JSON.stringify(await shown()) === JSON.stringify(reversed), "saved device order after reload");
+
+      // The save fails: the toast tells so and the order goes back.
+      await clickMenuItem(page, "devices-card", "", "Bearbeitungsmodus");
+      await poll(() => deep(page, (all) => all.find((el) => el.localName === "devices-card")._sortable?.length === 1), "drag sorting");
+      await page.evaluate(() => {
+        const ha = document.querySelector("home-assistant");
+        window.__ddToasts = [];
+        ha.addEventListener("hass-notification", (event) => window.__ddToasts.push(event.detail.message));
+        const connection = ha.hass.connection;
+        const send = connection.sendMessagePromise.bind(connection);
+        connection.sendMessagePromise = (message) => (message.type === "dwains_dashboard/sort_device_button"
+          ? Promise.reject({ code: "e2e", message: "simulated failure" })
+          : send(message));
+        window.__ddRestoreSend = () => { connection.sendMessagePromise = send; };
+      });
+      assert.deepEqual(await drag(before), reversed);
+      assert.deepEqual(await shown(), reversed);
+      const toasts = await page.evaluate(() => window.__ddToasts);
+      assert.ok(toasts.some((text) => text.includes("simulated failure")), toasts.join(" | "));
+      await page.evaluate(() => window.__ddRestoreSend());
+      // Expected: the failed save is logged.
+      await page.waitForTimeout(300);
+      for (let index = errors.length - 1; index >= 0; index -= 1) {
+        if (/saving failed/.test(errors[index])) errors.splice(index, 1);
+      }
+
+      assert.deepEqual(await drag(before), before);
+    });
+
     await step("registries are read from Home Assistant, changes show up live", async () => {
       // HA requests the device, area and floor lists itself to fill hass;
       // the full entity list is what the dashboard used to download.
@@ -336,6 +382,115 @@ for (const colorScheme of ["light", "dark"]) {
       await poll(() => deep(page, (all) => all.some((el) => el.tagName.startsWith("DWAINS-EDIT-MORE-PAGE-CARD") && el.shadowRoot?.childElementCount)), "create dialog");
       await page.keyboard.press("Escape");
       await page.waitForTimeout(500);
+    });
+
+    // The integration's options (Settings → Devices & services → Dwains
+    // Dashboard → Configure), used through Home Assistant's own dialog.
+    const flow = page.locator("dialog-data-entry-flow");
+    const flowText = () => page.evaluate(() => {
+      const parts = [];
+      const walk = (root) => root.childNodes.forEach((node) => {
+        if (node.nodeType === Node.TEXT_NODE) parts.push(node.textContent);
+        if (node.shadowRoot) walk(node.shadowRoot);
+        walk(node);
+      });
+      const dialog = document.querySelector("home-assistant").shadowRoot.querySelector("dialog-data-entry-flow");
+      if (dialog?.shadowRoot) walk(dialog.shadowRoot);
+      return parts.join(" ").replace(/\s+/g, " ").trim();
+    });
+    const openOptions = async (choice) => {
+      await page.goto(BASE + "/config/integrations/integration/dwains_dashboard");
+      // The icon inside the button takes the pointer; click the button itself.
+      await page.getByRole("button", { name: "Konfigurieren" }).first().evaluate((button) => button.click());
+      await flow.locator("step-flow-menu").waitFor();
+      const menu = await poll(async () => {
+        const text = await flowText();
+        return /verwaiste Dashboard-Einstellungen: \d+/.test(text) && text;
+      }, "options menu");
+      await flow.getByText(choice, { exact: true }).click();
+      return menu;
+    };
+    const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+    let exported;
+
+    await step("settings: the export downloads an archive from the options dialog", async () => {
+      await openOptions("Einstellungen exportieren");
+      await flow.locator("step-flow-abort").waitFor();
+      assert.match(await flowText(), /\d+ Dateien exportiert/);
+      const href = await flow.locator("step-flow-abort a").first().getAttribute("href");
+      assert.match(href, /^\/api\/dwains_dashboard\/export\/dwains-dashboard-.*\.zip\?authSig=/);
+      const response = await page.request.get(new URL(href, BASE).toString());
+      assert.equal(response.status(), 200);
+      assert.equal(response.headers()["content-type"], "application/zip");
+      exported = await response.body();
+      assert.ok(exported.includes("dwains-dashboard-export.json"), "manifest in the archive");
+      assert.ok(exported.includes("configs/areas.yaml"), "area settings in the archive");
+      // Without the signature the file is not served.
+      assert.equal((await page.request.get(new URL(href.split("?")[0], BASE).toString())).status(), 401);
+    });
+
+    await step("settings: importing that archive puts the exported settings back", async () => {
+      assert.ok(exported, "archive of the export step");
+      // A change after the export, which the import has to undo.
+      await ws({ type: "dwains_dashboard/edit_more_page", name: "Nach dem Export", card_data: '{"type":"markdown"}' });
+      await openOptions("Einstellungen importieren");
+      await flow.locator("step-flow-form").waitFor();
+      await flow.locator("input[type=file]").setInputFiles({ name: "export.zip", mimeType: "application/zip", buffer: exported });
+      // Without the confirmation nothing happens; the uploaded file stays.
+      await poll(async () => (await flowText()).includes("export.zip"), "uploaded file");
+      await flow.getByRole("button", { name: "OK" }).click();
+      await poll(async () => (await flowText()).includes("Schalter"), "confirmation required");
+      assert.ok(!(await flowText()).includes("Pflichtfelder"), "file kept");
+      await flow.locator("ha-switch").click();
+      await flow.getByRole("button", { name: "OK" }).click();
+      await flow.locator("step-flow-abort").waitFor();
+      assert.match(await flowText(), /\d+ Dateien importiert.*backups\/import-/);
+      const pages = (await ws({ type: "dwains_dashboard/more_pages/get" })).more_pages;
+      assert.ok(!("nach_dem_export" in pages), Object.keys(pages).join(","));
+      await page.goto(BASE + "/dwains-dashboard/home");
+      await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("Wohnzimmer"))), "homepage after the import");
+    });
+
+    await step("settings: the cleanup removes an orphaned entry after confirmation", async () => {
+      await ws({ type: "dwains_dashboard/edit_entity", entity: "light.e2e_gone", hideEntity: true });
+      const menu = await openOptions("Verwaiste Einstellungen aufräumen");
+      assert.ok(Number(/Dashboard-Einstellungen: (\d+)/.exec(menu)[1]) >= 1, menu);
+      await flow.locator("step-flow-form").waitFor();
+      await poll(async () => (await flowText()).includes("light.e2e_gone"), "orphan listed");
+      await flow.locator("ha-switch").click();
+      await flow.getByRole("button", { name: "OK" }).click();
+      await flow.locator("step-flow-abort").waitFor();
+      assert.match(await flowText(), /\d+ Einträge entfernt.*backups\/cleanup-/);
+      const configuration = await ws({ type: "dwains_dashboard/configuration/get" });
+      assert.ok(!("light.e2e_gone" in (configuration.entities || {})), "orphan removed");
+    });
+
+    await step("a page whose parts cannot be loaded after an update asks for a reload", async () => {
+      // A tab that still runs the previous bundle: its editor file is gone.
+      const stale = await context.newPage();
+      await stale.route(/\/dwains_dashboard\/js\/chunks\/editors\./, (route) => route.fulfill({ status: 404, body: "" }));
+      try {
+        await stale.goto(BASE + "/dwains-dashboard/home");
+        await poll(() => deep(stale, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("°C"))), "homepage");
+        await clickMenuItem(stale, "homepage-card", "Bereiche", "Bearbeitungsmodus");
+        await poll(() => deep(stale, (all, areaId) => {
+          const button = all.find((el) => el.tagName === "HA-BUTTON" && el.area_id === areaId);
+          button?.click();
+          return Boolean(button);
+        }, token.areaId), "edit button");
+        const toast = await poll(() => deep(stale, (all) => {
+          const toast = all.find((el) => el.localName === "ha-toast");
+          return toast && /aktualisiert/.test(toast.labelText || toast.textContent) && (toast.labelText || toast.textContent);
+        }), "reload hint");
+        assert.match(toast, /Lade die Seite neu/);
+      } finally {
+        await stale.close();
+        // Expected: the missing editor file is logged.
+        await page.waitForTimeout(300);
+        for (let index = errors.length - 1; index >= 0; index -= 1) {
+          if (/failed to load the editors|editors\.[0-9a-f]+\.js|ChunkLoadError|Loading chunk/i.test(errors[index])) errors.splice(index, 1);
+        }
+      }
     });
   }
 

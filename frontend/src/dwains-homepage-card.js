@@ -7,6 +7,7 @@ import { WEATHER_ICONS, STATES_OFF, UNAVAILABLE_STATES, SENSOR_DOMAINS, ALERT_DO
 import { computeDomain } from './frontend-helpers';
 import translateEngine from './translate-engine';
 import { showSaveError } from './save-error-toast';
+const { savingSortableOptions } = require('./sortable-save');
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
@@ -1443,13 +1444,10 @@ function getDwainsHass() {
         animation: 150,
         dataIdAttr: dataIdAttr,
         handle: '.sortable-move',
-        onEnd: function(){
-          cardHass.callWS({
-            type: type,
-            sortData: JSON.stringify(this.toArray()),
-            sortType: sortType,
-          }).catch((err) => showSaveError(cardHass, err));
-        }
+        ...savingSortableOptions(
+          (order) => cardHass.callWS({ type: type, sortData: JSON.stringify(order), sortType: sortType }),
+          (err) => showSaveError(cardHass, err),
+        ),
       }));
     }
 

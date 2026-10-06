@@ -251,6 +251,13 @@ async def test_import_through_the_options_flow(
         result["flow_id"], {"file": file_id, "confirm": False}
     )
     assert result["errors"] == {"base": "confirm_required_import"}
+    # The uploaded file stays in the form, only the switch is missing.
+    suggested = {
+        str(key): key.description.get("suggested_value")
+        for key in result["data_schema"].schema
+        if key.description
+    }
+    assert suggested == {"file": file_id}
 
     # A file that is not an export is rejected.
     bad_id = await _upload(hass_client, b"not a zip")

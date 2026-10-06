@@ -1,30 +1,235 @@
 {
-  "title": "Dwains panel",
+  "title": "Dwains Dashboard",
   "config": {
     "step": {
       "init": {
-        "title": "Ustawienia Dwains panel",
+        "title": "Ustawienia Dwains Dashboard",
         "description": "",
         "data": {
-          "sidepanel_icon": "Ikona na panelu bocznym",
-          "sidepanel_title": "Tytuł na panelu bocznym"
+          "sidepanel_icon": "Ikona w panelu bocznym",
+          "sidepanel_title": "Tytuł w panelu bocznym"
         }
       }
     },
     "abort": {
-      "single_instance_allowed": "Tylko pojedyńcza konfiguracja Dwains panel jest dozwolona."
+      "single_instance_allowed": "Dozwolona jest tylko jedna konfiguracja Dwains Dashboard."
     }
   },
   "options": {
     "step": {
+      "init": {
+        "title": "Dwains Dashboard",
+        "description": "Wybierz, co chcesz zrobić. Znalezione osierocone ustawienia dashboardu: {orphans}.",
+        "menu_options": {
+          "settings": "Ustawienia",
+          "cleanup": "Usuń osierocone ustawienia",
+          "export_settings": "Eksportuj ustawienia",
+          "import_settings": "Importuj ustawienia"
+        }
+      },
       "settings": {
-        "title": "Ustawienia Dwains panel",
-        "description": "",
+        "title": "Ustawienia Dwains Dashboard",
+        "description": "Te ustawienia są zapisywane w dwains-dashboard/configs/settings.yaml.",
         "data": {
-          "sidepanel_icon": "Ikona na panelu bocznym",
-          "sidepanel_title": "Tytuł na panelu bocznym"
+          "sidepanel_title": "Tytuł w panelu bocznym",
+          "sidepanel_icon": "Ikona w panelu bocznym",
+          "disable_clock": "Wyłącz zegar",
+          "am_pm_clock": "Zegar 12-godzinny (AM/PM)",
+          "disable_welcome_message": "Wyłącz wiadomość powitalną",
+          "v2_mode": "Włącz tryb v2 (układ)",
+          "disable_sensor_graph": "Wyłącz wykres czujnika",
+          "invert_cover": "Odwróć stan rolet",
+          "weather_entity": "Encja pogody",
+          "alarm_entity": "Encja alarmu",
+          "hide_unavailable_entities": "Ukryj niedostępne encje",
+          "area_sensor_device_classes": "Wartości czujników pod nazwą obszaru",
+          "area_binary_sensor_device_classes": "Wartości czujników binarnych pod nazwą obszaru",
+          "area_view_grouping_mode": "Grupuj encje",
+          "area_floor_grouping_mode": "Grupuj obszary według pięter",
+          "disable_masonry": "Karty w rzędach o równej wysokości (bez układu masonry)",
+          "house_information_entries": "Pozycje paska stanu"
+        },
+        "data_description": {
+          "area_sensor_device_classes": "Wybierz klasy urządzeń czujników wyświetlane na kafelkach obszarów pod nazwą obszaru. Nie wybieraj niczego, aby nic nie wyświetlać.",
+          "area_binary_sensor_device_classes": "Wybierz klasy urządzeń czujników binarnych wyświetlane jako podsumowanie stanu po zwykłych wartościach czujników. Nie wybieraj niczego, aby nic nie wyświetlać.",
+          "area_view_grouping_mode": "Na kliencie zachowuje bieżące ustawienie przeglądarki lub urządzenia. Włączone lub wyłączone wymusza grupowanie globalnie z serwera.",
+          "area_floor_grouping_mode": "Na kliencie zachowuje bieżące ustawienie przeglądarki lub urządzenia. Włączone lub wyłączone wymusza grupowanie obszarów według pięter globalnie z serwera.",
+          "disable_masonry": "Ulubione i widok obszaru zwykle umieszczają każdą kartę w jej naturalnej wysokości, bez przerw (masonry). Włącz tę opcję, aby uzyskać rzędy, w których wszystkie karty mają tę samą wysokość, jak we wcześniejszych wersjach.",
+          "house_information_entries": "Wybierz, co może pokazywać pasek stanu u góry strony głównej. Pozycja pojawia się tylko wtedy, gdy coś tego rodzaju jest włączone, otwarte lub wykryte."
+        }
+      },
+      "cleanup": {
+        "title": "Usuń osierocone ustawienia",
+        "description": "Tych {count} wpisów wskazuje na encje lub obszary, które już nie istnieją w Home Assistant, zwykle po usunięciu urządzenia lub integracji:\n\n- Ustawienia encji: {entities}\n- Własne karty i okna podręczne: {cards}\n- Ustawienia i karty obszarów: {areas}\n- Czujniki pod nazwą obszaru, wykresy obszarów, encja pogody i alarmu: {settings}\n\n{items}\n\nEncje, które są tylko wyłączone, niedostępne lub należą do niezaładowanej integracji, **nie** są objęte. Encje o zmienionej nazwie automatycznie zabierają swoje ustawienia i nigdy się tu nie pojawiają.\n\nWszystkie zmieniane pliki są kopiowane do `dwains-dashboard/backups/`, zanim cokolwiek zostanie usunięte.",
+        "data": {
+          "confirm": "Utwórz kopię zapasową i usuń te wpisy"
+        }
+      },
+      "import_settings": {
+        "title": "Importuj ustawienia",
+        "description": "Zastępuje **wszystkie** ustawienia Dwains Dashboard (obszary, encje, karty, dodatkowe strony, blueprinty i ustawienia dashboardu) zawartością pliku utworzonego przez *Eksportuj ustawienia*.\n\nObecne ustawienia są najpierw przenoszone do `dwains-dashboard/backups/`, więc nic nie zostanie utracone.",
+        "data": {
+          "file": "Plik eksportu (.zip)",
+          "confirm": "Zastąp obecne ustawienia"
         }
       }
+    },
+    "error": {
+      "confirm_required": "Włącz przełącznik, aby potwierdzić czyszczenie.",
+      "confirm_required_import": "Włącz przełącznik, aby potwierdzić import.",
+      "invalid_archive": "Ten plik nie jest eksportem Dwains Dashboard lub jest uszkodzony. Nic nie zostało zmienione.",
+      "upload_failed": "Przesyłanie nie dotarło. Wybierz plik ponownie."
+    },
+    "abort": {
+      "nothing_to_clean": "Nie znaleziono osieroconych ustawień. Wszystko jest w porządku.",
+      "cleanup_done": "Usunięto wpisy: {removed}. Kopia zapasowa wszystkich zmienionych plików znajduje się w `{backup}`.",
+      "export_done": "Wyeksportowano pliki: {files}.\n\nPobieranie: **{download}**\n\nLink jest ważny przez 10 minut. Archiwum pozostaje też w `{folder}` (przechowywanych jest pięć najnowszych eksportów).",
+      "export_failed": "Nie można wyeksportować ustawień: {error}. Nic nie zostało zapisane.",
+      "import_done": "Zaimportowano pliki: {files}. Dashboard przeładuje się z zaimportowanymi ustawieniami. Poprzednie ustawienia znajdują się w `{backup}`."
+    }
+  },
+  "selector": {
+    "area_grouping_mode": {
+      "options": {
+        "client": "Na kliencie",
+        "enabled": "Włączone",
+        "disabled": "Wyłączone"
+      }
+    },
+    "area_sensor_device_class": {
+      "options": {
+        "apparent_power": "Moc pozorna",
+        "aqi": "Indeks jakości powietrza",
+        "atmospheric_pressure": "Ciśnienie atmosferyczne",
+        "battery": "Bateria",
+        "carbon_dioxide": "Dwutlenek węgla",
+        "carbon_monoxide": "Tlenek węgla",
+        "current": "Natężenie prądu",
+        "data_rate": "Prędkość transmisji danych",
+        "data_size": "Wielkość danych",
+        "date": "Data",
+        "distance": "Odległość",
+        "duration": "Czas trwania",
+        "energy": "Energia",
+        "energy_storage": "Energia zmagazynowana",
+        "enum": "Sensor",
+        "frequency": "Częstotliwość",
+        "gas": "Gaz",
+        "humidity": "Wilgotność",
+        "illuminance": "Natężenie oświetlenia",
+        "irradiance": "Natężenie promieniowania",
+        "moisture": "Wilgoć",
+        "monetary": "Kwota pieniężna",
+        "nitrogen_dioxide": "Dwutlenek azotu",
+        "nitrogen_monoxide": "Tlenek azotu",
+        "nitrous_oxide": "Podtlenek azotu",
+        "ozone": "Ozon",
+        "pm1": "PM1",
+        "pm10": "PM10",
+        "pm25": "PM2.5",
+        "power": "Moc",
+        "power_factor": "Współczynnik mocy",
+        "precipitation": "Opad atmosferyczny",
+        "precipitation_intensity": "Intensywność opadów",
+        "pressure": "Ciśnienie",
+        "reactive_power": "Moc reaktywna",
+        "signal_strength": "Siła sygnału",
+        "sound_pressure": "Ciśnienie akustyczne",
+        "speed": "Prędkość",
+        "sulphur_dioxide": "Dwutlenek siarki",
+        "temperature": "Temperatura",
+        "timestamp": "Znacznik czasu",
+        "volatile_organic_compounds": "Lotne związki organiczne",
+        "volatile_organic_compounds_parts": "Części lotnych związków organicznych",
+        "voltage": "Napięcie",
+        "volume": "Objętość",
+        "volume_flow_rate": "Przepływ objętości",
+        "volume_storage": "Zmagazynowana objętość",
+        "water": "Woda",
+        "weight": "Waga",
+        "wind_speed": "Prędkość wiatru"
+      }
+    },
+    "area_binary_sensor_device_class": {
+      "options": {
+        "battery": "Bateria",
+        "battery_charging": "Ładowanie",
+        "carbon_monoxide": "Tlenek węgla",
+        "cold": "Chłód",
+        "connectivity": "Łączność",
+        "door": "Drzwi",
+        "garage_door": "Brama garażowa",
+        "gas": "Gaz",
+        "heat": "Ciepło",
+        "light": "Światło",
+        "lock": "Zamek",
+        "moisture": "Wilgoć",
+        "motion": "Ruch",
+        "moving": "Poruszanie",
+        "occupancy": "Zajętość",
+        "opening": "Otwarcie",
+        "plug": "Wtyczka",
+        "power": "Zasilanie",
+        "presence": "Obecność",
+        "problem": "Problem",
+        "running": "Działanie",
+        "safety": "Bezpieczeństwo",
+        "smoke": "Dym",
+        "sound": "Dźwięk",
+        "tamper": "Naruszenie",
+        "update": "Aktualizacja",
+        "vibration": "Wibracje",
+        "window": "Okno"
+      }
+    },
+    "house_information_entries": {
+      "options": {
+        "person": "Osoby",
+        "light": "Światła",
+        "switch": "Przełączniki",
+        "fan": "Wentylatory",
+        "climate": "Klimat",
+        "cover": "Rolety",
+        "smoke": "Dym",
+        "carbon_monoxide": "Tlenek węgla",
+        "gas": "Gaz",
+        "moisture": "Wilgoć",
+        "problem": "Problem",
+        "safety": "Bezpieczeństwo",
+        "door": "Drzwi",
+        "window": "Okna",
+        "opening": "Otwarcia (kontaktrony)",
+        "garage_door": "Bramy garażowe",
+        "lock": "Zamki",
+        "motion": "Ruch",
+        "occupancy": "Zajętość",
+        "presence": "Obecność",
+        "vibration": "Wibracje",
+        "running": "Praca",
+        "vacuum": "Odkurzacze",
+        "media_player": "Odtwarzacze multimedialne",
+        "valve": "Zawory",
+        "humidifier": "Nawilżacze",
+        "lawn_mower": "Kosiarki",
+        "siren": "Syreny"
+      }
+    }
+  },
+  "issues": {
+    "restart_required": {
+      "title": "Wymagany restart, aby dokończyć wyłączanie Dwains Dashboard",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Uruchom ponownie Home Assistant",
+            "description": "Dwains Dashboard rejestruje dashboard w pasku bocznym i zasoby frontendu, które można całkowicie usunąć tylko przez ponowne uruchomienie Home Assistant.\n\nWybierz **Zatwierdź**, aby uruchomić ponownie teraz."
+          }
+        }
+      }
+    },
+    "broken_configuration_files": {
+      "title": "Niektórych plików Dwains Dashboard nie można odczytać",
+      "description": "Te pliki w `dwains-dashboard/configs/` są uszkodzone lub nie są poprawnym YAML. Dashboard działa bez nich, dopóki nie zostaną poprawione lub usunięte:\n\n{files}\n\nTen komunikat zniknie, gdy tylko pliki znów będzie można odczytać."
     }
   }
 }

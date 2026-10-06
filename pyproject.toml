@@ -4,7 +4,7 @@ asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 extend-exclude = ["custom_components/dwains_dashboard/js"]
 
 [tool.ruff.lint]
