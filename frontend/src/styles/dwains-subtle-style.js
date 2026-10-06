@@ -129,7 +129,7 @@ export const subtleHouseInformationStyles = (css) => css`
 
   ha-card .dd-header-tabs {
     gap: 0.45rem;
-    padding: 0.7rem;
+    padding: 0.4rem;
   }
 
   ha-card .dd-header-tab {
@@ -167,7 +167,7 @@ export const subtleHouseInformationStyles = (css) => css`
 
   ha-card .domain-badge-card h3,
   ha-card .dd-header-tab h3 {
-    margin-top: 0.42rem;
+    margin-top: 0.3rem;
     font-weight: 650;
     letter-spacing: -0.01em;
     color: var(--primary-text-color);

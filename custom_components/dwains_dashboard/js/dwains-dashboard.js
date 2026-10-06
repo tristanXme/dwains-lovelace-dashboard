@@ -3333,10 +3333,13 @@
         flex-direction: row;
         align-items: center;
         gap: 8px;
-        height: 110px;
+        /* As high as its entries: the bar scrolls only sideways.
+           overflow-x alone makes overflow-y auto as well, and iOS then lets
+           the entries be dragged up and down. */
         padding: 4px 8px;
         margin: 0 .25rem;
         overflow-x: auto;
+        overflow-y: hidden;
         overscroll-behavior-x: contain;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
@@ -3390,7 +3393,7 @@
     `,(0,l.MP)(a.AH)]}static get properties(){return{_hass:{type:Object},configuration:{type:Object},domains:{type:Object},persons:{type:Array}}}setConfig(e){this.configuration=e}set hass(e){const t=x(this._hass,e),i=this._hass;this._hass=e,this._startedHass&&this._registryChanges.update(e),g(i,e,this._isShownEntity)&&this.requestUpdate(),this._startIfReady(t)}_entityDisplayName(e,t){const i=t||this.entitiesById?.get(e),a=i?.device_id?this.devicesById?.get(i.device_id):void 0;return(0,c.Hg)(this._hass,this.configuration,e,i,a)}async connectedCallback(){super.connectedCallback(),this._disconnectGrace.cancel()||(this._timers.connect(),await this._startIfReady())}async _startIfReady(e=!1){const t=w(this._hass);if(!this.isConnected||!this._hass||this._startedHass===t)return;this._hass;this._startedHass=t;try{e?await this._loads.reload():await this._loadData()}catch(e){this._startedHass===t&&(this._startedHass=void 0),console.error("Error starting house information card:",e)}}disconnectedCallback(){super.disconnectedCallback(),this._disconnectGrace.schedule(this,()=>this._teardown())}_teardown(){this._startedHass=void 0,this._loads.invalidate(),this._timers.disconnect(),this._registryChanges.reset()}async _reloadCard(){await this._loads.reload(),this.requestUpdate()}_loadData(){return this._loads.load()}async _loadConfiguration({isCurrent:e=()=>!0}={}){const t=await u(this._hass);if(e())if(Object.assign(this,t),f().catch(e=>{console.error("Failed to preload house-information card helpers",e)}),null==this.areas||0===this.areas.length||null==this.devices||0===this.devices.length||null==this.entities||0===this.entities.length||null==this.configuration||0===this.configuration.length);else{const e=[],t=[];for(const e of this.entities){if("person"==(0,o.mD)(e.entity_id)){const i=this.configuration.entities&&this.configuration.entities[e.entity_id]||{};e.hidden_by||i.disabled||i.excluded||i.hidden||t.push(e.entity_id)}}for(const t of this.areas)if(!this.configuration.areas[t.area_id]||!this.configuration.areas[t.area_id].disabled){new Set;for(const i of this.entitiesByAreaId.get(t.area_id)||[])if(!i.hidden_by){const a=!!this.configuration.entities[i.entity_id]&&!!this.configuration.entities[i.entity_id].disabled,s=!!this.configuration.entities[i.entity_id]&&!!this.configuration.entities[i.entity_id].excluded,r=!!this.configuration.entities[i.entity_id]&&!!this.configuration.entities[i.entity_id].hidden,d=$(this.configuration.entities?.[i.entity_id]);if(!(a||s||r||d)){const a=this._entityDisplayName(i.entity_id,i),s=(0,o.mD)(i.entity_id);if(!(n.Zz.includes(s)||n.Ti.includes(s)||n.K5.includes(s)||n.ge.includes(s)||n.R9.includes(s)))continue;s in e||(e[s]={domain:s,entities:[]}),e[s].entities.push({entity_id:i.entity_id,area:t,friendlyName:a})}}}this.domains=e,this.persons=t,this._isShownEntity=_({entityIds:[...t,...Object.values(e).flatMap(e=>e.entities.map(e=>e.entity_id))],domains:["climate"]})}}_handleMoreInfo(e){if(e.currentTarget.entity)(0,s.Q)(e.currentTarget.entity);else{const t=e.currentTarget.domain,i=e.currentTarget.deviceClass,a=this.domains?.[t]?.entities,o="climate"!==t||a&&0!==a.length?(a||[]).filter(e=>!k(this._hass.states[e.entity_id],this._hass.entities,this._countedLockDevices())):Object.keys(this._hass.states).filter(e=>e.startsWith("climate.")&&!$(this.configuration?.entities?.[e])).map(e=>({entity_id:e,area:{},friendlyName:this._entityDisplayName(e)}));this._popupOpens.schedule(()=>{(0,s.fireEvent)("hass-more-info",{entityId:""},this),(0,r.d)((0,d.A)(this._hass,"device."+t),{type:"custom:dwains-house-information-more-info-card",domain:t,entities:o,deviceClass:"climate"===t?"":i,configuration:this.configuration},!0,"")})}}_isOn(e,t,i){if(e)return(i?e.filter(e=>e.attributes.device_class===i):e).filter(e=>{const t=this.configuration?.entities?.[e.entity_id];return!(e.hidden_by||t?.disabled||t?.excluded||t?.hidden||t?.hidden_in_area||n.s7.includes(e.state)||n.jj.includes(e.state))}).length}_isOnCover(e,t,i){if(e)return(i?e.filter(e=>e.attributes.device_class===i):e).filter(e=>!n.s7.includes(e.state)&&!n.jj.includes(e.state)&&!this.configuration.homepage_header.invert_cover).length}_isOffCover(e,t,i){if(e)return(i?e.filter(e=>e.attributes.device_class===i):e).filter(e=>!n.s7.includes(e.state)&&n.jj.includes(e.state)&&this.configuration.homepage_header.invert_cover).length}_isOnClimate(e,t){if(!e)return;const i=[];for(const t of e)t.attributes.hvac_action&&"idle"!=t.attributes.hvac_action?n.s7.includes(t.attributes.hvac_action)||n.jj.includes(t.attributes.hvac_action)||i.push(t.entity_id):t.attributes.hvac_action||n.s7.includes(t.state)||n.jj.includes(t.state)||i.push(t.entity_id);return i.length}_countedLockDevices(){return C((this.domains?.lock?.entities||[]).map(e=>this._hass.states[e.entity_id]),this._hass.entities,n.s7)}_renderDomain(e){const t=[],i="binary_sensor"===e.domain?this._countedLockDevices():new Set;for(const a of e.entities){const e=this._hass.states[a.entity_id];e&&!k(e,this._hass.entities,i)&&t.push(e)}if(n.Zz.includes(e.domain)){if(!this._showsEntry(e.domain))return;const i=this._isOn(t,e);if(i)return this._renderDomainBadgeCard(e.domain,(0,d.A)(this._hass,"device."+e.domain),n.qJ[e.domain][i?"on":"off"],i,"")}else{if(n.Ti.includes(e.domain))return n.gJ[e.domain].map(i=>{if(!this._showsEntry(i))return;const a=this._isOn(t,e.domain,i);return a?this._renderDomainBadgeCard(e.domain,(0,d.A)(this._hass,"device."+E(i)),n.qJ[e.domain][i],a,i):void 0});if(n.K5.includes(e.domain)){if(!this._showsEntry("cover"))return;return n.gJ[e.domain].map(i=>{const a=this._isOnCover(t,e.domain,i),s=this._isOffCover(t,e.domain,i);return a?this._renderDomainBadgeCard(e.domain,(0,d.A)(this._hass,"device."+i),n.qJ[e.domain][i],a,i):s?this._renderDomainBadgeCard(e.domain,(0,d.A)(this._hass,"device."+i),n.qJ[e.domain][i],s,i):void 0})}if(n.ge.includes(e.domain)){if(!this._showsEntry("climate"))return;const i=this._isOnClimate(t,e.domain);if(i)return this._renderDomainBadgeCard(e.domain,(0,d.A)(this._hass,"device."+e.domain),n.qJ[e.domain][i?"on":"off"],i,"")}else if(n.R9.includes(e.domain)){if(!this._showsEntry(e.domain))return;const i=this._isOn(t,e);if(i)return this._renderDomainBadgeCard(e.domain,(0,d.A)(this._hass,"device."+e.domain),n.qJ[e.domain][i?"on":"off"],i,"")}}}_showsEntry(e){const t=this.configuration?.homepage_header?.house_information_entries;return!Array.isArray(t)||t.includes(e)}_scrollTabsWithWheel(e){const t=e.currentTarget;if(t.scrollWidth<=t.clientWidth||Math.abs(e.deltaX)>=Math.abs(e.deltaY))return;const i=t.scrollLeft;t.scrollLeft+=e.deltaY,t.scrollLeft!==i&&e.preventDefault()}_renderDomainBadgeCard(e,t,i,s,r){let o;return o=!(n.Hi.includes(r)||["cover","lock","valve"].includes(e))||this.configuration.homepage_header.invert_cover&&"cover"==e?this.configuration.homepage_header.invert_cover&&"cover"==e?(0,d.A)(this._hass,"device.closed"):n.Hh.includes(r)?(0,d.A)(this._hass,"device.detected"):(0,d.A)(this._hass,"device.on"):(0,d.A)(this._hass,"device.open"),a.qy`
       <div class="dd-header-tab">
         <div class="text-center cursor-pointer domain-badge-card" .domain=${e} .deviceClass=${r} @click=${this._handleMoreInfo}>
-          <div class="rounded-full flex items-center justify-center m-auto round-badge" style="width: 50px; height: 50px;">
+          <div class="rounded-full flex items-center justify-center m-auto round-badge" style="width: 36px; height: 36px;">
             <div class="">
               <ha-icon
                 class="w-8 h-8 badge-icon"
@@ -3408,9 +3411,9 @@
                 <div class="dd-header-tab">
                 <div class="text-center cursor-pointer" .entity=${e} @click=${this._handleMoreInfo}>
                     ${i?a.qy`
-                    <img src="${i}" width="50" class="rounded-full m-auto ${t.state}">
+                    <img src="${i}" width="36" class="rounded-full m-auto ${t.state}">
                     `:a.qy`
-                    <div class="rounded-full flex items-center justify-center m-auto round-badge" style="width: 50px; height: 50px; margin-bottom: 6px;">
+                    <div class="rounded-full flex items-center justify-center m-auto round-badge" style="width: 36px; height: 36px;">
                     <div class="">
                         <ha-icon
                         class="w-8 h-8 badge-icon"
@@ -4808,7 +4811,7 @@
 
   ha-card .dd-header-tabs {
     gap: 0.45rem;
-    padding: 0.7rem;
+    padding: 0.4rem;
   }
 
   ha-card .dd-header-tab {
@@ -4846,7 +4849,7 @@
 
   ha-card .domain-badge-card h3,
   ha-card .dd-header-tab h3 {
-    margin-top: 0.42rem;
+    margin-top: 0.3rem;
     font-weight: 650;
     letter-spacing: -0.01em;
     color: var(--primary-text-color);

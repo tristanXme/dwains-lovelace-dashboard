@@ -126,10 +126,13 @@ class DwainsHouseInformationCard extends LitElement {
         flex-direction: row;
         align-items: center;
         gap: 8px;
-        height: 110px;
+        /* As high as its entries: the bar scrolls only sideways.
+           overflow-x alone makes overflow-y auto as well, and iOS then lets
+           the entries be dragged up and down. */
         padding: 4px 8px;
         margin: 0 .25rem;
         overflow-x: auto;
+        overflow-y: hidden;
         overscroll-behavior-x: contain;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
@@ -574,7 +577,7 @@ class DwainsHouseInformationCard extends LitElement {
         return html`
       <div class="dd-header-tab">
         <div class="text-center cursor-pointer domain-badge-card" .domain=${domain} .deviceClass=${deviceClass} @click=${this._handleMoreInfo}>
-          <div class="rounded-full flex items-center justify-center m-auto round-badge" style="width: 50px; height: 50px;">
+          <div class="rounded-full flex items-center justify-center m-auto round-badge" style="width: 36px; height: 36px;">
             <div class="">
               <ha-icon
                 class="w-8 h-8 badge-icon"
@@ -605,9 +608,9 @@ class DwainsHouseInformationCard extends LitElement {
                 <div class="dd-header-tab">
                 <div class="text-center cursor-pointer" .entity=${entity_id} @click=${this._handleMoreInfo}>
                     ${imageUrl ? html`
-                    <img src="${imageUrl}" width="50" class="rounded-full m-auto ${stateObj.state}">
+                    <img src="${imageUrl}" width="36" class="rounded-full m-auto ${stateObj.state}">
                     ` : html`
-                    <div class="rounded-full flex items-center justify-center m-auto round-badge" style="width: 50px; height: 50px; margin-bottom: 6px;">
+                    <div class="rounded-full flex items-center justify-center m-auto round-badge" style="width: 36px; height: 36px;">
                     <div class="">
                         <ha-icon
                         class="w-8 h-8 badge-icon"

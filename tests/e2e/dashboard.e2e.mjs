@@ -146,6 +146,18 @@ for (const colorScheme of ["light", "dark"]) {
   });
 
   if (colorScheme === "light") {
+    await step("the status bar scrolls only sideways and shows its entries whole", async () => {
+      const bar = await poll(() => deep(page, (all) => {
+        const tabs = all.find((el) => el.classList?.contains("dd-header-tabs") && el.children.length);
+        if (!tabs) return undefined;
+        const style = getComputedStyle(tabs);
+        return { overflowX: style.overflowX, overflowY: style.overflowY, clientHeight: tabs.clientHeight, scrollHeight: tabs.scrollHeight };
+      }), "status bar");
+      assert.equal(bar.overflowX, "auto");
+      assert.equal(bar.overflowY, "hidden");
+      assert.ok(bar.scrollHeight <= bar.clientHeight, `entries ${bar.scrollHeight}px in ${bar.clientHeight}px`);
+    });
+
     await step("area badges take the pointer, so their tooltip shows", async () => {
       // The window sensor of the test area is open: one badge.
       const hit = await poll(() => page.evaluate(() => {
