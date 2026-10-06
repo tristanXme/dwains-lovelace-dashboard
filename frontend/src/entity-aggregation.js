@@ -38,7 +38,7 @@ function averageEntityStates(
   return formatValueWithUnit(sum / values.length, unit, locale);
 }
 
-function countActiveEntities(
+function activeEntities(
   data,
   domain,
   deviceClass,
@@ -50,8 +50,11 @@ function countActiveEntities(
     .filter((entity) => !deviceClass
       || entity.attributes.device_class === deviceClass)
     .filter((entity) => !unavailableStates.includes(entity.state)
-      && !statesOff.includes(entity.state))
-    .length;
+      && !statesOff.includes(entity.state));
+}
+
+function countActiveEntities(data, domain, deviceClass, options) {
+  return activeEntities(data, domain, deviceClass, options)?.length;
 }
 
 function localizedClimateState(
@@ -162,6 +165,7 @@ function isLockSensorOfLock(stateObj, registryEntities, lockDevices) {
 }
 
 module.exports = {
+  activeEntities,
   averageEntityStates,
   countActiveEntities,
   groupEntityStatesByDomain,

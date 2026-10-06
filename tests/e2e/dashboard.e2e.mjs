@@ -190,7 +190,8 @@ for (const colorScheme of ["light", "dark"]) {
       }), "area badge").catch(async (error) => {
         throw new Error(`${error.message}; pointer lands on ${await page.evaluate(() => window.__ddPointerTarget)}`);
       });
-      assert.match(hit, /Fenster offen/);
+      // The tooltip names the open window.
+      assert.match(hit, /^1 Fenster offen \(Fenster Wohnzimmer\)$/);
     });
 
     await step("graph click opens the sensor history", async () => {

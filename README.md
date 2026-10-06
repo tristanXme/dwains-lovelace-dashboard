@@ -117,9 +117,9 @@ Security, stability and performance release of DD3.
   humidifiers, mowing lawn mowers and active sirens are shown like the vacuum.
   "Running" no longer uses the smoke detector icon. Safety first: smoke, CO,
   gas, water and problems come before doors, windows and motion. Hovering a
-  badge tells what it counts ("2 windows open"), in all ten languages. A lock
-  sensor on a device that also has a lock entity is the same lock: only the
-  lock entity is counted. If the lock entity is left out of the dashboard or
+  badge tells what it counts and which entities ("2 windows open (Kitchen,
+  Bath)"), in all ten languages. A lock sensor on a device that also has a
+  lock entity is the same lock: only the lock entity is counted. If the lock entity is left out of the dashboard or
   unavailable, the sensor counts again.
 
 ## Development

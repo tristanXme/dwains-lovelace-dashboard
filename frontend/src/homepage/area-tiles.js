@@ -176,25 +176,25 @@ export const AreaTilesMixin = (Base) => class extends Base {
       for (const domain of ALERT_DOMAINS) {
         if (!(domain in entitiesByDomain)) continue;
         for (const deviceClass of DEVICE_CLASSES[domain]) {
-          const count = this._isOn(entitiesByDomain, domain, deviceClass);
+          const active = this._activeEntities(entitiesByDomain, domain, deviceClass);
           const icon = DOMAIN_STATE_ICONS[domain][deviceClass];
-          if (count && icon) {
-            add(DETECTED_DEVICE_CLASSES.includes(deviceClass) ? 1 : 3, icon, count, this._badgeTitle(deviceClass, count));
+          if (active.length && icon) {
+            add(DETECTED_DEVICE_CLASSES.includes(deviceClass) ? 1 : 3, icon, active.length, this._badgeTitle(deviceClass, active.length, active));
           }
         }
       }
       for (const domain of COVER_DOMAINS) {
         if (!(domain in entitiesByDomain)) continue;
         for (const deviceClass of DEVICE_CLASSES[domain]) {
-          const count = this._coverOpenCount(entitiesByDomain, deviceClass);
+          const open = this._coverOpenEntities(entitiesByDomain, deviceClass);
           const icon = DOMAIN_STATE_ICONS[domain][deviceClass];
-          if (count && icon) add(4, icon, count, this._badgeTitle(deviceClass, count));
+          if (open.length && icon) add(4, icon, open.length, this._badgeTitle(deviceClass, open.length, open));
         }
       }
       for (const domain of OTHER_DOMAINS) {
         if (!(domain in entitiesByDomain)) continue;
-        const count = this._isOn(entitiesByDomain, domain);
-        if (count) add(5, DOMAIN_STATE_ICONS[domain].on, count, this._badgeTitle(domain, count));
+        const active = this._activeEntities(entitiesByDomain, domain);
+        if (active.length) add(5, DOMAIN_STATE_ICONS[domain].on, active.length, this._badgeTitle(domain, active.length, active));
       }
       // Stable sort: within a priority the order of DEVICE_CLASSES and the
       // domain lists is kept.
@@ -263,11 +263,17 @@ export const AreaTilesMixin = (Base) => class extends Base {
       });
     }
 
-    // Tooltip of a status badge: "2 windows open", "Vacuum: active".
-    _badgeTitle(type, count) {
-      return translateEngine(this._hass, summaryTranslationKey(type, count))
+    // Tooltip of a status badge: "2 windows open (Kitchen, Bath)", "Vacuum:
+    // active (Robbie)". The names tell badges of the same kind apart, such as
+    // a lock and a lock sensor; more than five end in "…".
+    _badgeTitle(type, count, entities = []) {
+      const summary = translateEngine(this._hass, summaryTranslationKey(type, count))
         .replace('{count}', count)
         .replace('{label}', translateEngine(this._hass, 'device.' + type));
+      const names = entities.map((entity) => this._entityDisplayName(entity.entity_id));
+      if (!names.length) return summary;
+      const shown = names.length > 5 ? [...names.slice(0, 5), '…'] : names;
+      return `${summary} (${shown.join(', ')})`;
     }
 
     _binarySensorStateLabel(entity) {
