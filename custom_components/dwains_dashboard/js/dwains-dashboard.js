@@ -3333,10 +3333,14 @@
         flex-direction: row;
         align-items: center;
         gap: 8px;
-        height: 110px;
+        /* At least this high, higher with larger text: the bar scrolls only
+           sideways. overflow-x alone makes overflow-y auto as well, and iOS
+           then lets the entries be dragged up and down. */
+        min-height: 110px;
         padding: 4px 8px;
         margin: 0 .25rem;
         overflow-x: auto;
+        overflow-y: hidden;
         overscroll-behavior-x: contain;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
