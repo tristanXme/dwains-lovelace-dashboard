@@ -146,6 +146,36 @@ for (const colorScheme of ["light", "dark"]) {
   });
 
   if (colorScheme === "light") {
+    await step("area badges take the pointer, so their tooltip shows", async () => {
+      // The window sensor of the test area is open: one badge.
+      const hit = await poll(() => page.evaluate(() => {
+        const find = (root) => {
+          for (const el of root.querySelectorAll("*")) {
+            if (el.classList?.contains("info-badge") && el.offsetParent && el.title) return el;
+            const found = el.shadowRoot && find(el.shadowRoot);
+            if (found) return found;
+          }
+          return undefined;
+        };
+        const badge = find(document);
+        if (!badge) return undefined;
+        const rect = badge.getBoundingClientRect();
+        const [x, y] = [rect.x + rect.width / 2, rect.y + rect.height / 2];
+        // The element the pointer lands on, through the shadow roots.
+        let element = document.elementFromPoint(x, y);
+        while (element?.shadowRoot) {
+          const inner = element.shadowRoot.elementFromPoint(x, y);
+          if (!inner || inner === element) break;
+          element = inner;
+        }
+        for (let node = element; node; node = node.parentElement || node.getRootNode()?.host) {
+          if (node === badge) return badge.title;
+        }
+        return `pointer lands on ${element?.localName}.${element?.className}`;
+      }), "area badge");
+      assert.match(hit, /Fenster offen/);
+    });
+
     await step("graph click opens the sensor history", async () => {
       await deep(page, (all) => all.find((el) => el.classList?.contains("area-graph")).click());
       await poll(() => deep(page, (all) => all.some((el) => el.tagName === "HA-MORE-INFO-DIALOG" && el.shadowRoot?.textContent.includes("Temperatur"))), "more-info dialog");
@@ -161,6 +191,33 @@ for (const colorScheme of ["light", "dark"]) {
       }), "area view");
       assert.match(header, /Wohnzimmer/);
       assert.match(header, /°C/);
+    });
+
+    await step("a card with a larger row span leaves no gap below it (masonry)", async () => {
+      const setRowSpan = (span) => page.evaluate((span) => document.querySelector("home-assistant").hass.callWS({
+        type: "dwains_dashboard/edit_entity", entity: "input_boolean.e2e_lamp",
+        rowSpan: span, rowSpanLg: span, rowSpanXl: span,
+      }), span);
+      await setRowSpan("2");
+      try {
+        await page.goto(BASE + "/dwains-dashboard/home");
+        await poll(() => deep(page, (all) => {
+          const button = all.find((el) => el.classList?.contains("area-button") && el.textContent.includes("Wohnzimmer"));
+          button?.click();
+          return Boolean(button);
+        }), "area button");
+        // The rows reserved for the cell: the card plus the 16px gap,
+        // rounded up to 8px rows.
+        const sizes = await poll(() => deep(page, (all) => {
+          const cell = all.find((el) => el.dataset?.entity === "input_boolean.e2e_lamp" && el.closest(".dd-masonry"));
+          const card = cell?.firstElementChild?.getBoundingClientRect().height;
+          const rows = Number(/span (\d+)/.exec(cell?.style.gridRow || "")?.[1]);
+          return card > 0 && rows > 0 && { reserved: rows * 8, card };
+        }), "lamp card in the area view");
+        assert.ok(sizes.reserved - sizes.card < 16 + 8, JSON.stringify(sizes));
+      } finally {
+        await setRowSpan("1");
+      }
     });
 
     await step("the strings load before the first render", async () => {

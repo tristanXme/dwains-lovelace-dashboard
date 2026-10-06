@@ -383,21 +383,6 @@ function getDwainsHass() {
 	      }
 	    }
 
-	    _currentMasonryRowSpan(item){
-	      const width = window.innerWidth || 0;
-	      const classes = Array.from(item.classList || []);
-	      let rowSpanClass;
-	      if(width >= 1536){
-	        rowSpanClass = classes.find((className) => className.startsWith("xl-row-span-"));
-	      } else if(width >= 1024){
-	        rowSpanClass = classes.find((className) => className.startsWith("lg-row-span-"));
-	      } else {
-	        rowSpanClass = classes.find((className) => className.startsWith("row-span-"));
-	      }
-	      const rowSpan = rowSpanClass ? Number(rowSpanClass.split("-").pop()) : 1;
-	      return Number.isFinite(rowSpan) && rowSpan > 0 ? rowSpan : 1;
-	    }
-
 	    _applyMasonrySpans(){
 	      try {
 	        if(!this.shadowRoot) return;
@@ -411,19 +396,12 @@ function getDwainsHass() {
 	        // per card (the main cost when opening an area).
 	        const layouts = grids.map((grid) => {
 	          const items = Array.from(grid.children);
-	          const heights = items.map((item) => {
+	          // Every card takes its own height. A configured row span only
+	          // applies to rows of equal height (the "no masonry" option); here
+	          // it would reserve room the card does not fill.
+	          return items.map((item) => {
 	            const content = item.firstElementChild;
-	            return content ? content.getBoundingClientRect().height : 0;
-	          });
-	          // A card configured with a row span of 2+ keeps that much room:
-	          // a multiple of the typical single card.
-	          const single = heights
-	            .filter((height, index) => height > 0 && this._currentMasonryRowSpan(items[index]) === 1)
-	            .sort((a, b) => a - b);
-	          const typical = single.length ? single[Math.floor(single.length / 2)] : 0;
-	          return items.map((item, index) => {
-	            const rowSpan = this._currentMasonryRowSpan(item);
-	            const height = Math.max(heights[index], rowSpan > 1 ? rowSpan * typical + (rowSpan - 1) * 16 : 0);
+	            const height = content ? content.getBoundingClientRect().height : 0;
 	            return [item, height > 0 ? Math.ceil((height + 16) / 8) : undefined];
 	          });
 	        });
