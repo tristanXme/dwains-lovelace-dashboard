@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { groupEntityStatesByDomain, isLockSensorOfLock } = require("../src/entity-aggregation");
+const { groupEntityStatesByDomain, isLockSensorOfLock, lockDeviceIds } = require("../src/entity-aggregation");
 
 const registry = {
   "lock.front_door": { entity_id: "lock.front_door", device_id: "nuki" },
@@ -20,37 +20,48 @@ const states = {
   "binary_sensor.window_lock": state("binary_sensor.window_lock", "lock"),
   "binary_sensor.front_door_contact": state("binary_sensor.front_door_contact", "door"),
 };
+const unavailableStates = ["unavailable", "unknown"];
+const lockDevices = lockDeviceIds([states["lock.front_door"]], registry, unavailableStates);
 
-test("a lock sensor on a device with a lock entity is the lock again", () => {
-  assert.equal(isLockSensorOfLock(states["binary_sensor.front_door_lock"], registry), true);
+test("a lock sensor on the device of a counted lock is the lock again", () => {
+  assert.equal(isLockSensorOfLock(states["binary_sensor.front_door_lock"], registry, lockDevices), true);
 });
 
 test("lock sensors of other devices and other sensors of the lock count", () => {
-  assert.equal(isLockSensorOfLock(states["binary_sensor.window_lock"], registry), false);
-  assert.equal(isLockSensorOfLock(states["binary_sensor.front_door_contact"], registry), false);
-  assert.equal(isLockSensorOfLock(states["lock.front_door"], registry), false);
-  assert.equal(isLockSensorOfLock(states["binary_sensor.front_door_lock"], undefined), false);
-  assert.equal(isLockSensorOfLock(undefined, registry), false);
+  assert.equal(isLockSensorOfLock(states["binary_sensor.window_lock"], registry, lockDevices), false);
+  assert.equal(isLockSensorOfLock(states["binary_sensor.front_door_contact"], registry, lockDevices), false);
+  assert.equal(isLockSensorOfLock(states["lock.front_door"], registry, lockDevices), false);
+  assert.equal(isLockSensorOfLock(states["binary_sensor.front_door_lock"], undefined, lockDevices), false);
+  assert.equal(isLockSensorOfLock(undefined, registry, lockDevices), false);
 });
 
-test("a changed registry is read again", () => {
-  const withoutLock = { ...registry };
-  delete withoutLock["lock.front_door"];
-  assert.equal(isLockSensorOfLock(states["binary_sensor.front_door_lock"], registry), true);
-  assert.equal(isLockSensorOfLock(states["binary_sensor.front_door_lock"], withoutLock), false);
+test("a lock that is not counted leaves its sensor counted", () => {
+  const sensor = states["binary_sensor.front_door_lock"];
+  assert.equal(isLockSensorOfLock(sensor, registry, lockDeviceIds([], registry)), false);
+  const unavailable = lockDeviceIds([state("lock.front_door", undefined, "unavailable")], registry, unavailableStates);
+  assert.equal(isLockSensorOfLock(sensor, registry, unavailable), false);
 });
 
-test("area grouping leaves out lock sensors of locks", () => {
-  const grouped = groupEntityStatesByDomain(Object.keys(states), {
-    states,
-    domainGroups: { toggle: [], sensor: [], alert: ["binary_sensor"], cover: [], climate: [], other: ["lock"] },
-    deviceClasses: { binary_sensor: ["lock", "door"] },
-    sensorDeviceClasses: [],
-    registryEntities: registry,
-  });
-  assert.deepEqual(grouped.lock.map((entity) => entity.entity_id), ["lock.front_door"]);
-  assert.deepEqual(
-    grouped.binary_sensor.map((entity) => entity.entity_id),
-    ["binary_sensor.window_lock", "binary_sensor.front_door_contact"],
-  );
+const group = (entityIds, excludedEntities = {}) => groupEntityStatesByDomain(entityIds, {
+  states,
+  excludedEntities,
+  domainGroups: { toggle: [], sensor: [], alert: ["binary_sensor"], cover: [], climate: [], other: ["lock"] },
+  deviceClasses: { binary_sensor: ["lock", "door"] },
+  sensorDeviceClasses: [],
+  registryEntities: registry,
+  unavailableStates,
+});
+const ids = (entities) => entities.map((entity) => entity.entity_id);
+
+test("area grouping leaves out lock sensors of counted locks", () => {
+  const grouped = group(Object.keys(states));
+  assert.deepEqual(ids(grouped.lock), ["lock.front_door"]);
+  assert.deepEqual(ids(grouped.binary_sensor), ["binary_sensor.window_lock", "binary_sensor.front_door_contact"]);
+});
+
+test("area grouping keeps the lock sensor when the lock is left out", () => {
+  const expected = ["binary_sensor.front_door_lock", "binary_sensor.window_lock", "binary_sensor.front_door_contact"];
+  assert.deepEqual(ids(group(Object.keys(states), { "lock.front_door": { excluded: true } }).binary_sensor), expected);
+  assert.deepEqual(ids(group(Object.keys(states), { "lock.front_door": { hidden_in_area: true } }).binary_sensor), expected);
+  assert.deepEqual(ids(group(expected).binary_sensor), expected);
 });

@@ -4,7 +4,7 @@ import translateEngine from '../translate-engine';
 const { areaBinarySensorDeviceClasses, areaBinarySensorEntities, areaSensorDeviceClasses, areaSensorEntities } = require('../homepage-preferences');
 const { collectAreaBinarySensorValues, entityBelongsToArea, summaryTranslationKey } = require('../area-binary-sensors');
 const { collectAreaSensorValues } = require('../area-sensors');
-const { isEntityHiddenInArea, isLockSensorOfLock } = require('../entity-aggregation');
+const { isEntityHiddenInArea, isLockSensorOfLock, lockDeviceIds } = require('../entity-aggregation');
 require('../dwains-area-graph');
 
 
@@ -141,15 +141,22 @@ export const AreaTilesMixin = (Base) => class extends Base {
 
     // The same entities as the badges and averages of the tile: hidden in
     // the area also leaves the summary below the area name, and so does a
-    // lock sensor of a lock.
+    // lock sensor of a lock that the badges count.
     _areaEntityIdsForArea(areaId) {
-      return (this.entitiesByAreaId?.get(areaId) || [])
+      const entityIds = (this.entitiesByAreaId?.get(areaId) || [])
         .filter((entity) => !entity.hidden_by)
         .filter((entity) => !(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['disabled']))
         .filter((entity) => !isEntityHiddenInArea(this.configuration['entities'][entity.entity_id]))
         .filter((entity) => this._hass.states[entity.entity_id])
-        .filter((entity) => !isLockSensorOfLock(this._hass.states[entity.entity_id], this._hass.entities))
         .map((entity) => entity.entity_id);
+      const lockDevices = lockDeviceIds(
+        entityIds
+          .filter((entityId) => entityId.startsWith('lock.') && !this.configuration['entities'][entityId]?.['excluded'])
+          .map((entityId) => this._hass.states[entityId]),
+        this._hass.entities,
+        UNAVAILABLE_STATES,
+      );
+      return entityIds.filter((entityId) => !isLockSensorOfLock(this._hass.states[entityId], this._hass.entities, lockDevices));
     }
 
     // Status badges in the top right corner of an area tile, in columns from

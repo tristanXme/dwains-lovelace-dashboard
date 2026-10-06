@@ -119,7 +119,8 @@ Security, stability and performance release of DD3.
   gas, water and problems come before doors, windows and motion. Hovering a
   badge tells what it counts ("2 windows open"), in all ten languages. A lock
   sensor on a device that also has a lock entity is the same lock: only the
-  lock entity is counted.
+  lock entity is counted. If the lock entity is left out of the dashboard or
+  unavailable, the sensor counts again.
 
 ## Development
 
