@@ -2,7 +2,7 @@ import { html } from 'lit';
 import { STATES_OFF, UNAVAILABLE_STATES, SENSOR_DOMAINS, ALERT_DOMAINS, COVER_DOMAINS, TOGGLE_DOMAINS, OTHER_DOMAINS, DEVICE_CLASSES, DOMAIN_STATE_ICONS, DETECTED_DEVICE_CLASSES } from '../variables';
 import translateEngine from '../translate-engine';
 const { areaBinarySensorDeviceClasses, areaBinarySensorEntities, areaSensorDeviceClasses, areaSensorEntities } = require('../homepage-preferences');
-const { collectAreaBinarySensorValues, entityBelongsToArea, summaryTranslationKey } = require('../area-binary-sensors');
+const { binarySensorType, collectAreaBinarySensorValues, entityBelongsToArea, summaryTranslationKey } = require('../area-binary-sensors');
 const { collectAreaSensorValues } = require('../area-sensors');
 const { isEntityHiddenInArea, isLockSensorOfLock, lockDeviceIds } = require('../entity-aggregation');
 require('../dwains-area-graph');
@@ -121,9 +121,10 @@ export const AreaTilesMixin = (Base) => class extends Base {
     }
 
     _areaBinarySensorSummary(deviceClass, activeCount) {
-      const label = this._areaBinarySensorLabel(deviceClass);
+      const type = binarySensorType(deviceClass);
+      const label = this._areaBinarySensorLabel(type);
       return this._translateAreaBinarySensorText(
-        summaryTranslationKey(deviceClass, activeCount),
+        summaryTranslationKey(type, activeCount),
         {
         count: activeCount,
         label,
@@ -179,7 +180,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
           const count = this._isOn(entitiesByDomain, domain, deviceClass);
           const icon = DOMAIN_STATE_ICONS[domain][deviceClass];
           if (count && icon) {
-            add(DETECTED_DEVICE_CLASSES.includes(deviceClass) ? 1 : 3, icon, count, this._badgeTitle(deviceClass, count));
+            add(DETECTED_DEVICE_CLASSES.includes(deviceClass) ? 1 : 3, icon, count, this._badgeTitle(binarySensorType(deviceClass), count));
           }
         }
       }

@@ -142,6 +142,11 @@
         "one": "1 slot ontgrendeld",
         "many": "{count} sloten ontgrendeld"
       },
+      "lock_sensor": {
+        "zero": "Slotsensoren vergrendeld",
+        "one": "1 slotsensor ontgrendeld",
+        "many": "{count} slotsensoren ontgrendeld"
+      },
       "moisture": {
         "zero": "Droog",
         "one": "Vocht gedetecteerd",
@@ -261,6 +266,7 @@
     "motion": "Beweging",
     "device_tracker": "Device tracker",
     "lock": "Slot",
+    "lock_sensor": "Slotsensor",
     "siren": "Siren",
     "input_boolean": "Input boolean",
     "weather": "Weer",

@@ -3,7 +3,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { summaryTranslationKey } = require("../src/area-binary-sensors");
+const { binarySensorType, summaryTranslationKey } = require("../src/area-binary-sensors");
 
 // variables.js is an ES module; evaluate its plain data.
 function loadModule(file) {
@@ -35,7 +35,7 @@ test("every badge on an area tile has an icon", () => {
 });
 
 test("badge labels and tooltips exist in every language", () => {
-  const types = [...variables.DEVICE_CLASSES.binary_sensor, ...variables.OTHER_DOMAINS];
+  const types = [...variables.DEVICE_CLASSES.binary_sensor.map(binarySensorType), ...variables.OTHER_DOMAINS];
   for (const [language, strings] of Object.entries(translations)) {
     for (const type of types) {
       assert.ok(get(strings, `device.${type}`), `${language}: device.${type}`);
@@ -55,4 +55,19 @@ test("new sensor types have their own summaries", () => {
   assert.equal(summaryTranslationKey("gas", 1), "area_binary_sensor.summary.gas.one");
   assert.equal(summaryTranslationKey("valve", 2), "area_binary_sensor.summary.valve.many");
   assert.equal(summaryTranslationKey("vacuum", 1), "area_binary_sensor.summary.fallback.one");
+});
+
+test("lock sensors and lock entities have their own texts", () => {
+  assert.equal(binarySensorType("lock"), "lock_sensor");
+  assert.equal(binarySensorType("door"), "door");
+  assert.equal(summaryTranslationKey(binarySensorType("lock"), 1), "area_binary_sensor.summary.lock_sensor.one");
+  assert.equal(summaryTranslationKey("lock", 1), "area_binary_sensor.summary.lock.one");
+  for (const [language, strings] of Object.entries(translations)) {
+    assert.notEqual(get(strings, "device.lock_sensor"), get(strings, "device.lock"), language);
+    assert.notEqual(
+      get(strings, "area_binary_sensor.summary.lock_sensor.one"),
+      get(strings, "area_binary_sensor.summary.lock.one"),
+      language,
+    );
+  }
 });

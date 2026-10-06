@@ -120,7 +120,8 @@ Security, stability and performance release of DD3.
   badge tells what it counts ("2 windows open"), in all ten languages. A lock
   sensor on a device that also has a lock entity is the same lock: only the
   lock entity is counted. If the lock entity is left out of the dashboard or
-  unavailable, the sensor counts again.
+  unavailable, the sensor counts again. Lock sensors are named apart from
+  locks ("1 lock sensor unlocked" next to "1 lock unlocked").
 
 ## Development
 
