@@ -48,6 +48,9 @@ function createLazyCardClass({
     }
 
     set card(card) {
+      // The same card handed over again (reused by a rebuild): it is the
+      // item's card now, a new factory must not drop it.
+      if (card && card === this.__c) this.__cardFromFactory = false;
       this._setCard(card, false);
     }
 
