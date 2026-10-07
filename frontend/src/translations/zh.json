@@ -142,11 +142,6 @@
         "one": "1 把锁已解锁",
         "many": "{count} 把锁已解锁"
       },
-      "lock_sensor": {
-        "zero": "锁传感器已锁定",
-        "one": "1 个锁传感器已解锁",
-        "many": "{count} 个锁传感器已解锁"
-      },
       "moisture": {
         "zero": "干燥",
         "one": "检测到湿气",
@@ -266,7 +261,6 @@
     "motion": "运动",
     "device_tracker": "设备追踪器",
     "lock": "锁",
-    "lock_sensor": "锁传感器",
     "siren": "Siren",
     "input_boolean": "输入布尔值",
     "weather": "天气",

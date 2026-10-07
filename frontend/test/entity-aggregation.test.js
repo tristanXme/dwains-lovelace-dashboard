@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { groupEntityStatesByDomain, isLockSensorOfLock, lockDeviceIds } = require("../src/entity-aggregation");
+const { activeEntities, countActiveEntities, groupEntityStatesByDomain, isLockSensorOfLock, lockDeviceIds } = require("../src/entity-aggregation");
 
 const registry = {
   "lock.front_door": { entity_id: "lock.front_door", device_id: "nuki" },
@@ -64,4 +64,20 @@ test("area grouping keeps the lock sensor when the lock is left out", () => {
   assert.deepEqual(ids(group(Object.keys(states), { "lock.front_door": { excluded: true } }).binary_sensor), expected);
   assert.deepEqual(ids(group(Object.keys(states), { "lock.front_door": { hidden_in_area: true } }).binary_sensor), expected);
   assert.deepEqual(ids(group(expected).binary_sensor), expected);
+});
+
+test("active entities are the ones the badge counts", () => {
+  const data = {
+    binary_sensor: [
+      state("binary_sensor.window_kitchen", "window", "on"),
+      state("binary_sensor.window_bath", "window", "off"),
+      state("binary_sensor.window_hall", "window", "unavailable"),
+      state("binary_sensor.door", "door", "on"),
+    ],
+  };
+  const options = { unavailableStates, statesOff: ["off"] };
+  assert.deepEqual(ids(activeEntities(data, "binary_sensor", "window", options)), ["binary_sensor.window_kitchen"]);
+  assert.equal(countActiveEntities(data, "binary_sensor", "window", options), 1);
+  assert.equal(activeEntities(data, "lock", undefined, options), undefined);
+  assert.equal(countActiveEntities(data, "lock", undefined, options), undefined);
 });

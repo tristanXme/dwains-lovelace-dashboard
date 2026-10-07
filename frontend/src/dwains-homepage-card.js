@@ -11,7 +11,7 @@ const { savingSortableOptions } = require('./sortable-save');
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
-const { averageEntityStates, countActiveEntities, groupEntityStatesByDomain, isEntityHiddenInArea, localizedClimateState } = require('./entity-aggregation');
+const { activeEntities, averageEntityStates, countActiveEntities, groupEntityStatesByDomain, isEntityHiddenInArea, localizedClimateState } = require('./entity-aggregation');
 const { TimerOwner } = require('./timer-owner');
 const { PopupOpenScheduler } = require('./popup-open-scheduler');
 const { ReloadableLoadOwner } = require('./reloadable-load-owner');
@@ -1008,7 +1008,14 @@ function getDwainsHass() {
       });
     }
 
-    _coverOpenCount(data, deviceClass) {
+    _activeEntities(data, domain, deviceClass) {
+      return activeEntities(data, domain, deviceClass, {
+        unavailableStates: UNAVAILABLE_STATES,
+        statesOff: STATES_OFF,
+      });
+    }
+
+    _coverOpenEntities(data, deviceClass) {
       const entities = data["cover"];
       if (!entities) {
         return undefined;
@@ -1031,7 +1038,7 @@ function getDwainsHass() {
           return invertCover
             ? STATES_OFF.includes(entity.state)
             : !STATES_OFF.includes(entity.state);
-        }).length;
+        });
     }
 
     _climateState(data, domain){

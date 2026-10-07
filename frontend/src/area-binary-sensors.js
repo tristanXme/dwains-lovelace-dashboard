@@ -7,7 +7,6 @@ const AREA_BINARY_SENSOR_SUMMARY_KEYS = Object.freeze({
   garage_door: "garage_door",
   gas: "gas",
   lock: "lock",
-  lock_sensor: "lock_sensor",
   moisture: "moisture",
   motion: "motion",
   occupancy: "occupancy",
@@ -23,13 +22,6 @@ const AREA_BINARY_SENSOR_SUMMARY_KEYS = Object.freeze({
   vibration: "vibration",
   window: "window",
 });
-
-// Label and summary type of a binary sensor class. A lock binary sensor is
-// named apart from a lock entity: "1 lock sensor unlocked" next to
-// "1 lock unlocked".
-function binarySensorType(deviceClass) {
-  return deviceClass === "lock" ? "lock_sensor" : deviceClass;
-}
 
 function summaryTranslationKey(deviceClass, activeCount) {
   const knownClass = AREA_BINARY_SENSOR_SUMMARY_KEYS[deviceClass];
@@ -92,7 +84,6 @@ function collectAreaBinarySensorValues({
 }
 
 module.exports = {
-  binarySensorType,
   collectAreaBinarySensorValues,
   entityBelongsToArea,
   summaryTranslationKey,

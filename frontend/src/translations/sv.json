@@ -142,11 +142,6 @@
         "one": "1 lås olåst",
         "many": "{count} lås olåsta"
       },
-      "lock_sensor": {
-        "zero": "Låssensorer låsta",
-        "one": "1 låssensor olåst",
-        "many": "{count} låssensorer olåsta"
-      },
       "moisture": {
         "zero": "Torrt",
         "one": "Fukt upptäckt",
@@ -266,7 +261,6 @@
     "motion": "Rörelse",
     "device_tracker": "Enhetsspårare",
     "lock": "Lås",
-    "lock_sensor": "Låssensor",
     "siren": "Siren",
     "input_boolean": "Växlare",
     "weather": "Väder",
