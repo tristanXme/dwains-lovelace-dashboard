@@ -8,7 +8,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Context, HomeAssistant
+from homeassistant.exceptions import Unauthorized
 
 
 async def _call(client, msg_type: str, **payload) -> dict:
@@ -115,6 +116,18 @@ async def test_more_page_config_without_name_does_not_break_reload(
     response = await _call(client, "lovelace/config", url_path="dwains-dashboard", force=True)
     assert response["success"], response
     assert "manual" in [view.get("title") for view in response["result"]["views"]]
+
+
+async def test_reload_service_is_admin_only(
+    hass: HomeAssistant, setup_dashboard, hass_read_only_user
+) -> None:
+    with pytest.raises(Unauthorized):
+        await hass.services.async_call(
+            "dwains_dashboard",
+            "reload",
+            blocking=True,
+            context=Context(user_id=hass_read_only_user.id),
+        )
 
 
 async def test_card_files_round_trip(
