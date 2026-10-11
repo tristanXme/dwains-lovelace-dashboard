@@ -2,6 +2,7 @@ import { moreInfo } from './card-tools-compat';
 import { popUp } from './dwains-popup';
 import { mdiDotsVertical, mdiCog } from '@mdi/js';
 import { css, html, LitElement } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { clientPreferences } from './client-preferences';
 import { WEATHER_ICONS, STATES_OFF, UNAVAILABLE_STATES, SENSOR_DOMAINS, ALERT_DOMAINS, COVER_DOMAINS, TOGGLE_DOMAINS, CLIMATE_DOMAINS, OTHER_DOMAINS, DEVICE_CLASSES, ALARM_ICONS } from './variables';
 import { computeDomain } from './frontend-helpers';
@@ -9,6 +10,8 @@ import translateEngine from './translate-engine';
 import { editTitle, entityEditTitle } from './edit-title';
 import { showSaveError } from './save-error-toast';
 const { savingSortableOptions } = require('./sortable-save');
+const { applyLocalOrder } = require('./local-order');
+const { hideItemWhileSaving } = require('./optimistic-item');
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
@@ -287,9 +290,9 @@ function getDwainsHass() {
 	        "dwains_dashboard_homepage_card_reload",
 	        () => {
 	          websocketReadStore.invalidate(this._hass);
-	          this._reloadCard().catch((error) => {
-	            console.error('Error reloading homepage card:', error);
-	          });
+	          // One change fires several dashboard events at once; reload
+	          // after all of them, with one read of the configuration.
+	          this._timers.schedule('event-reload', () => this._reloadCard(), 0);
 	        },
 	      );
 	    }
@@ -1248,18 +1251,19 @@ function getDwainsHass() {
         entityId,
         key,
         value,
-      }).catch((err) => {
-        console.error('Failed to update entity setting:', err);
-      });
+      }).catch((err) => showSaveError(this._hass, err));
     }
     _handleEntityEditBoolValueClick(ev) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      this._saveEntityBoolValue(
-        ev.currentTarget.entity,
-        ev.currentTarget.key,
-        ev.currentTarget.ddValue,
-      );
+      const { entity, key, ddValue } = ev.currentTarget;
+      // The card leaves this list (hidden, disabled, excluded or shown again).
+      hideItemWhileSaving(ev.currentTarget, () => this._hass.callWS({
+        type: 'dwains_dashboard/edit_entity_bool_value',
+        entityId: entity,
+        key,
+        value: ddValue,
+      })).catch((err) => showSaveError(this._hass, err));
     }
     _handleEntityAreaVisibilityClick(ev, entityId, value) {
       closeParentDropdown(ev);
@@ -1399,7 +1403,8 @@ function getDwainsHass() {
 
       if(value){
         this._attachSortables('.favorites-sortable', 'data-entity', 'dwains_dashboard/sort_entity',
-          'favorite_sort_order', () => this.favoriteEditMode);
+          'favorite_sort_order', () => this.favoriteEditMode,
+          (order) => this._showOrder([this.favorites], 'favorite_sort_order', order));
       } else {
         this._destroySortables();
       }
@@ -1420,10 +1425,16 @@ function getDwainsHass() {
       this.areaEditMode = value;
     }
 
+    // A dragged order of entity cards, shown before the save comes back.
+    _showOrder(lists, sortKey, order){
+      for (const items of lists) applyLocalOrder(items, (item) => item.entity, order, sortKey);
+      this.requestUpdate();
+    }
+
     // Makes the grids matching selector drag-sortable and saves the new order.
     // Sortable is loaded on first use, so isActive() tells whether the edit
     // mode is still on once it has arrived.
-    async _attachSortables(selector, dataIdAttr, type, sortType, isActive){
+    async _attachSortables(selector, dataIdAttr, type, sortType, isActive, applyOrder = undefined){
       let Sortable;
       try {
         Sortable = await loadSortable();
@@ -1442,6 +1453,7 @@ function getDwainsHass() {
         ...savingSortableOptions(
           (order) => cardHass.callWS({ type: type, sortData: JSON.stringify(order), sortType: sortType }),
           (err) => showSaveError(cardHass, err),
+          { applyOrder },
         ),
       }));
     }
@@ -1457,8 +1469,10 @@ function getDwainsHass() {
       this._destroySortables();
       this.updateComplete.then(() => {
         if(this.areaViewEditMode){
+          const sortType = this.areaViewDisplayGrouped ? 'grouped_sort_order' : 'sort_order';
           this._attachSortables('.area-view-entity-sortable', 'data-entity', 'dwains_dashboard/sort_entity',
-            this.areaViewDisplayGrouped ? 'grouped_sort_order' : 'sort_order', () => this.areaViewEditMode);
+            sortType, () => this.areaViewEditMode,
+            (order) => this._showOrder(this.data.map((area) => area.cards), sortType, order));
         }
       });
     }
@@ -1530,7 +1544,7 @@ function getDwainsHass() {
 
 	    _renderFavoriteViewCard(data){
 	      return html`
-	      <div data-entity='${data.entity}' class="col-span-${data.colSpan} row-span-${data.rowSpan} lg-col-span-${data.colSpanLg} lg-row-span-${data.rowSpanLg}  relative">
+	      <div data-dd-item data-entity='${data.entity}' class="col-span-${data.colSpan} row-span-${data.rowSpan} lg-col-span-${data.colSpanLg} lg-row-span-${data.rowSpanLg}  relative">
 	        <div>
 	          <dd-lazy-card .card=${data.card} .cardFactory=${data.cardFactory} .hass=${this._hass}></dd-lazy-card>
 	        </div>
@@ -1656,9 +1670,7 @@ function getDwainsHass() {
             </div>
           </div>
           <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4 sortable favorites-sortable ${this.favoriteEditMode || !this._masonryEnabled() ? "" : "dd-fav-masonry"}">
-            ${this.favorites.map((i) =>
-              html`${this._renderFavoriteViewCard(i)}`
-            )}
+            ${repeat(this.favorites, (i) => i.entity, (i) => this._renderFavoriteViewCard(i))}
           </div>
         </div>
         `;
@@ -1861,7 +1873,7 @@ function getDwainsHass() {
                 </div>
               </div>
               <div class="w-full ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-w-1-2 xl-w-2-3"} ${!window.location.hash ? (this.configuration['homepage_header']['v2_mode'] ? "hidden" : "hidden lg-block") : ""} p-4">
-                ${this.data.map((i) => this._renderAreaView(i))}
+                ${repeat(this.data, (i) => i.area.area_id, (i) => this._renderAreaView(i))}
               </div>
             </div>
             </div>

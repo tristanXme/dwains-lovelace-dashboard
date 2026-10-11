@@ -105,9 +105,11 @@ for (const colorScheme of ["light", "dark"]) {
   page.on("console", (message) => consoleLog.push(`${new Date().toISOString()} ${message.type()}: ${message.text()}`));
   page.on("pageerror", (error) => consoleLog.push(`${new Date().toISOString()} pageerror: ${error.stack || error.message}`));
   const registryLists = [];
+  const historyStreams = [];
   page.on("websocket", (socket) => socket.on("framesent", (frame) => {
     const type = /"type":"(config\/[a-z_]+_registry\/list)"/.exec(String(frame.payload))?.[1];
     if (type) registryLists.push(type);
+    if (String(frame.payload).includes('"type":"history/stream"')) historyStreams.push(String(frame.payload));
   }));
   const requests = [];
   page.on("request", (request) => {
@@ -225,6 +227,8 @@ for (const colorScheme of ["light", "dark"]) {
       await deep(page, (all) => all
         .filter((el) => el.dataset?.entity && el.closest?.(".dd-area-view"))
         .forEach((cell) => { const card = cell.querySelector("dd-lazy-card")?.firstElementChild; if (card) card.__ddMark = cell.dataset.entity; }));
+      await page.waitForTimeout(500);
+      historyStreams.length = 0;
       await hideInArea(true);
       try {
         const after = await poll(async () => {
@@ -233,9 +237,13 @@ for (const colorScheme of ["light", "dark"]) {
         }, "card hidden");
         assert.ok(after.length >= 2, JSON.stringify(after));
         for (const card of after) {
-          assert.equal(card.mark, card.entity, `${card.entity} was created again`);
+          assert.equal(card.mark, card.entity, `${card.entity} was created again or moved to another place`);
           assert.ok(card.rendered, `${card.entity} still renders`);
         }
+        // The cards stay in place, so their graphs keep their history
+        // subscription instead of loading the history again.
+        await page.waitForTimeout(500);
+        assert.deepEqual(historyStreams, []);
       } finally {
         await hideInArea(false);
       }
@@ -358,6 +366,50 @@ for (const colorScheme of ["light", "dark"]) {
       await areaDialog("card.shadowRoot.querySelector('ha-button[slot=primaryAction]').click()");
       await poll(async () => !/^19 °C/.test(await tile() || "19"), "average on the tile");
       await page.waitForTimeout(1000);
+    });
+
+    await step("dragging entity cards shows the order at once and keeps it across rebuilds", async () => {
+      const areaId = token.areaId;
+      await page.goto(`${BASE}/dwains-dashboard/home#${areaId}`);
+      const shown = () => deep(page, (all, areaId) => {
+        const view = all.find((el) => el.classList?.contains("dd-area-view") && el.id === areaId);
+        return [...(view?.querySelectorAll(".area-view-entity-sortable > [data-entity]") || [])]
+          .filter((cell) => cell.style.display !== "none")
+          .map((cell) => cell.dataset.entity);
+      }, areaId);
+      await poll(async () => (await shown()).length >= 3, "area view cards");
+      await clickMenuItem(page, "homepage-card", "Wohnzimmer", "Bearbeitungsmodus");
+      await poll(() => deep(page, (all) => all.find((el) => el.localName === "homepage-card")._sortable?.length > 0), "drag sorting");
+      // A drag as Sortable does it: the first card goes behind the last one.
+      const drag = () => deep(page, async (all, areaId) => {
+        const card = all.find((el) => el.localName === "homepage-card");
+        const sortable = card._sortable.find((candidate) => candidate.el.closest(".dd-area-view")?.id === areaId
+          && candidate.el.querySelectorAll(":scope > [data-entity]").length > 1);
+        const cells = [...sortable.el.querySelectorAll(":scope > [data-entity]")];
+        sortable.options.onStart.call(sortable, { item: cells[0] });
+        cells.at(-1).after(cells[0]);
+        await sortable.options.onEnd.call(sortable, { item: cells[0] });
+        await card.updateComplete;
+        return cells.slice(1).concat(cells[0]).map((cell) => cell.dataset.entity);
+      }, areaId);
+      const before = await shown();
+      const expected = await drag();
+      assert.deepEqual(await shown(), expected);
+      // A rebuild (here: after hiding and showing another entity) keeps the
+      // order and every card exactly once.
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const other = expected.at(-2);
+      await ws({ type: "dwains_dashboard/edit_entity_bool_value", entityId: other, key: "hidden", value: true });
+      await poll(async () => !(await shown()).includes(other), "hidden card gone");
+      await ws({ type: "dwains_dashboard/edit_entity_bool_value", entityId: other, key: "hidden", value: false });
+      await poll(async () => JSON.stringify(await shown()) === JSON.stringify(expected), `order kept: ${JSON.stringify(expected)}`);
+      await page.reload();
+      await poll(async () => JSON.stringify(await shown()) === JSON.stringify(expected), "saved order after reload");
+      // Back to the order before for the remaining tests (sorting fires no
+      // reload event: the page shows a dragged order itself).
+      await ws({ type: "dwains_dashboard/sort_entity", sortData: JSON.stringify(before), sortType: "sort_order" });
+      await page.reload();
+      await poll(async () => JSON.stringify(await shown()) === JSON.stringify(before), "order restored");
     });
 
     await step("the devices page lists the device types and opens one", async () => {

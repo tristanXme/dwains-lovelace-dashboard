@@ -1,4 +1,5 @@
 import { html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { mdiDotsVertical } from "@mdi/js";
 import { DOMAIN_ICONS } from '../variables';
 import translateEngine from '../translate-engine';
@@ -145,9 +146,7 @@ _renderDeviceButton(data){
 
 	            return html`
 	            <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable">
-	              ${cards.map((i) =>
-	                html`${this._renderDeviceViewCard(i)}`
-	              )}
+	              ${repeat(cards, (i) => i.entity, (i) => this._renderDeviceViewCard(i))}
 	            </div>
 	            `;
 	          } else {
@@ -186,12 +185,12 @@ _renderDeviceButton(data){
 
         return html`
         <div>
-        ${sortedGroup.map((key) =>
+        ${repeat(sortedGroup, (key) => key, (key) =>
           html`
             <div class="mb-5">
               <h3 class="font-semibold capitalize text-gray">${group[key][0].area.name}</h3>
               <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable">
-              ${Object.entries(group[key]).map(([k,v]) => html`${this._renderDeviceViewCard(v)}`)}
+              ${repeat(group[key], (v) => v.entity, (v) => this._renderDeviceViewCard(v))}
               </div>
             </div>
           `

@@ -95,3 +95,55 @@ test("a failed newest drag goes back to the last saved order", async () => {
   assert.deepEqual(errors, ["offline"]);
   assert.deepEqual(sortable.toArray(), ["b", "a", "c"]);
 });
+
+// A list element with ids, enough for the DOM moves of the applyOrder mode.
+function fakeList(ids) {
+  const parent = {
+    children: [],
+    insertBefore(node, next) {
+      this.children = this.children.filter((child) => child !== node);
+      const index = next ? this.children.indexOf(next) : this.children.length;
+      this.children.splice(index, 0, node);
+      node.parentNode = this;
+    },
+  };
+  for (const id of ids) parent.insertBefore({ id }, null);
+  for (const node of parent.children) {
+    Object.defineProperty(node, "nextSibling", {
+      get() { return parent.children[parent.children.indexOf(node) + 1] || null; },
+    });
+  }
+  return {
+    parent,
+    toArray() { return parent.children.map((child) => child.id); },
+    node(id) { return parent.children.find((child) => child.id === id); },
+  };
+}
+
+test("with applyOrder the drag is undone in the DOM and the page shows the order", async () => {
+  const shown = [];
+  const saved = [];
+  const options = savingSortableOptions(async (order) => saved.push(order), () => assert.fail("no error"), {
+    applyOrder: (order) => shown.push(order),
+  });
+  const list = fakeList(["a", "b", "c"]);
+  options.onStart.call(list, { item: list.node("a") });
+  list.parent.insertBefore(list.node("a"), null);
+  await options.onEnd.call(list);
+  assert.deepEqual(list.toArray(), ["a", "b", "c"], "the DOM is as lit rendered it");
+  assert.deepEqual(shown, [["b", "c", "a"]]);
+  assert.deepEqual(saved, [["b", "c", "a"]]);
+});
+
+test("with applyOrder a failed save shows the saved order again", async () => {
+  const shown = [];
+  const options = savingSortableOptions(async () => { throw new Error("offline"); }, () => {}, {
+    applyOrder: (order) => shown.push(order),
+  });
+  const list = fakeList(["a", "b"]);
+  options.onStart.call(list, { item: list.node("b") });
+  list.parent.insertBefore(list.node("b"), list.node("a"));
+  await options.onEnd.call(list);
+  assert.deepEqual(shown, [["b", "a"], ["a", "b"]]);
+  assert.deepEqual(list.toArray(), ["a", "b"]);
+});

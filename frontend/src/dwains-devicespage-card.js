@@ -4,6 +4,7 @@ import {
 } from './frontend-helpers';
 import { mdiDotsVertical, mdiCog } from "@mdi/js";
 import { html, LitElement } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import translateEngine from './translate-engine';
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { devicesPageCardStyles } from './styles/devicespage-card-styles';
@@ -242,9 +243,9 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 	            "dwains_dashboard_devicespage_card_reload",
 	            () => {
 	              websocketReadStore.invalidate(this._hass);
-	              this._reloadCard().catch((error) => {
-	                console.error('Error reloading devices page card:', error);
-	              });
+	              // One change fires several dashboard events at once; reload
+	              // after all of them, with one read of the configuration.
+	              this._timers.schedule('event-reload', () => this._reloadCard(), 0);
 	            },
 	          );
 	        }
@@ -733,7 +734,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                     </div>
                   </div>
                   <div class="w-full ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-w-1-2 xl-w-2-3"} ${!window.location.hash ? (this.configuration['homepage_header']['v2_mode'] ? "hidden" : "hidden lg-block") : ""} p-4">
-                    ${Object.values(this.data).map((i) => this._renderDeviceView(i))}
+                    ${repeat(Object.values(this.data), (i) => i.domain, (i) => this._renderDeviceView(i))}
                   </div>
                 </div>
                 <div class="sticky z-30 bottom-0 ${!window.location.hash ? "hidden" : ""} ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-hidden"} text-right">
