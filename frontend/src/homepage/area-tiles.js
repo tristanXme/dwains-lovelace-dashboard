@@ -1,4 +1,5 @@
 import { html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { STATES_OFF, UNAVAILABLE_STATES, SENSOR_DOMAINS, ALERT_DOMAINS, COVER_DOMAINS, TOGGLE_DOMAINS, OTHER_DOMAINS, DEVICE_CLASSES, DOMAIN_STATE_ICONS, DETECTED_DEVICE_CLASSES } from '../variables';
 import translateEngine from '../translate-engine';
 const { areaBinarySensorDeviceClasses, areaBinarySensorEntities, areaSensorDeviceClasses, areaSensorEntities } = require('../homepage-preferences');
@@ -22,7 +23,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
       if(!this.areaDisplayGrouped){
         return html`
           <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable area-sortable">
-            ${data.map((i) => this._renderAreaButton(i))}
+            ${repeat(data, (i) => i.area.area_id, (i) => this._renderAreaButton(i))}
           </div>`;
       } else {
         //Sort by floor
@@ -49,12 +50,12 @@ export const AreaTilesMixin = (Base) => class extends Base {
 
         return html`
         <div>
-        ${Object.keys(group).map((key) =>
+        ${repeat(Object.keys(group), (key) => key, (key) =>
           html`
             <div class="mb-5">
               <h3 class="font-semibold capitalize text-gray">${key.replace(/_/g, " ")}</h3>
               <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable area-sortable">
-              ${Object.entries(group[key]).map(([k,v]) => html`${this._renderAreaButton(v)}`)}
+              ${repeat(group[key], (v) => v.area.area_id, (v) => this._renderAreaButton(v))}
               </div>
             </div>
           `
@@ -65,7 +66,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
     }
     _renderAreaButtonCard(area, type) {
       return html`
-        <div>
+        <div data-dd-item>
           <ha-card class="p-2">
             ${translateEngine(this._hass, 'area.title')}:<br>
             <span class="break-words">

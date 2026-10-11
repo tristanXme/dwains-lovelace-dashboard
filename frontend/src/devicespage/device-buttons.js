@@ -9,7 +9,7 @@ import { deviceTypeName } from '../device-type-name';
 export const DeviceButtonsMixin = (Base) => class extends Base {
     _renderDeviceButtonCard(domain, type) {
       return html`
-        <div>
+        <div data-dd-item>
           <ha-card class="p-2">
             <span class="break-words">
             ${deviceTypeName(this._hass, domain)}
@@ -38,7 +38,7 @@ _renderDeviceButton(data){
     ? this.configuration['devices'][deviceDomain]['icon']
     : (DOMAIN_ICONS[deviceDomain] ? DOMAIN_ICONS[deviceDomain] : DOMAIN_ICONS["unknown"]);
   return html`
-    <div class="relative" data-device='${deviceDomain}'>
+    <div class="relative" data-dd-item data-device='${deviceDomain}'>
       <div
         class="flex justify-between h-44 p-3 device-button ${this.selectedDevice == deviceDomain && !this.configuration['homepage_header']['v2_mode'] ? 'current' : ''}"
         data-device=${deviceDomain}

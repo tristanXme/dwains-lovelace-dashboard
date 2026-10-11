@@ -9,9 +9,10 @@ import { computeDomain } from './frontend-helpers';
 import translateEngine from './translate-engine';
 import { editTitle, entityEditTitle } from './edit-title';
 import { showSaveError } from './save-error-toast';
-const { savingSortableOptions } = require('./sortable-save');
+import { saveEntityBoolValue } from './entity-bool-save';
+const { attachSortableLists } = require('./sortable-lists');
 const { applyLocalOrder } = require('./local-order');
-const { hideItemWhileSaving } = require('./optimistic-item');
+const { hideItemWhileSaving, hideWhileSaving } = require('./optimistic-item');
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
@@ -24,7 +25,6 @@ const { websocketReadStore } = require('./websocket-read-store');
 const { loadDashboardRegistrySnapshot } = require('./dashboard-registry-snapshot');
 const { resolveHass } = require('./hass-provider');
 const { loadCardHelpers } = require('./card-helpers-loader');
-const { loadSortable } = require('./lazy-modules');
 const { RegistryChangeWatcher } = require('./registry-change-watcher');
 const { homepageEmptyReason, initialSelection } = require('./empty-state');
 import { emptyStateStyles, renderEmptyState } from './empty-state-view';
@@ -1058,13 +1058,15 @@ function getDwainsHass() {
       const data = this.data.find((data) => data.area.area_id == areaId);
       const key = ev.currentTarget.key;
       const value = ev.currentTarget.ddValue;
+      // Every card of the area view leaves its list.
+      const cards = [...(ev.currentTarget.closest('.dd-area-view')?.querySelectorAll('.area-view-entity-sortable > [data-dd-item]') || [])];
 
-      this._hass.callWS({
+      hideWhileSaving(cards, () => this._hass.callWS({
         type: 'dwains_dashboard/edit_entities_bool_value',
         entities: JSON.stringify([...data.entities]),
         key: key,
         value: value,
-      }).catch((err) => showSaveError(this._hass, err));
+      })).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleAreaClick(event){
@@ -1245,45 +1247,28 @@ function getDwainsHass() {
       });
     }
 
-    _saveEntityBoolValue(entityId, key, value) {
-      return this._hass.callWS({
-        type: 'dwains_dashboard/edit_entity_bool_value',
-        entityId,
-        key,
-        value,
-      }).catch((err) => showSaveError(this._hass, err));
-    }
     _handleEntityEditBoolValueClick(ev) {
       closeParentDropdown(ev);
       ev.stopPropagation();
       const { entity, key, ddValue } = ev.currentTarget;
       // The card leaves this list (hidden, disabled, excluded or shown again).
-      hideItemWhileSaving(ev.currentTarget, () => this._hass.callWS({
-        type: 'dwains_dashboard/edit_entity_bool_value',
-        entityId: entity,
-        key,
-        value: ddValue,
-      })).catch((err) => showSaveError(this._hass, err));
+      saveEntityBoolValue(this._hass, entity, key, ddValue, ev.currentTarget);
     }
     _handleEntityAreaVisibilityClick(ev, entityId, value) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      this._saveEntityBoolValue(entityId, 'hidden_in_area', value);
+      saveEntityBoolValue(this._hass, entityId, 'hidden_in_area', value);
     }
     _handleAreaEditBoolValueClick(ev) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      const areaId = ev.currentTarget.areaId;
-      const key = ev.currentTarget.key;
-      const value = ev.currentTarget.ddValue;
-
-      this._hass.callWS({
+      const { areaId, key, ddValue } = ev.currentTarget;
+      hideItemWhileSaving(ev.currentTarget, () => this._hass.callWS({
         type: 'dwains_dashboard/edit_area_bool_value',
-        areaId: areaId,
-        key: key,
-        value: value,
-      }).catch((err) => showSaveError(this._hass, err));
-
+        areaId,
+        key,
+        value: ddValue,
+      })).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleEntityEditCardClick(ev) {
@@ -1417,8 +1402,10 @@ function getDwainsHass() {
       const value = ev.currentTarget.ddValue;
 
       if(value){
+        const sortType = this.areaDisplayGrouped ? 'grouped_sort_order' : 'sort_order';
         this._attachSortables('.area-sortable', 'data-area-id', 'dwains_dashboard/sort_area_button',
-          this.areaDisplayGrouped ? 'grouped_sort_order' : 'sort_order', () => this.areaEditMode);
+          sortType, () => this.areaEditMode,
+          (order) => this._showAreaOrder(sortType, order));
       } else {
         this._destroySortables();
       }
@@ -1431,31 +1418,33 @@ function getDwainsHass() {
       this.requestUpdate();
     }
 
+    // A dragged order of the area tiles. Without grouping the tiles are
+    // shown in the order of this.data.
+    _showAreaOrder(sortKey, order){
+      applyLocalOrder(this.data, (item) => item.area.area_id, order, sortKey);
+      if (sortKey === 'sort_order') {
+        this.data.sort((x, y) => (x.sort_order == y.sort_order ? 0 : x.sort_order > y.sort_order ? 1 : -1));
+      }
+      this.requestUpdate();
+    }
+
     // Makes the grids matching selector drag-sortable and saves the new order.
     // Sortable is loaded on first use, so isActive() tells whether the edit
     // mode is still on once it has arrived.
-    async _attachSortables(selector, dataIdAttr, type, sortType, isActive, applyOrder = undefined){
-      let Sortable;
-      try {
-        Sortable = await loadSortable();
-      } catch (err) {
-        console.error('Dwains Dashboard: failed to load drag and drop (reload the page after an update)', err);
-        return;
-      }
-      if(!isActive()) return;
-      this._destroySortables();
+    async _attachSortables(selector, dataIdAttr, type, sortType, isActive, applyOrder){
       const cardHass = this._hass;
-      this._sortable = [...this.shadowRoot.querySelectorAll(selector)].map((element) => new Sortable(element, {
-        forceFallback: true,
-        animation: 150,
-        dataIdAttr: dataIdAttr,
-        handle: '.sortable-move',
-        ...savingSortableOptions(
-          (order) => cardHass.callWS({ type: type, sortData: JSON.stringify(order), sortType: sortType }),
-          (err) => showSaveError(cardHass, err),
-          { applyOrder },
-        ),
-      }));
+      await attachSortableLists({
+        isActive,
+        lists: () => this.shadowRoot.querySelectorAll(selector),
+        dataIdAttr,
+        save: (order) => cardHass.callWS({ type: type, sortData: JSON.stringify(order), sortType: sortType }),
+        onError: (err) => showSaveError(cardHass, err),
+        applyOrder,
+        replace: (sortables) => {
+          this._destroySortables();
+          this._sortable = sortables;
+        },
+      });
     }
 
     _destroySortables(){
@@ -1863,9 +1852,7 @@ function getDwainsHass() {
                       <div class="mb-5">
                         <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass,'area.disabled')}</h3>
                         <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                        ${this.disabledAreas.map((area) =>
-                            html`${this._renderAreaButtonCard(area, 'disabled')}`
-                        )}
+                        ${repeat(this.disabledAreas, (area) => area.area_id, (area) => this._renderAreaButtonCard(area, 'disabled'))}
                         </div>
                       </div>` : ""
                     }

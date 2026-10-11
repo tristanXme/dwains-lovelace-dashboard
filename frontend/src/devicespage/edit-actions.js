@@ -1,11 +1,11 @@
 import { popUp } from "../dwains-popup";
 import { fireEvent } from "../card-tools-compat";
-const { loadSortable } = require('../lazy-modules');
 import translateEngine from '../translate-engine';
 import { deviceTypeName } from '../device-type-name';
 import { editTitle, entityEditTitle } from '../edit-title';
 import { showSaveError } from '../save-error-toast';
-const { savingSortableOptions } = require('../sortable-save');
+import { saveEntityBoolValue } from '../entity-bool-save';
+const { attachSortableLists } = require('../sortable-lists');
 const { applyLocalOrder } = require('../local-order');
 const { hideItemWhileSaving } = require('../optimistic-item');
 const { closeParentDropdown } = require('../dropdown-controller');
@@ -181,45 +181,30 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
       });
     }
 
-    _saveEntityBoolValue(entityId, key, value) {
-      return this._hass.callWS({
-        type: 'dwains_dashboard/edit_entity_bool_value',
-        entityId,
-        key,
-        value,
-      }).catch((err) => showSaveError(this._hass, err));
-    }
     _handleEntityEditBoolValueClick(ev) {
       closeParentDropdown(ev);
       ev.stopPropagation();
       const { entity, key, ddValue } = ev.currentTarget;
       // The card leaves this list (hidden, disabled, excluded or shown again).
-      hideItemWhileSaving(ev.currentTarget, () => this._hass.callWS({
-        type: 'dwains_dashboard/edit_entity_bool_value',
-        entityId: entity,
-        key,
-        value: ddValue,
-      })).catch((err) => showSaveError(this._hass, err));
+      saveEntityBoolValue(this._hass, entity, key, ddValue, ev.currentTarget);
     }
     _handleEntityAreaVisibilityClick(ev, entityId, value) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      this._saveEntityBoolValue(entityId, 'hidden_in_area', value);
+      saveEntityBoolValue(this._hass, entityId, 'hidden_in_area', value);
     }
 
     _handleDeviceEditBoolValueClick(ev) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      const device = ev.currentTarget.device;
-      const key = ev.currentTarget.key;
-      const value = ev.currentTarget.ddValue;
-
-      this._hass.callWS({
+      const { device, key, ddValue } = ev.currentTarget;
+      // The device type leaves its list (hidden or shown again).
+      hideItemWhileSaving(ev.currentTarget, () => this._hass.callWS({
         type: 'dwains_dashboard/edit_device_bool_value',
-        device: device,
-        key: key,
-        value: value,
-      }).catch((err) => showSaveError(this._hass, err));
+        device,
+        key,
+        value: ddValue,
+      })).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleDeviceEditCardClick(ev) {
@@ -281,7 +266,13 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
       if(value){
         const cardHass = this._hass;
         this._attachSortables('#sortable', 'data-device', () => this.deviceEditMode,
-          (order) => cardHass.callWS({ type: 'dwains_dashboard/sort_device_button', sortData: JSON.stringify(order) }));
+          (order) => cardHass.callWS({ type: 'dwains_dashboard/sort_device_button', sortData: JSON.stringify(order) }),
+          (order) => {
+            // The device type buttons are shown in the order of this.data.
+            applyLocalOrder(this.data, (device) => device.domain, order, 'sort_order');
+            this.data.sort((x, y) => x.sort_order - y.sort_order);
+            this.requestUpdate();
+          });
       } else {
         this._destroySortables();
       }
@@ -312,27 +303,22 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
       this.deviceViewEditMode = value;
     }
 
-    // Sortable is loaded on first use, so isActive() tells whether the
-    // edit mode is still on once it has arrived. save(order) stores the
-    // order after a drag; a failure is shown and the drag undone.
-    async _attachSortables(selector, dataIdAttr, isActive, save, applyOrder = undefined){
-      let Sortable;
-      try {
-        Sortable = await loadSortable();
-      } catch (err) {
-        console.error('Dwains Dashboard: failed to load drag and drop (reload the page after an update)', err);
-        return;
-      }
-      if(!isActive()) return;
-      this._destroySortables();
+    // save(order) stores the order after a drag, applyOrder(order) shows it
+    // (see sortable-lists.js).
+    async _attachSortables(selector, dataIdAttr, isActive, save, applyOrder){
       const cardHass = this._hass;
-      this._sortable = [...this.shadowRoot.querySelectorAll(selector)].map((element) => new Sortable(element, {
-        forceFallback: true,
-        animation: 150,
-        dataIdAttr: dataIdAttr,
-        handle: '.sortable-move',
-        ...savingSortableOptions(save, (err) => showSaveError(cardHass, err), { applyOrder }),
-      }));
+      await attachSortableLists({
+        isActive,
+        lists: () => this.shadowRoot.querySelectorAll(selector),
+        dataIdAttr,
+        save,
+        onError: (err) => showSaveError(cardHass, err),
+        applyOrder,
+        replace: (sortables) => {
+          this._destroySortables();
+          this._sortable = sortables;
+        },
+      });
     }
 
     _destroySortables(){

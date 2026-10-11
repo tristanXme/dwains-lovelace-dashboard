@@ -439,22 +439,25 @@ for (const colorScheme of ["light", "dark"]) {
     });
 
     await step("dragging device types saves the order, a failed save puts it back", async () => {
-      // Sortable calls onStart/onEnd around a drag; calling them around
-      // sort() is the same without moving the mouse.
-      const drag = (order) => deep(page, async (all, order) => {
-        const sortable = all.find((el) => el.localName === "devices-card")._sortable[0];
-        sortable.options.onStart.call(sortable);
-        sortable.sort(order);
-        await sortable.options.onEnd.call(sortable);
-        return sortable.toArray();
-      }, order);
+      // A drag as Sortable does it: onStart, the first button moves behind
+      // the last one, onEnd.
+      const drag = () => deep(page, async (all) => {
+        const card = all.find((el) => el.localName === "devices-card");
+        const sortable = card._sortable[0];
+        const items = [...sortable.el.querySelectorAll(":scope > [data-device]")];
+        sortable.options.onStart.call(sortable, { item: items[0] });
+        items.at(-1).after(items[0]);
+        await sortable.options.onEnd.call(sortable, { item: items[0] });
+        await card.updateComplete;
+      });
       const shown = () => deep(page, (all) => [...(all.find((el) => el.localName === "devices-card")?.shadowRoot?.querySelectorAll(".device-button") || [])].map((button) => button.dataset.device));
       const before = await shown();
       assert.ok(before.length > 1, before.join(","));
-      const reversed = [...before].reverse();
-      assert.deepEqual(await drag(reversed), reversed);
+      const moved = [...before.slice(1), before[0]];
+      await drag();
+      assert.deepEqual(await shown(), moved, "the page shows the dragged order at once");
       await page.reload();
-      await poll(async () => JSON.stringify(await shown()) === JSON.stringify(reversed), "saved device order after reload");
+      await poll(async () => JSON.stringify(await shown()) === JSON.stringify(moved), "saved device order after reload");
 
       // The save fails: the toast tells so and the order goes back.
       await clickMenuItem(page, "devices-card", "", "Bearbeitungsmodus");
@@ -470,8 +473,8 @@ for (const colorScheme of ["light", "dark"]) {
           : send(message));
         window.__ddRestoreSend = () => { connection.sendMessagePromise = send; };
       });
-      assert.deepEqual(await drag(before), reversed);
-      assert.deepEqual(await shown(), reversed);
+      await drag();
+      await poll(async () => JSON.stringify(await shown()) === JSON.stringify(moved), "order back after the failed save");
       const toasts = await page.evaluate(() => window.__ddToasts);
       assert.ok(toasts.some((text) => text.includes("simulated failure")), toasts.join(" | "));
       await page.evaluate(() => window.__ddRestoreSend());
@@ -481,7 +484,13 @@ for (const colorScheme of ["light", "dark"]) {
         if (/saving failed/.test(errors[index])) errors.splice(index, 1);
       }
 
-      assert.deepEqual(await drag(before), before);
+      // Back to the order before for the remaining tests (sorting fires no
+      // reload event: the page shows a dragged order itself).
+      await page.evaluate((order) => document.querySelector("home-assistant").hass.callWS({
+        type: "dwains_dashboard/sort_device_button", sortData: JSON.stringify(order),
+      }), before);
+      await page.reload();
+      await poll(async () => JSON.stringify(await shown()) === JSON.stringify(before), "order restored");
     });
 
     await step("registries are read from Home Assistant, changes show up live", async () => {

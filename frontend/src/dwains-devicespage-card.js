@@ -715,7 +715,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                       </div>
 
                       <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4" id="sortable">
-                        ${Object.values(this.data).map((i) => this._renderDeviceButton(i))}
+                        ${repeat(Object.values(this.data), (i) => i.domain, (i) => this._renderDeviceButton(i))}
                       </div>
                       ${renderEmptyState(this._hass, 'devices', devicesEmptyReason(this))}
 
@@ -724,9 +724,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                           <div class="mb-5">
                             <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass,'device.hidden')}</h3>
                             <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                            ${this.disabledDevices.map((device) =>
-                                html`${this._renderDeviceButtonCard(device, 'disabled')}`
-                            )}
+                            ${repeat(this.disabledDevices, (device) => device, (device) => this._renderDeviceButtonCard(device, 'disabled'))}
                             </div>
                           </div>` : ""
                         }
