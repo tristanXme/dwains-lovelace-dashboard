@@ -98,6 +98,7 @@ async def ws_handle_edit_device_card(
 ) -> None:
     """Handle saving a device card."""
     persisted_card = await _write_domain_card(hass, msg, "devices_card")
+    hass.bus.async_fire("dwains_dashboard_homepage_card_reload")
     hass.bus.async_fire("dwains_dashboard_devicespage_card_reload")
     connection.send_result(
         msg["id"],
@@ -122,6 +123,7 @@ async def ws_handle_remove_device_card(
 ) -> None:
     """Handle removing a device-domain card."""
     await _remove_domain_card(hass, msg, "devices_card")
+    hass.bus.async_fire("dwains_dashboard_homepage_card_reload")
     hass.bus.async_fire("dwains_dashboard_devicespage_card_reload")
     connection.send_result(
         msg["id"], {"succesfull": "Entity card removed succesfully"}
@@ -240,6 +242,11 @@ async def ws_handle_sort_device_button(
         hass.config.path(DEVICES_PATH),
         devices,
     )
+    # The dragging page shows the order already; other open dashboards and
+    # cached configurations get it through the reload (the navigation bar
+    # lists device pages in this order too).
+    hass.bus.async_fire("dwains_dashboard_devicespage_card_reload")
+    hass.bus.async_fire("dwains_dashboard_navigation_card_reload")
     connection.send_result(
         msg["id"], {"succesfull": "Device buttons sorted succesfully"}
     )

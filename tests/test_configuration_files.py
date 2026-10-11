@@ -143,3 +143,19 @@ def test_yaml_files_use_libyaml_and_keep_the_file_format(tmp_path: Path) -> None
         value, Dumper=_PythonDumper, default_flow_style=False, sort_keys=False
     )
     assert yaml_files.load_yaml_file(str(path)) == yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def test_mapping_files_are_always_mappings(tmp_path: Path) -> None:
+    """The pages read these files as mappings (an empty one used to be null)."""
+    configs = _configs(tmp_path)
+    _write(configs / "entities.yaml", "# all removed\n")
+    _write(configs / "settings.yaml", "")
+    _write(configs / "devices.yaml", "- light\n- switch\n")
+
+    snapshot = load_configuration_files(str(configs))
+    assert snapshot["entities"] == {}
+    assert snapshot["homepage_header"] == {}
+    assert snapshot["devices"] == {}
+    assert snapshot["load_errors"] == [
+        {"file": "devices.yaml", "error": "must contain a mapping (key: value)"}
+    ]

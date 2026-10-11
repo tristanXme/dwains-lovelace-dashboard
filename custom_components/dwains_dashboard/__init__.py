@@ -153,10 +153,9 @@ async def async_remove_entry(hass, config_entry):
 async def _update_listener(hass, config_entry):
     _LOGGER.info("Dwains Dashboard options changed; reloading configuration")
 
+    # Reloads the open dashboards (dwains_dashboard_reload).
     await process_yaml(hass, config_entry)
     # Sidebar title and icon (saved settings or an imported export).
     update_dashboard_panel(hass, config_entry)
-
-    hass.bus.async_fire("dwains_dashboard_reload")
 
     return True

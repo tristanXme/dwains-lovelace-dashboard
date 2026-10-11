@@ -107,7 +107,18 @@ def load_configuration_files(configs_path: str) -> dict[str, Any]:
     cards_path = os.path.join(configs_path, "cards")
 
     def mapping(filename: str) -> Any:
-        return snapshot.load(os.path.join(configs_path, filename), OrderedDict(), OrderedDict())
+        # The pages read these files as mappings: an empty file (or one with
+        # comments only) is an empty mapping, other content is reported.
+        path = os.path.join(configs_path, filename)
+        value = snapshot.load(path, OrderedDict(), OrderedDict())
+        if value is None:
+            return OrderedDict()
+        if not isinstance(value, dict):
+            snapshot.errors.append(
+                {"file": filename, "error": "must contain a mapping (key: value)"}
+            )
+            return OrderedDict()
+        return value
 
     configuration = {
         "areas": mapping("areas.yaml"),

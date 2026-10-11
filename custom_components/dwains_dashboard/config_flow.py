@@ -1,6 +1,4 @@
 import logging
-import json
-import os
 
 import voluptuous as vol
 
@@ -11,7 +9,6 @@ from .maintenance import (
     async_remove_orphans,
     orphan_description_placeholders,
 )
-from .runtime_data import get_domain_data
 from .settings_export import EXPORTED_OPTIONS, async_export, async_import
 from .settings_transfer import ExportError, InvalidArchive
 from .yaml_files import dump_yaml_file, load_yaml_file
@@ -81,6 +78,12 @@ HOUSE_INFORMATION_ENTRIES = (
     "siren",
 )
 SETTINGS_FILE = "dwains-dashboard/configs/settings.yaml"
+# Every page shows settings (v2 layout, graphs, unavailable entities, ...).
+SETTINGS_RELOAD_EVENTS = (
+    "dwains_dashboard_homepage_card_reload",
+    "dwains_dashboard_devicespage_card_reload",
+    "dwains_dashboard_navigation_card_reload",
+)
 DEFAULT_AREA_SENSOR_DEVICE_CLASSES = ["temperature", "humidity"]
 DEFAULT_AREA_BINARY_SENSOR_DEVICE_CLASSES = []
 AREA_VIEW_GROUPING_MODE_CLIENT = "client"
@@ -91,7 +94,6 @@ AREA_VIEW_GROUPING_MODES = (
     AREA_VIEW_GROUPING_MODE_ENABLED,
     AREA_VIEW_GROUPING_MODE_DISABLED,
 )
-_TRANSLATION_CACHE_KEY = "translation_cache"
 FALLBACK_SENSOR_DEVICE_CLASSES = [
     "apparent_power",
     "aqi",
@@ -190,59 +192,6 @@ def _write_settings(path, data):
     dump_yaml_file(path, data)
 
 
-def _nested_value(data, path):
-    value = data
-    for part in path.split("."):
-        if not isinstance(value, dict):
-            return None
-        value = value.get(part)
-    return value
-
-
-def _translation_language_codes(hass):
-    lang = getattr(getattr(hass, "config", None), "language", None) or "en"
-    base_lang = lang.split("-")[0]
-    codes = [lang, base_lang, "en"]
-    return list(dict.fromkeys(codes))
-
-
-def _load_translation_data(language_codes):
-    translation_dir = os.path.join(os.path.dirname(__file__), "translations")
-    translations = []
-    for language_code in language_codes:
-        translation_path = os.path.join(translation_dir, f"{language_code}.json")
-        if not os.path.exists(translation_path):
-            continue
-        try:
-            with open(translation_path, "r", encoding="utf-8") as f:
-                translation_data = json.load(f)
-        except Exception:
-            _LOGGER.exception("Failed to load dashboard translation %s", translation_path)
-            continue
-        if isinstance(translation_data, dict):
-            translations.append(translation_data)
-    return translations
-
-
-async def _async_translation_data(hass):
-    language_codes = tuple(_translation_language_codes(hass))
-    domain_data = get_domain_data(hass)
-    translation_cache = domain_data.setdefault(_TRANSLATION_CACHE_KEY, {})
-    if language_codes not in translation_cache:
-        translation_cache[language_codes] = await hass.async_add_executor_job(
-            _load_translation_data, language_codes
-        )
-    return translation_cache[language_codes]
-
-
-def _translation(translations, path, fallback):
-    for translation_data in translations:
-        value = _nested_value(translation_data, path)
-        if isinstance(value, str):
-            return value
-    return fallback
-
-
 def _sensor_device_classes_from_input(value):
     if value is None:
         return list(DEFAULT_AREA_SENSOR_DEVICE_CLASSES)
@@ -285,44 +234,36 @@ def _entity_list_from_input(value):
     return []
 
 
-def _sensor_device_class_options(translations):
-    values = []
-    if SensorDeviceClass is not None:
-        values = [device_class.value for device_class in SensorDeviceClass]
-    for device_class in FALLBACK_SENSOR_DEVICE_CLASSES:
-        if device_class not in values:
-            values.append(device_class)
+def _options(values):
+    """Select options; Home Assistant shows them translated in the user's
+    language (selector.<translation_key>.options.<value> in translations/),
+    the label is the fallback for values without a translation."""
     return [
-        {
-            "value": device_class,
-            "label": _translation(
-                translations,
-                f"selector.area_sensor_device_class.options.{device_class}",
-                device_class.replace("_", " ").title(),
-            ),
-        }
-        for device_class in values
+        {"value": value, "label": value.replace("_", " ").title()}
+        for value in values
     ]
 
 
-def _binary_sensor_device_class_options(translations):
-    values = []
-    if BinarySensorDeviceClass is not None:
-        values = [device_class.value for device_class in BinarySensorDeviceClass]
-    for device_class in FALLBACK_BINARY_SENSOR_DEVICE_CLASSES:
-        if device_class not in values:
-            values.append(device_class)
-    return [
-        {
-            "value": device_class,
-            "label": _translation(
-                translations,
-                f"selector.area_binary_sensor_device_class.options.{device_class}",
-                device_class.replace("_", " ").title(),
-            ),
-        }
-        for device_class in values
-    ]
+def _with_fallback(values, fallback):
+    return list(dict.fromkeys([*values, *fallback]))
+
+
+def _sensor_device_class_values():
+    values = (
+        [device_class.value for device_class in SensorDeviceClass]
+        if SensorDeviceClass is not None
+        else []
+    )
+    return _with_fallback(values, FALLBACK_SENSOR_DEVICE_CLASSES)
+
+
+def _binary_sensor_device_class_values():
+    values = (
+        [device_class.value for device_class in BinarySensorDeviceClass]
+        if BinarySensorDeviceClass is not None
+        else []
+    )
+    return _with_fallback(values, FALLBACK_BINARY_SENSOR_DEVICE_CLASSES)
 
 
 def _house_information_entries_to_input(settings):
@@ -332,51 +273,8 @@ def _house_information_entries_to_input(settings):
     return [entry for entry in value if entry in HOUSE_INFORMATION_ENTRIES]
 
 
-def _house_information_entry_options(translations):
-    return [
-        {
-            "value": entry,
-            "label": _translation(
-                translations,
-                f"selector.house_information_entries.options.{entry}",
-                entry.replace("_", " ").title(),
-            ),
-        }
-        for entry in HOUSE_INFORMATION_ENTRIES
-    ]
-
-
 def _area_view_grouping_mode(value):
     return value if value in AREA_VIEW_GROUPING_MODES else AREA_VIEW_GROUPING_MODE_CLIENT
-
-
-def _area_view_grouping_mode_options(translations):
-    return [
-        {
-            "value": AREA_VIEW_GROUPING_MODE_CLIENT,
-            "label": _translation(
-                translations,
-                "selector.area_grouping_mode.options.client",
-                AREA_VIEW_GROUPING_MODE_CLIENT,
-            ),
-        },
-        {
-            "value": AREA_VIEW_GROUPING_MODE_ENABLED,
-            "label": _translation(
-                translations,
-                "selector.area_grouping_mode.options.enabled",
-                AREA_VIEW_GROUPING_MODE_ENABLED,
-            ),
-        },
-        {
-            "value": AREA_VIEW_GROUPING_MODE_DISABLED,
-            "label": _translation(
-                translations,
-                "selector.area_grouping_mode.options.disabled",
-                AREA_VIEW_GROUPING_MODE_DISABLED,
-            ),
-        },
-    ]
 
 
 class DwainsDashboardConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -550,8 +448,8 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
                     )
                 finally:
                     configuration_runtime.clear_cache()
-            self.hass.bus.async_fire("dwains_dashboard_homepage_card_reload")
-            self.hass.bus.async_fire("dwains_dashboard_navigation_card_reload")
+            for event_type in SETTINGS_RELOAD_EVENTS:
+                self.hass.bus.async_fire(event_type)
 
             # Sidebar title/icon live in the entry options.
             return self.async_create_entry(
@@ -564,7 +462,6 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
 
         cur = await self.hass.async_add_executor_job(_read_settings, path)
         opts = self.config_entry.options
-        translations = await _async_translation_data(self.hass)
 
         def entity_default(key):
             val = cur.get(key)
@@ -583,34 +480,39 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             vol.Optional("disable_masonry", default=bool(cur.get("disable_masonry", False))): selector.BooleanSelector(),
             vol.Optional("house_information_entries", default=_house_information_entries_to_input(cur)): selector.SelectSelector(
                 selector.SelectSelectorConfig(
-                    options=_house_information_entry_options(translations),
+                    options=_options(HOUSE_INFORMATION_ENTRIES),
+                    translation_key="house_information_entries",
                     multiple=True,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             ),
             vol.Optional("area_sensor_device_classes", default=_sensor_device_classes_to_input(cur)): selector.SelectSelector(
                 selector.SelectSelectorConfig(
-                    options=_sensor_device_class_options(translations),
+                    options=_options(_sensor_device_class_values()),
+                    translation_key="area_sensor_device_class",
                     multiple=True,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             ),
             vol.Optional("area_binary_sensor_device_classes", default=_binary_sensor_device_classes_to_input(cur)): selector.SelectSelector(
                 selector.SelectSelectorConfig(
-                    options=_binary_sensor_device_class_options(translations),
+                    options=_options(_binary_sensor_device_class_values()),
+                    translation_key="area_binary_sensor_device_class",
                     multiple=True,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             ),
             vol.Optional("area_view_grouping_mode", default=_area_view_grouping_mode(cur.get("area_view_grouping_mode"))): selector.SelectSelector(
                 selector.SelectSelectorConfig(
-                    options=_area_view_grouping_mode_options(translations),
+                    options=_options(AREA_VIEW_GROUPING_MODES),
+                    translation_key="area_grouping_mode",
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             ),
             vol.Optional("area_floor_grouping_mode", default=_area_view_grouping_mode(cur.get("area_floor_grouping_mode"))): selector.SelectSelector(
                 selector.SelectSelectorConfig(
-                    options=_area_view_grouping_mode_options(translations),
+                    options=_options(AREA_VIEW_GROUPING_MODES),
+                    translation_key="area_grouping_mode",
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             ),

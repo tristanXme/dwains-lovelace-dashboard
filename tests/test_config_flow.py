@@ -24,6 +24,11 @@ async def test_options_flow_saves_settings_and_keeps_other_keys(
     assert result["type"] == "form"
     fields = {str(key) for key in result["data_schema"].schema}
     assert "area_sensor_device_classes" in fields
+    # Option labels come from translations/ in the user's language.
+    selectors = {str(key): value for key, value in result["data_schema"].schema.items()}
+    assert selectors["area_sensor_device_classes"].config["translation_key"] == "area_sensor_device_class"
+    assert selectors["house_information_entries"].config["translation_key"] == "house_information_entries"
+    assert selectors["area_view_grouping_mode"].config["translation_key"] == "area_grouping_mode"
     # The sensors below the area name are chosen per area now.
     assert "area_sensor_entities" not in fields
     assert "area_binary_sensor_entities" not in fields

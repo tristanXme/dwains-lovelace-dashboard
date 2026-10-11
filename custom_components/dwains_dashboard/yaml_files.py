@@ -40,13 +40,18 @@ def load_yaml_file_or_default(
     fallback: Any,
     require_nonempty: bool = False,
 ) -> Any:
-    """Load YAML with the caller's missing/empty fallback semantics."""
+    """Load YAML with the caller's missing/empty fallback semantics.
+
+    A file without content (empty, only comments) gives the fallback too:
+    the callers change the loaded mapping and would fail on None.
+    """
     try:
         if require_nonempty and os.path.getsize(file_path) == 0:
             return fallback
-        return load_yaml_file(file_path)
+        value = load_yaml_file(file_path)
     except FileNotFoundError:
         return fallback
+    return fallback if value is None else value
 
 
 def parse_yaml_text(value: str) -> Any:
