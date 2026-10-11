@@ -453,6 +453,70 @@ for (const colorScheme of ["light", "dark"]) {
       await poll(async () => JSON.stringify(await shown()) === JSON.stringify(before), "order restored");
     });
 
+    // The editors of own cards and popups, opened from the menus.
+    const configurationGet = () => page.evaluate(() => document.querySelector("home-assistant").hass.callWS({ type: "dwains_dashboard/configuration/get" }));
+    const inEditor = (tag, src) => deep(page, (all, [tag, src]) => {
+      // Registered with a suffix (defineDwainsElement).
+      const editor = all.find((el) => el.localName.startsWith(tag) && el.isConnected);
+      return editor ? new Function("editor", src)(editor) : undefined;
+    }, [tag, src]);
+    const clickItem = async (match, text) => {
+      const clicked = await deep(page, (all, [match, text]) => {
+        const entry = all.find((el) => el.localName === "ha-dropdown-item"
+          && Object.entries(match).every(([key, value]) => el[key] === value)
+          && el.textContent.trim() === text);
+        entry?.click();
+        return Boolean(entry);
+      }, [match, text]);
+      assert.ok(clicked, `menu item ${text}`);
+    };
+    const markdownShown = (text) => deep(page, (all, text) => all.some((el) => el.localName === "ha-markdown" && el.shadowRoot?.textContent.includes(text)), text);
+
+    await step("an entity's own card and popup are made and removed with their editors", async () => {
+      const entityId = "input_boolean.e2e_lamp";
+      await page.goto(`${BASE}/dwains-dashboard/home#${token.areaId}`);
+      await poll(() => deep(page, (all, entityId) => all.some((el) => el.dataset?.entity === entityId && el.closest?.(".dd-area-view")), entityId), "area view");
+      await clickMenuItem(page, "homepage-card", "Wohnzimmer", "Bearbeitungsmodus");
+      const stored = (store) => deep(page, (all, [store, entityId]) => all.find((el) => el.localName === "homepage-card")?.configuration?.[store]?.[entityId], [store, entityId]);
+      for (const [item, tag, store, flag, content] of [
+        ["Entität-Karte", "dwains-edit-entity-card-card", "entity_cards", "custom_card", "E2E eigene Karte"],
+        ["Pop-up Karte", "dwains-edit-entity-popup-card", "entities_popup", "custom_popup", "E2E eigenes Popup"],
+      ]) {
+        // A Lovelace card: the card picker hands its configuration to the
+        // editor, which shows it and saves it.
+        await clickItem({ entity: entityId }, item);
+        await poll(() => inEditor(tag, "return editor.mode === 'pre-select' && Boolean(editor.shadowRoot.querySelector('ha-md-list-item'))"), `${tag} opens`);
+        await inEditor(tag, "[...editor.shadowRoot.querySelectorAll('ha-md-list-item')].find((item) => item.mode === 'hui-card-picker').click()");
+        await poll(() => inEditor(tag, "return Boolean(editor.shadowRoot.querySelector('dwains-card-picker'))"), "card picker");
+        await inEditor(tag, `editor.shadowRoot.querySelector('dwains-card-picker').dispatchEvent(new CustomEvent('config-changed', { detail: { config: { type: 'markdown', content: ${JSON.stringify(content)} } } }))`);
+        await poll(() => inEditor(tag, "return Boolean(editor.shadowRoot.querySelector('dwains-card-config-editor'))"), "card editor");
+        await inEditor(tag, "editor.shadowRoot.querySelector('ha-button[slot=primaryAction]').click()");
+        const saved = await poll(async () => {
+          const configuration = await configurationGet();
+          return configuration.entities?.[entityId]?.[flag] && configuration[store]?.[entityId];
+        }, `${store} saved`);
+        assert.equal(saved.content, content);
+        await poll(() => stored(store), "page reloaded");
+        if (store === "entity_cards") {
+          await poll(() => markdownShown(content), "own card in the area view");
+        } else {
+          await page.evaluate((entityId) => document.querySelector("home-assistant").dispatchEvent(new CustomEvent("hass-more-info", {
+            detail: { entityId }, bubbles: true, composed: true,
+          })), entityId);
+          await poll(() => markdownShown(content), "own popup");
+          await page.keyboard.press("Escape");
+          await poll(() => deep(page, (all) => !all.some((el) => el.localName === "card-tools-popup" && el.open)), "popup closed");
+        }
+        // Opened again, the editor shows the card and removes it.
+        await clickItem({ entity: entityId }, item);
+        await poll(() => inEditor(tag, "return editor.existingCardEdit === true && Boolean(editor.shadowRoot.querySelector('ha-button.warning'))"), "editor of the saved card");
+        page.once("dialog", (dialog) => dialog.accept());
+        await inEditor(tag, "editor.shadowRoot.querySelector('ha-button.warning').click()");
+        await poll(async () => !(await configurationGet())[store]?.[entityId], `${store} removed`);
+        await poll(async () => !(await stored(store)), "page reloaded");
+      }
+    });
+
     await step("the devices page lists the device types and opens one", async () => {
       await page.goto(BASE + "/dwains-dashboard/devices");
       const types = await poll(() => deep(page, (all) => {
@@ -541,6 +605,46 @@ for (const colorScheme of ["light", "dark"]) {
       }), before);
       await page.reload();
       await poll(async () => JSON.stringify(await shown()) === JSON.stringify(before), "order restored");
+    });
+
+    await step("a device type's card and popup are set from a blueprint and removed with their editors", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const blueprint = [
+        "blueprint:", "  name: E2E Ersatzkarte", "  description: Browsertest", "  version: 1.0.0",
+        "  type: replace-card", "  custom_cards: []", "card:", "  type: markdown", "  content: E2E Blueprint",
+      ].join("\n");
+      const { succesfull: file } = await ws({ type: "dwains_dashboard/install_blueprint", yamlCode: blueprint });
+      try {
+        await page.goto(BASE + "/dwains-dashboard/devices");
+        await poll(() => deep(page, (all) => all.find((el) => el.localName === "devices-card")?.shadowRoot?.querySelector(".device-button")), "devices page");
+        await clickMenuItem(page, "devices-card", "", "Bearbeitungsmodus");
+        await poll(() => deep(page, (all) => all.find((el) => el.localName === "devices-card")?.deviceEditMode === true), "device edit mode");
+        const stored = (store) => deep(page, (all, store) => all.find((el) => el.localName === "devices-card")?.configuration?.[store]?.input_boolean, store);
+        // The popup first: it opens before the blueprints have arrived.
+        for (const [item, tag, store] of [
+          ["Pop-up Karte", "dwains-edit-device-popup-card", "devices_popup"],
+          ["Entität-Karte", "dwains-edit-device-card-card", "devices_card"],
+        ]) {
+          // The editor lists the installed blueprints; using one saves it.
+          await clickItem({ domain: "input_boolean" }, item);
+          const use = `[...editor.shadowRoot.querySelectorAll('ha-button')].find((button) => button.blueprint === ${JSON.stringify(file)} && button.textContent.includes('Verwende'))`;
+          await poll(() => inEditor(tag, `return Boolean(${use})`), `${tag} lists the blueprint`);
+          await inEditor(tag, `${use}.click()`);
+          const saved = await poll(async () => (await configurationGet())[store]?.input_boolean, `${store} saved`);
+          assert.equal(saved.blueprint, file);
+          assert.equal(saved.type, "custom:dwains-blueprint-card");
+          await poll(() => stored(store), "page reloaded");
+          // Opened again, the editor shows the blueprint in use and removes it.
+          await clickItem({ domain: "input_boolean" }, item);
+          await poll(() => inEditor(tag, "return editor.mode === 'current-selected-blueprint' && editor.shadowRoot.textContent.includes('E2E Ersatzkarte')"), "blueprint in use");
+          page.once("dialog", (dialog) => dialog.accept());
+          await inEditor(tag, "editor.shadowRoot.querySelector('ha-button.warning').click()");
+          await poll(async () => !(await configurationGet())[store]?.input_boolean, `${store} removed`);
+          await poll(async () => !(await stored(store)), "page reloaded");
+        }
+      } finally {
+        await ws({ type: "dwains_dashboard/delete_blueprint", blueprint: file });
+      }
     });
 
     await step("registries are read from Home Assistant, changes show up live", async () => {
