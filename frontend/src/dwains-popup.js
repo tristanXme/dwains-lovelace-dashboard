@@ -56,6 +56,15 @@ export async function popUp(title, card, large=false, style={}, fullscreen=false
           popupHistoryController.markClosed();
         }
 
+        _dialogClosed(ev) {
+          // Only the dialog's own close: closed events from the card bubble
+          // up to here too, and a dialog that closeDialog() took out reports
+          // its close once more after its animation, maybe when the next
+          // popup is open already.
+          if (ev.target !== ev.currentTarget || !ev.currentTarget.isConnected) return;
+          this.closeDialog();
+        }
+
         async _makeCard() {
           this.card = null;
           const card = await this._cardBuilds.build(this._card, this.hass);
@@ -113,7 +122,7 @@ export async function popUp(title, card, large=false, style={}, fullscreen=false
           return html`
             <ha-dialog
               open
-              @closed=${this.closeDialog}
+              @closed=${this._dialogClosed}
               .width=${this.fullscreen ? "full" : this.large ? "large" : "medium"}
               @ll-rebuild=${this._handleCardRebuild}
             >

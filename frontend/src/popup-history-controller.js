@@ -47,18 +47,17 @@ class PopupHistoryController {
   // added are left, so that Back leaves the page instead of going through
   // them first. Closed through Back the popup's entry is left already.
   markClosed() {
-    if (!this._history?.state?.cardToolsPopup) return;
+    const state = this._history?.state;
+    if (!state?.cardToolsPopup) return;
     const entries = Math.max(1, this._entries);
     this._entries = 0;
     try {
+      // The browser goes back later. Until then a second close (Save
+      // clicked twice) finds the entry closed and does not go back again.
+      this._history.replaceState(this._stateWith({ cardToolsPopup: false }, state), "");
       if (typeof this._history.go === "function") {
         this._history.go(-entries);
-        return;
       }
-      this._history.replaceState(
-        this._stateWith({ cardToolsPopup: false }, this._history.state),
-        "",
-      );
     } catch (error) {
       this._reportError("Failed to close popup navigation state", error);
     }
