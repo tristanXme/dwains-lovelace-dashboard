@@ -535,7 +535,7 @@ class DwainsCreateCustomCardCard extends LitElement {
               .lovelace=${{views: []}}
             ></dwains-card-picker>
             <div class="card-footer">
-              <ha-button slot="secondaryAction" @click=${(e) => closePopup()}>
+              <ha-button appearance="plain" slot="secondaryAction" @click=${(e) => closePopup()}>
                 ${this.hass.localize("ui.common.cancel")}
               </ha-button>
             </div>

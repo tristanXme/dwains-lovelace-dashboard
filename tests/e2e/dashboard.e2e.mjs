@@ -309,6 +309,9 @@ for (const colorScheme of ["light", "dark"]) {
       await openAreaDialog();
       assert.ok(requests.some((path) => /\/chunks\/editors\.[0-9a-f]+\.js$/.test(path)), "editors loaded");
       assert.equal(await areaDialog("return card.shadowRoot.querySelector('ha-entity-picker').value"), "sensor.temperatur_wohnzimmer");
+      // The dialog title names the area.
+      const title = await deep(page, (all) => all.find((el) => el.localName === "card-tools-popup")?.shadowRoot?.querySelector('[slot="headerTitle"]')?.textContent.trim());
+      assert.equal(title, "Wohnzimmer bearbeiten");
     });
 
     await step("a dialog checkbox toggles with its text and the change is saved", async () => {

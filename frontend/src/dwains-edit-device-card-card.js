@@ -473,7 +473,7 @@ class DwainsEditDeviceCardCard extends LitElement {
                   ` : html`<div></div>`
                 }
                 <div>
-                  <ha-button slot="secondaryAction" @click=${(e) => closePopup()}>
+                  <ha-button appearance="plain" slot="secondaryAction" @click=${(e) => closePopup()}>
                     ${this.hass.localize("ui.common.cancel")}
                   </ha-button>
                   <ha-button slot="primaryAction" .blueprint=${this.cardConfig.blueprint} @click=${this._handleUseBlueprintClicked}>

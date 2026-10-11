@@ -45,7 +45,7 @@
 
   // Written by scripts/postbuild.mjs: language code -> strings file next to
   // this loader (the file name carries a content hash). English is bundled.
-  const languageFiles = {"de":"lang/de.933f6202.json","es":"lang/es.36a14a15.json","fr":"lang/fr.1705b1d9.json","it":"lang/it.5e107472.json","nl":"lang/nl.67d22109.json","pl":"lang/pl.76260642.json","pt":"lang/pt.fec7970c.json","sv":"lang/sv.52d5cffa.json","zh":"lang/zh.687de87c.json"};
+  const languageFiles = {"de":"lang/de.15d40caa.json","es":"lang/es.baad2082.json","fr":"lang/fr.d7bca3d1.json","it":"lang/it.c0909d4e.json","nl":"lang/nl.37112345.json","pl":"lang/pl.9acc7ef8.json","pt":"lang/pt.c332f0be.json","sv":"lang/sv.7909927d.json","zh":"lang/zh.47479d54.json"};
   runtimeState.languageFiles = Object.fromEntries(
     Object.entries(languageFiles).map(([code, file]) => [code, new URL(file, loaderUrl).href]),
   );

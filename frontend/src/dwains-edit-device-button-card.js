@@ -106,7 +106,7 @@ class DwainsEditDeviceButtonCard extends LitElement {
             </label>
 
             <div class="card-footer">
-              <ha-button slot="secondaryAction" @click=${(e) => closePopup()}>
+              <ha-button appearance="plain" slot="secondaryAction" @click=${(e) => closePopup()}>
                 ${this.hass.localize("ui.common.cancel")}
               </ha-button>
               <ha-button slot="primaryAction" @click=${this._saveButton}>

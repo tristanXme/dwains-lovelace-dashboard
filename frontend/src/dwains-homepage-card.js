@@ -6,6 +6,7 @@ import { clientPreferences } from './client-preferences';
 import { WEATHER_ICONS, STATES_OFF, UNAVAILABLE_STATES, SENSOR_DOMAINS, ALERT_DOMAINS, COVER_DOMAINS, TOGGLE_DOMAINS, CLIMATE_DOMAINS, OTHER_DOMAINS, DEVICE_CLASSES, ALARM_ICONS } from './variables';
 import { computeDomain } from './frontend-helpers';
 import translateEngine from './translate-engine';
+import { editTitle, entityEditTitle } from './edit-title';
 import { showSaveError } from './save-error-toast';
 const { savingSortableOptions } = require('./sortable-save');
 import { createCardElementSafe, resolveEntityName } from './helpers';
@@ -1197,7 +1198,7 @@ function getDwainsHass() {
       const configuredArea = (this.configuration['areas'] && this.configuration['areas'][areaId]) || {};
       this._popupOpens.schedule(() => {
 
-        popUp(translateEngine(this._hass, 'area.edit_area_button'), {
+        popUp(editTitle(this._hass, this._hass.areas?.[areaId]?.name || areaId), {
           type: "custom:dwains-edit-area-button-card",
           areaId: areaId,
           icon: icon,
@@ -1234,7 +1235,7 @@ function getDwainsHass() {
 
     _openEntitySettings(settings) {
       this._popupOpens.schedule(() => {
-        popUp(translateEngine(this._hass, 'entity.edit_entity'), {
+        popUp(entityEditTitle(this._hass, settings.entity), {
           type: "custom:dwains-edit-entity-card",
           ...settings,
         }, false, '');

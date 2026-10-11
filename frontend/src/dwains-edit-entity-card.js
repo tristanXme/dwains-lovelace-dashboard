@@ -11,11 +11,17 @@ class DwainsEditEntityCard extends LitElement {
         checkRowStyles(css),
         css`
         h2 {
-          margin: 0;
+          margin: 16px 0 8px;
           font-size: 1rem;
         }
         .edit-element {
           padding: 20px;
+        }
+        .entity-id {
+          margin-bottom: 12px;
+          color: var(--secondary-text-color);
+          font-family: var(--ha-font-family-code, monospace);
+          font-size: 0.85rem;
         }
         .add-button {
           font-size: 16px;
@@ -145,7 +151,7 @@ class DwainsEditEntityCard extends LitElement {
     render() {
       return html`
         <div class="edit-element">
-            <h1 style="font-size: 15px; font-weight: bold;">${translateEngine(this.hass, 'entity.edit_entity')} "${this.entity}"</h1>
+            <div class="entity-id">${this.entity}</div>
 
             <ha-input
               label=${translateEngine(this.hass, 'entity.friendly_name')}
@@ -239,7 +245,7 @@ class DwainsEditEntityCard extends LitElement {
             </label>
 
             <div class="card-footer">
-              <ha-button slot="secondaryAction" @click=${(e) => closePopup()}>
+              <ha-button appearance="plain" slot="secondaryAction" @click=${(e) => closePopup()}>
                 ${this.hass.localize("ui.common.cancel")}
               </ha-button>
               <ha-button slot="primaryAction" @click=${this._saveButton}>

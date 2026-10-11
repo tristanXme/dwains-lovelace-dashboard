@@ -294,7 +294,7 @@ class DwainsEditAreaButtonCard extends LitElement {
               <span>${translateEngine(this.hass, 'area.disable')}</span>
             </label>
           <div class="card-footer">
-            <ha-button slot="secondaryAction" @click=${(e) => closePopup()}>
+            <ha-button appearance="plain" slot="secondaryAction" @click=${(e) => closePopup()}>
               ${this.hass.localize("ui.common.cancel")}
             </ha-button>
             <ha-button slot="primaryAction" @click=${this._saveButton}>

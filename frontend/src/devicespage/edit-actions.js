@@ -3,6 +3,7 @@ import { fireEvent } from "../card-tools-compat";
 const { loadSortable } = require('../lazy-modules');
 import translateEngine from '../translate-engine';
 import { deviceTypeName } from '../device-type-name';
+import { editTitle, entityEditTitle } from '../edit-title';
 import { showSaveError } from '../save-error-toast';
 const { savingSortableOptions } = require('../sortable-save');
 const { closeParentDropdown } = require('../dropdown-controller');
@@ -50,7 +51,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
     _openEntitySettings(settings) {
       this._popupOpens.schedule(() => {
         fireEvent("hass-more-info", {entityId: ""}, this);
-        popUp(translateEngine(this._hass, 'entity.edit_entity'), {
+        popUp(entityEditTitle(this._hass, settings.entity), {
           type: "custom:dwains-edit-entity-card",
           ...settings,
         }, false, '');
@@ -117,7 +118,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
       const showInNavbar = ev.currentTarget.showInNavbar;
       this._popupOpens.schedule(() => {
         fireEvent("hass-more-info", {entityId: ""}, this);
-        popUp(translateEngine(this._hass, 'device.edit_device_button'), {
+        popUp(editTitle(this._hass, deviceTypeName(this._hass, device)), {
           type: "custom:dwains-edit-device-button-card",
           device: device,
           icon: icon,
