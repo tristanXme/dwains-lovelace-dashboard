@@ -183,7 +183,7 @@ class DwainsEditAreaButtonCard extends LitElement {
             .hass=${this.hass}
             .showEntityId=${true}
             .label=${this.hass.localize(`component.sensor.entity_component.${type.deviceClass}.name`) || type.deviceClass.replace(/_/g, ' ')}
-            .placeholder=${translateEngine(this.hass, 'area.sensor_average').replace('{count}', type.sensors.length)}
+            .placeholder=${translateEngine(this.hass, 'area.sensor_average').replace('{count}', type.averaged)}
             .value=${type.chosen || ""}
             .includeEntities=${type.sensors}
             @value-changed=${(ev) => this._typeSensorChanged(type.deviceClass, ev)}

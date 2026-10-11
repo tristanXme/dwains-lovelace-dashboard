@@ -13,6 +13,8 @@ function areaSensorChoices({ deviceClasses, areaSensorIds, chosenIds, deviceClas
     .map((deviceClass) => ({
       deviceClass,
       sensors: candidates.filter((entityId) => deviceClassOf(entityId) === deviceClass),
+      // The average covers the sensors in the area only.
+      averaged: areaSensorIds.filter((entityId) => deviceClassOf(entityId) === deviceClass).length,
       chosen: chosenIds.find((entityId) => deviceClassOf(entityId) === deviceClass),
     }))
     .filter((type) => type.sensors.length);

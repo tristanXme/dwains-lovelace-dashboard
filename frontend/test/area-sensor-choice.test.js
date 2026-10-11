@@ -18,8 +18,8 @@ const areaSensorIds = ["sensor.temp_window", "sensor.temp_door", "sensor.humidit
 test("types with sensors in the area, average when none is chosen", () => {
   const { types, extras, extraCandidates } = areaSensorChoices({ deviceClasses, areaSensorIds, chosenIds: [], deviceClassOf });
   assert.deepEqual(types, [
-    { deviceClass: "temperature", sensors: ["sensor.temp_window", "sensor.temp_door"], chosen: undefined },
-    { deviceClass: "humidity", sensors: ["sensor.humidity"], chosen: undefined },
+    { deviceClass: "temperature", sensors: ["sensor.temp_window", "sensor.temp_door"], averaged: 2, chosen: undefined },
+    { deviceClass: "humidity", sensors: ["sensor.humidity"], averaged: 1, chosen: undefined },
   ]);
   assert.deepEqual(extras, []);
   assert.deepEqual(extraCandidates, ["sensor.rain", "sensor.wind"]);
@@ -29,8 +29,10 @@ test("chosen sensors land in their type or as extra values", () => {
   const chosenIds = ["sensor.temp_door", "sensor.rain", "sensor.temp_moved"];
   const { types, extras } = areaSensorChoices({ deviceClasses, areaSensorIds, chosenIds, deviceClassOf });
   assert.equal(types[0].chosen, "sensor.temp_door");
-  // A chosen sensor that moved to another area can still be picked.
+  // A chosen sensor that moved to another area can still be picked, but
+  // the average only counts the sensors in the area.
   assert.ok(types[0].sensors.includes("sensor.temp_moved"));
+  assert.equal(types[0].averaged, 2);
   assert.deepEqual(extras, ["sensor.rain"]);
 });
 
