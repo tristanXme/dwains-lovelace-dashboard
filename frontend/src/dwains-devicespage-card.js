@@ -178,13 +178,17 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 
         _syncSelectedDeviceFromLocation() {
           const newstate = window.location.hash.substring(1);
+          const hashChanged = newstate !== this._syncedHash;
+          this._syncedHash = newstate;
 
           if (newstate){
             this.selectedDevice = newstate;
           } else {
-            //The tab/page itself is clicked so fallback on first device button
+            // Without a hash the first device type is shown. It stays shown
+            // while it is listed: dragging another one to the front must not
+            // switch the page (and build all of its cards again).
             this.selectedDevice = initialSelection(
-              "",
+              hashChanged ? "" : this.selectedDevice,
               Object.values(this.data || {}).map((item) => item.domain),
             );
           }
@@ -735,7 +739,14 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                     </div>
                   </div>
                   <div class="w-full ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-w-1-2 xl-w-2-3"} ${!window.location.hash ? (this.configuration['homepage_header']['v2_mode'] ? "hidden" : "hidden lg-block") : ""} p-4">
-                    ${repeat(Object.values(this.data), (i) => i.domain, (i) => this._renderDeviceView(i))}
+                    ${repeat(
+                      // Only the shown device type: in a list of all of them
+                      // a new order (a drag in edit mode) would move its view,
+                      // and moving takes every card out and puts it back.
+                      Object.values(this.data).filter((i) => i.domain == this.selectedDevice),
+                      (i) => i.domain,
+                      (i) => this._renderDeviceView(i),
+                    )}
                   </div>
                 </div>
                 <div class="sticky z-30 bottom-0 ${!window.location.hash ? "hidden" : ""} ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-hidden"} text-right">

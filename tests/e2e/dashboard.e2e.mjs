@@ -447,8 +447,7 @@ for (const colorScheme of ["light", "dark"]) {
       await poll(async () => JSON.stringify(await shown()) === JSON.stringify(expected), `order kept: ${JSON.stringify(expected)}`);
       await page.reload();
       await poll(async () => JSON.stringify(await shown()) === JSON.stringify(expected), "saved order after reload");
-      // Back to the order before for the remaining tests (sorting fires no
-      // reload event: the page shows a dragged order itself).
+      // Back to the order before for the remaining tests.
       await ws({ type: "dwains_dashboard/sort_entity", sortData: JSON.stringify(before), sortType: "sort_order" });
       await page.reload();
       await poll(async () => JSON.stringify(await shown()) === JSON.stringify(before), "order restored");
@@ -493,11 +492,15 @@ for (const colorScheme of ["light", "dark"]) {
         await card.updateComplete;
       });
       const shown = () => deep(page, (all) => [...(all.find((el) => el.localName === "devices-card")?.shadowRoot?.querySelectorAll(".device-button") || [])].map((button) => button.dataset.device));
+      const selected = () => deep(page, (all) => all.find((el) => el.localName === "devices-card")?.selectedDevice);
       const before = await shown();
       assert.ok(before.length > 1, before.join(","));
       const moved = [...before.slice(1), before[0]];
+      const shownType = await selected();
       await drag();
       assert.deepEqual(await shown(), moved, "the page shows the dragged order at once");
+      // The device type shown stays, although another one is first now.
+      assert.equal(await selected(), shownType);
       await page.reload();
       await poll(async () => JSON.stringify(await shown()) === JSON.stringify(moved), "saved device order after reload");
 
@@ -515,10 +518,16 @@ for (const colorScheme of ["light", "dark"]) {
           : send(message));
         window.__ddRestoreSend = () => { connection.sendMessagePromise = send; };
       });
+      const shownAfterReload = await selected();
+      historyStreams.length = 0;
       await drag();
       await poll(async () => JSON.stringify(await shown()) === JSON.stringify(moved), "order back after the failed save");
       const toasts = await page.evaluate(() => window.__ddToasts);
       assert.ok(toasts.some((text) => text.includes("simulated failure")), toasts.join(" | "));
+      // The view shown stayed in place through the drag and its rollback:
+      // no graph card was built again and loaded its history again.
+      assert.equal(await selected(), shownAfterReload);
+      assert.deepEqual(historyStreams, []);
       await page.evaluate(() => window.__ddRestoreSend());
       // Expected: the failed save is logged.
       await page.waitForTimeout(300);
@@ -526,8 +535,7 @@ for (const colorScheme of ["light", "dark"]) {
         if (/saving failed/.test(errors[index])) errors.splice(index, 1);
       }
 
-      // Back to the order before for the remaining tests (sorting fires no
-      // reload event: the page shows a dragged order itself).
+      // Back to the order before for the remaining tests.
       await page.evaluate((order) => document.querySelector("home-assistant").hass.callWS({
         type: "dwains_dashboard/sort_device_button", sortData: JSON.stringify(order),
       }), before);

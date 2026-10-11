@@ -1864,7 +1864,15 @@ function getDwainsHass() {
                 </div>
               </div>
               <div class="w-full ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-w-1-2 xl-w-2-3"} ${!window.location.hash ? (this.configuration['homepage_header']['v2_mode'] ? "hidden" : "hidden lg-block") : ""} p-4">
-                ${repeat(this.data, (i) => i.area.area_id, (i) => this._renderAreaView(i))}
+                ${repeat(
+                  // In a fixed order, not in the order of the tiles: one view
+                  // is shown at a time, and a new order (a drag in edit mode)
+                  // would move the views, which takes every card out and puts
+                  // it back.
+                  [...this.data].sort((x, y) => (x.area.area_id < y.area.area_id ? -1 : x.area.area_id > y.area.area_id ? 1 : 0)),
+                  (i) => i.area.area_id,
+                  (i) => this._renderAreaView(i),
+                )}
               </div>
             </div>
             </div>
