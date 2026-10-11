@@ -14,7 +14,15 @@ import yaml
 from yaml.representer import Representer
 
 
-class _DashboardDumper(yaml.Dumper):
+# PyYAML's libyaml bindings (part of Home Assistant's PyYAML) read and write
+# the same YAML about ten times faster than the pure Python classes. Every
+# dashboard change reads and writes entities.yaml and then reads all files
+# again, so on large installations this is most of the time a change takes.
+_SafeLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+_Dumper = getattr(yaml, "CDumper", yaml.Dumper)
+
+
+class _DashboardDumper(_Dumper):
     """Private dumper that supports legacy OrderedDict values."""
 
 
@@ -24,7 +32,7 @@ _DashboardDumper.add_representer(OrderedDict, Representer.represent_dict)
 def load_yaml_file(file_path: str) -> Any:
     """Load one YAML file while owning its descriptor."""
     with open(file_path, "r", encoding="utf-8") as yaml_file:
-        return yaml.safe_load(yaml_file)
+        return yaml.load(yaml_file, Loader=_SafeLoader)  # noqa: S506 - a safe loader
 
 
 def load_yaml_file_or_default(
@@ -43,7 +51,7 @@ def load_yaml_file_or_default(
 
 def parse_yaml_text(value: str) -> Any:
     """Parse YAML text."""
-    return yaml.safe_load(value)
+    return yaml.load(value, Loader=_SafeLoader)  # noqa: S506 - a safe loader
 
 
 def _atomic_yaml_write(file_path: str, writer: Callable[[TextIO], None]) -> None:
@@ -100,7 +108,7 @@ def dump_json_normalized_yaml_file(file_path: str, value: Any) -> None:
     """Atomically dump JSON-compatible card data with legacy YAML defaults."""
     def write(yaml_file: TextIO) -> None:
         yaml.dump(
-            yaml.safe_load(json.dumps(value)),
+            yaml.load(json.dumps(value), Loader=_SafeLoader),  # noqa: S506
             yaml_file,
             Dumper=_DashboardDumper,
             default_flow_style=False,

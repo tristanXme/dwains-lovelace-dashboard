@@ -113,3 +113,33 @@ async def test_broken_files_show_up_as_repair_and_in_diagnostics(
     response = await client.receive_json()
     assert response["result"]["area_cards"]["kitchen"]["broken.yaml"] == {"type": "markdown"}
     assert ir.async_get(hass).async_get_issue(DOMAIN, "broken_configuration_files") is None
+
+
+def test_yaml_files_use_libyaml_and_keep_the_file_format(tmp_path: Path) -> None:
+    """The fast libyaml classes write exactly what the Python classes wrote."""
+    from collections import OrderedDict
+
+    import yaml
+
+    from custom_components.dwains_dashboard import yaml_files
+
+    if yaml.__with_libyaml__:
+        assert issubclass(yaml_files._DashboardDumper, yaml.CDumper)
+        assert yaml_files._SafeLoader is yaml.CSafeLoader
+    value = OrderedDict(
+        [
+            ("sensor.b", OrderedDict([("hidden", True), ("friendly_name", "Küche – Decke")])),
+            ("sensor.a", {"sort_order": 2, "note": "a: b # c", "long": "x " * 60}),
+        ]
+    )
+    path = tmp_path / "entities.yaml"
+    yaml_files.dump_yaml_file(str(path), value)
+
+    class _PythonDumper(yaml.Dumper):
+        pass
+
+    _PythonDumper.add_representer(OrderedDict, yaml.representer.Representer.represent_dict)
+    assert path.read_text(encoding="utf-8") == yaml.dump(
+        value, Dumper=_PythonDumper, default_flow_style=False, sort_keys=False
+    )
+    assert yaml_files.load_yaml_file(str(path)) == yaml.safe_load(path.read_text(encoding="utf-8"))
