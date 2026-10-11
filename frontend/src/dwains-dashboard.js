@@ -1,5 +1,4 @@
 import { popUp } from "./dwains-popup";
-import { fireEvent } from "./card-tools-compat";
 import {
     applyThemesOnElement,
     computeDomain
@@ -20,10 +19,11 @@ const { isDwainsRoute } = require('./dashboard-route-state');
 const {
     findHomeAssistantHost,
     findHomeAssistantMain,
-    findLovelaceConfig,
     findLovelaceRoot,
     findLovelaceShell,
 } = require('./lovelace-dom');
+const POPUP_LISTENER_OPTIONS = { capture: true };
+
 //Herschreven
 function getDwainsHass() {
     return resolveHass();
@@ -48,9 +48,6 @@ class DwainsDashboard {
         };
         this._popupCardHandler = this.popupCard.bind(this);
 
-        this.startDwainsDashboard().catch((error) => {
-            console.error("Failed to start Dwains Dashboard", error);
-        });
         this._listeners.listen('location-changed', window, 'location-changed', this._locationUpdater);
         this._listeners.listen('popstate', window, 'popstate', this._locationUpdater);
         this._listeners.listen(
@@ -62,6 +59,9 @@ class DwainsDashboard {
         this._listeners.connect();
 
         this._subscribeReload();
+        // Home Assistant may open on any page; the dashboard starts when it
+        // is shown (now or after a later navigation).
+        this.locationChanged();
     }
 
     _subscribeReload() {
@@ -164,11 +164,13 @@ class DwainsDashboard {
         this._timers.clear('subscription-retry');
     }
 
+    // In the capture phase: popupCard() runs before Home Assistant's own
+    // listener on the same element and can keep it from opening its dialog.
     _ensurePopupListener() {
         if (this._destroyed) return;
         const host = findHomeAssistantHost();
         if (!host || host === this._popupHost) return;
-        this._listeners.listen('hass-more-info', host, 'hass-more-info', this._popupCardHandler);
+        this._listeners.listen('hass-more-info', host, 'hass-more-info', this._popupCardHandler, POPUP_LISTENER_OPTIONS);
         this._popupHost = host;
     }
 
@@ -221,64 +223,41 @@ class DwainsDashboard {
     }
 
     locationChanged() {
-        if (this._destroyed) return;
-        let path = window.location.pathname;
-
-        if(isDwainsRoute(path)) {
-            this.applyDwainsTheme();
-            this._ensurePopupListener();
-        }
-    }
-
-    popupCard(ev) {
-        if(!ev.detail || !ev.detail.entityId || !this.configuration) return;
-
-        const domain = computeDomain(ev.detail.entityId);
-        const popupHost = ev.currentTarget || this._popupHost;
-
-        if(this.configuration["entities_popup"] && this.configuration["entities_popup"][ev.detail.entityId]){
-            //This specific entity has a own popup
-            if(this.configuration['entities'][ev.detail.entityId] && !this.configuration['entities'][ev.detail.entityId]['custom_popup']){
-                // Its own popup card exists but is switched off.
-            } else {
-                const friendlyName = this._entityDisplayName(ev.detail.entityId);
-
-
-                this._popupOpens.schedule(() => {
-                    this._closeMoreInfo(popupHost);
-                    popUp(friendlyName, {input_entity: ev.detail.entityId,...this.configuration["entities_popup"][ev.detail.entityId]}, false, '');
-                });
-            }
-        } else if(this.configuration["devices_popup"] && this.configuration["devices_popup"][domain]){
-            //Look if the domain of this entity has a custom popup
-            const friendlyName = this._entityDisplayName(ev.detail.entityId);
-
-
-            this._popupOpens.schedule(() => {
-                this._closeMoreInfo(popupHost);
-                popUp(friendlyName, {input_entity: ev.detail.entityId,...this.configuration["devices_popup"][domain]}, false, '');
+        if (this._destroyed || !isDwainsRoute(window.location.pathname)) return;
+        this.applyDwainsTheme();
+        this._ensurePopupListener();
+        // The custom popups need the configuration. Loaded the first time the
+        // dashboard is shown; dashboard events reload it (_subscribeReload).
+        if (!this.configuration) {
+            this.loadData().catch((error) => {
+                console.error("Failed to load Dwains Dashboard data", error);
             });
         }
     }
 
-    _closeMoreInfo(host) {
-        if (!host) {
-            console.error("Unable to close Home Assistant more-info: host is unavailable");
-            return false;
-        }
-        fireEvent("hass-more-info", { entityId: "" }, host);
-        return true;
-    }
+    popupCard(ev) {
+        const entityId = ev.detail?.entityId;
+        // Only on the dashboard's own pages: other dashboards keep Home
+        // Assistant's dialog.
+        if(!entityId || !this.configuration || !isDwainsRoute(window.location.pathname)) return;
 
-    async startDwainsDashboard() {
-        const lovelace = await this.getLovelace();
-        if (this._destroyed || !lovelace) return;
-        if (lovelace.config.dwains_dashboard) {
-            await this.loadData();
-            if (this._destroyed) return;
-            this._ensurePopupListener();
-            this.applyDwainsTheme();
-        }
+        // The entity's own popup unless it is switched off, else the popup
+        // of its device type, else Home Assistant's more-info dialog.
+        const ownPopup = this.configuration.entities_popup?.[entityId];
+        const entityConfig = this.configuration.entities?.[entityId];
+        const ownPopupOn = ownPopup && (!entityConfig || entityConfig.custom_popup);
+        const popup = ownPopupOn ? ownPopup : this.configuration.devices_popup?.[computeDomain(entityId)];
+        if(!popup) return;
+
+        // Instead of Home Assistant's dialog, which must not open at all: it
+        // also writes the browser history (and the URL), and closing it
+        // again went back in the history and opened it again.
+        ev.stopImmediatePropagation();
+        ev.stopPropagation();
+        const friendlyName = this._entityDisplayName(entityId);
+        this._popupOpens.schedule(() => {
+            popUp(friendlyName, {input_entity: entityId, ...popup}, false, '');
+        });
     }
 
     applyDwainsTheme(isRetry) {
@@ -322,18 +301,6 @@ class DwainsDashboard {
             console.error("Failed to reload Dwains Dashboard data", err);
         }
         this.applyDwainsTheme();
-    }
-
-    async getLovelace() {
-        let lovelace;
-        while (!lovelace && !this._destroyed) {
-            lovelace = findLovelaceConfig();
-            if (!lovelace) {
-                const elapsed = await this._timers.delay('lovelace-poll', 500);
-                if (!elapsed) return undefined;
-            }
-        }
-        return lovelace;
     }
 
     getRoot() {

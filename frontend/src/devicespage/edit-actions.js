@@ -185,8 +185,9 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
       closeParentDropdown(ev);
       ev.stopPropagation();
       const { entity, key, ddValue } = ev.currentTarget;
-      // The card leaves this list (hidden, disabled, excluded or shown again).
-      saveEntityBoolValue(this._hass, entity, key, ddValue, ev.currentTarget);
+      // The card leaves its list at once; an excluded entity keeps its card
+      // and only leaves the counts.
+      saveEntityBoolValue(this._hass, entity, key, ddValue, key === 'excluded' ? undefined : ev.currentTarget);
     }
     _handleEntityAreaVisibilityClick(ev, entityId, value) {
       closeParentDropdown(ev);

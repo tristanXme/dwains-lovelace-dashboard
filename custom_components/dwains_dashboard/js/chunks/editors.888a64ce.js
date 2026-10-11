@@ -495,7 +495,7 @@
               <ha-button @click=${this._sendCard}>${this.hass.localize("ui.common.submit")}</ha-button>
             </div>
           </div>
-        `:void 0}}U("dwains-create-custom-card-card",W);var F=i(5213);const{closeParentDropdown:X}=d(),{defineDwainsElement:V}=o(),{AREA_GRAPH_HOURS:Y,normalizeGraphHours:G}=i(1495),{areaSensorChoices:J,chooseExtraSensors:K,chooseTypeSensor:Q}=s();class Z extends g.WF{static get styles(){return[(0,F.F)(g.AH),g.AH`
+        `:void 0}}U("dwains-create-custom-card-card",W);var X=i(5213);const{closeParentDropdown:F}=d(),{defineDwainsElement:V}=o(),{AREA_GRAPH_HOURS:Y,normalizeGraphHours:G}=i(1495),{areaSensorChoices:J,chooseExtraSensors:K,chooseTypeSensor:Q}=s();class Z extends g.WF{static get styles(){return[(0,X.F)(g.AH),g.AH`
         .edit-element {
           padding: 20px;
           max-width: 460px;
@@ -575,7 +575,7 @@
           ></ha-entity-picker>
         `)}
         ${this._renderEntityPickers({className:"extra-sensors",label:(0,b.A)(this.hass,"area.extra_sensor_entities"),helper:(0,b.A)(this.hass,"area.extra_sensor_entities_helper"),values:t,candidates:i,onChange:e=>this._extraSensorsChanged(e)})}
-      `}_renderEntityList(e,t,i,s){const a=[...new Set([...this._areaEntities(t),...this[e]])];return this._renderEntityPickers({className:`entity-list-${t}`,label:i,helper:s,values:this[e],candidates:a,onChange:t=>{this[e]=t,this.requestUpdate()}})}_saveButton(e){X(e),e.stopPropagation(),this.hass.callWS({type:"dwains_dashboard/edit_area_button",icon:this.icon,areaId:this.areaId,disableArea:this.disableArea,hideIcon:this.hideIcon,graphEntity:this.graphEntity,graphHours:this.graphHours,sensorEntities:this.sensorEntities,binarySensorEntities:this.binarySensorEntities}).then(e=>{(0,R.fs)()},e=>{(0,P.Ny)(this.hass,e)})}render(){return g.qy`
+      `}_renderEntityList(e,t,i,s){const a=[...new Set([...this._areaEntities(t),...this[e]])];return this._renderEntityPickers({className:`entity-list-${t}`,label:i,helper:s,values:this[e],candidates:a,onChange:t=>{this[e]=t,this.requestUpdate()}})}_saveButton(e){F(e),e.stopPropagation(),this.hass.callWS({type:"dwains_dashboard/edit_area_button",icon:this.icon,areaId:this.areaId,disableArea:this.disableArea,hideIcon:this.hideIcon,graphEntity:this.graphEntity,graphHours:this.graphHours,sensorEntities:this.sensorEntities,binarySensorEntities:this.binarySensorEntities}).then(e=>{(0,R.fs)()},e=>{(0,P.Ny)(this.hass,e)})}render(){return g.qy`
       <div class="edit-element">
           <ha-icon-picker
             label=${(0,b.A)(this.hass,"area.icon")}
@@ -584,7 +584,7 @@
             .disabled=${this.hideIcon}
             @value-changed=${this._iconPickerChange}
           ></ha-icon-picker>
-          <label class="dd-check" @click=${F.H}>
+          <label class="dd-check" @click=${X.H}>
               <ha-checkbox
               @change=${this._hideIconValueChanged}
               .checked=${this.hideIcon}
@@ -613,7 +613,7 @@
           `:""}
           ${this._renderSensorValues()}
           ${this._renderEntityList("binarySensorEntities","binary_sensor",(0,b.A)(this.hass,"area.binary_sensor_entities"),(0,b.A)(this.hass,"area.binary_sensor_entities_helper"))}
-          <label class="dd-check" @click=${F.H}>
+          <label class="dd-check" @click=${X.H}>
               <ha-checkbox
               @change=${this._disableValueChanged}
               .checked=${this.disableArea}
@@ -629,7 +629,7 @@
             </ha-button>
           </div>
       </div>
-      `}}V("dwains-edit-area-button-card",Z);const{closeParentDropdown:ee}=d(),{defineDwainsElement:te}=o();class ie extends g.WF{static get styles(){return[(0,F.F)(g.AH),g.AH`
+      `}}V("dwains-edit-area-button-card",Z);const{closeParentDropdown:ee}=d(),{defineDwainsElement:te}=o();class ie extends g.WF{static get styles(){return[(0,X.F)(g.AH),g.AH`
         .edit-element {
           padding: 20px;
           max-width: 460px;
@@ -675,7 +675,7 @@
               @value-changed=${this._iconPickerChange}
             ></ha-icon-picker>
 
-          <label class="dd-check" @click=${F.H}>
+          <label class="dd-check" @click=${X.H}>
               <ha-switch
                 @change=${this._showInMainNavbarValueChanged}
                 .checked=${this.showInNavbar}
@@ -1514,7 +1514,7 @@
               </div>
             </div>
           </div>
-        `}}Se("dwains-edit-entity-card-card",Ae);const{closeParentDropdown:Ee}=d(),{defineDwainsElement:qe}=o();class Be extends g.WF{static get styles(){return[(0,F.F)(g.AH),g.AH`
+        `}}Se("dwains-edit-entity-card-card",Ae);const{closeParentDropdown:Ee}=d(),{defineDwainsElement:qe}=o();class Be extends g.WF{static get styles(){return[(0,X.F)(g.AH),g.AH`
         h2 {
           margin: 16px 0 8px;
           font-size: 1rem;
@@ -1565,7 +1565,7 @@
           outline: none;
           border-color: var(--accent-color);
         }
-        `]}setConfig(e){this.entity=e.entity,this.friendlyName=e.friendlyName?e.friendlyName:"",this.hideEntity=!!e.hideEntity&&e.hideEntity,this.hideEntityInArea=e.hideEntityInArea??!1,this.disableEntity=!!e.disableEntity&&e.disableEntity,this.excludeEntity=!!e.excludeEntity&&e.excludeEntity,this.rowSpan=e.rowSpan?e.rowSpan:"1",this.colSpan=e.colSpan?e.colSpan:"1",this.rowSpanLg=e.rowSpanLg?e.rowSpanLg:"1",this.colSpanLg=e.colSpanLg?e.colSpanLg:"1",this.rowSpanXl=e.rowSpanXl?e.rowSpanXl:"1",this.colSpanXl=e.colSpanXl?e.colSpanXl:"1",this.customCard=!!e.customCard&&e.customCard,this.customPopup=!!e.customPopup&&e.customPopup}async _saveButton(e){Ee(e),e.stopPropagation();try{await this.hass.callWS({type:"dwains_dashboard/edit_entity",entity:this.entity,friendlyName:this.friendlyName,disableEntity:this.disableEntity,hideEntity:this.hideEntity,excludeEntity:this.excludeEntity,rowSpan:this.rowSpan,colSpan:this.colSpan,rowSpanLg:this.rowSpanLg,colSpanLg:this.colSpanLg,rowSpanXl:this.rowSpanXl,colSpanXl:this.colSpanXl,customCard:this.customCard,customPopup:this.customPopup}),await this.hass.callWS({type:"dwains_dashboard/edit_entity_bool_value",entityId:this.entity,key:"hidden_in_area",value:this.hideEntityInArea}),(0,R.fs)()}catch(e){console.error("Failed to save entity settings:",e)}}_friendlyNameChanged(e){this.friendlyName=e.target.value}_disableValueChanged(e){this.disableEntity=e.target.checked}_hideValueChanged(e){this.hideEntity=e.target.checked}_hideInAreaValueChanged(e){this.hideEntityInArea=e.target.checked}_excludeValueChanged(e){this.excludeEntity=e.target.checked}_customCardValueChanged(e){this.customCard=e.target.checked}_customPopupValueChanged(e){this.customPopup=e.target.checked}_haSelectChanged(e){Ee(e),e.stopPropagation();const t=e.currentTarget||e.target,i=t.name||t.type||t.getAttribute?.("type"),s=e.detail?.value??e.detail?.item?.value??t.selectedItem?.value??t.value;i&&void 0!==s&&(this[i]=s),this.requestUpdate()}_stopPropagation(e){e.stopPropagation()}render(){return g.qy`
+        `]}setConfig(e){this.entity=e.entity,this.friendlyName=e.friendlyName?e.friendlyName:"",this.hideEntity=!!e.hideEntity&&e.hideEntity,this.hideEntityInArea=e.hideEntityInArea??!1,this.disableEntity=!!e.disableEntity&&e.disableEntity,this.excludeEntity=!!e.excludeEntity&&e.excludeEntity,this.rowSpan=e.rowSpan?e.rowSpan:"1",this.colSpan=e.colSpan?e.colSpan:"1",this.rowSpanLg=e.rowSpanLg?e.rowSpanLg:"1",this.colSpanLg=e.colSpanLg?e.colSpanLg:"1",this.rowSpanXl=e.rowSpanXl?e.rowSpanXl:"1",this.colSpanXl=e.colSpanXl?e.colSpanXl:"1",this.customCard=!!e.customCard&&e.customCard,this.customPopup=!!e.customPopup&&e.customPopup}async _saveButton(e){Ee(e),e.stopPropagation();try{await this.hass.callWS({type:"dwains_dashboard/edit_entity",entity:this.entity,friendlyName:this.friendlyName,disableEntity:this.disableEntity,hideEntity:this.hideEntity,excludeEntity:this.excludeEntity,rowSpan:this.rowSpan,colSpan:this.colSpan,rowSpanLg:this.rowSpanLg,colSpanLg:this.colSpanLg,rowSpanXl:this.rowSpanXl,colSpanXl:this.colSpanXl,customCard:this.customCard,customPopup:this.customPopup,hideEntityInArea:this.hideEntityInArea}),(0,R.fs)()}catch(e){(0,P.Ny)(this.hass,e)}}_friendlyNameChanged(e){this.friendlyName=e.target.value}_disableValueChanged(e){this.disableEntity=e.target.checked}_hideValueChanged(e){this.hideEntity=e.target.checked}_hideInAreaValueChanged(e){this.hideEntityInArea=e.target.checked}_excludeValueChanged(e){this.excludeEntity=e.target.checked}_customCardValueChanged(e){this.customCard=e.target.checked}_customPopupValueChanged(e){this.customPopup=e.target.checked}_haSelectChanged(e){Ee(e),e.stopPropagation();const t=e.currentTarget||e.target,i=t.name||t.type||t.getAttribute?.("type"),s=e.detail?.value??e.detail?.item?.value??t.selectedItem?.value??t.value;i&&void 0!==s&&(this[i]=s),this.requestUpdate()}_stopPropagation(e){e.stopPropagation()}render(){return g.qy`
         <div class="edit-element">
             <div class="entity-id">${this.entity}</div>
 
@@ -1617,42 +1617,42 @@
               </select>
             </div>
 
-            <label class="dd-check" @click=${F.H}>
+            <label class="dd-check" @click=${X.H}>
               <ha-checkbox
                 @change=${this._disableValueChanged}
                 .checked=${this.disableEntity}
               ></ha-checkbox>
               <span>${(0,b.A)(this.hass,"entity.disable")}</span>
             </label>
-            <label class="dd-check" @click=${F.H}>
+            <label class="dd-check" @click=${X.H}>
               <ha-checkbox
                 @change=${this._hideValueChanged}
                 .checked=${this.hideEntity}
               ></ha-checkbox>
               <span>${(0,b.A)(this.hass,"entity.hide")}</span>
             </label>
-            <label class="dd-check" @click=${F.H}>
+            <label class="dd-check" @click=${X.H}>
               <ha-checkbox
                 @change=${this._hideInAreaValueChanged}
                 .checked=${this.hideEntityInArea}
               ></ha-checkbox>
               <span>${(0,b.A)(this.hass,"entity.hide_in_area")}</span>
             </label>
-            <label class="dd-check" @click=${F.H}>
+            <label class="dd-check" @click=${X.H}>
               <ha-checkbox
                 @change=${this._excludeValueChanged}
                 .checked=${this.excludeEntity}
               ></ha-checkbox>
               <span>${(0,b.A)(this.hass,"entity.exclude")}</span>
             </label>
-            <label class="dd-check" @click=${F.H}>
+            <label class="dd-check" @click=${X.H}>
               <ha-checkbox
                 @change=${this._customCardValueChanged}
                 .checked=${this.customCard}
               ></ha-checkbox>
               <span>${(0,b.A)(this.hass,"entity.use_entity_card")}</span>
             </label>
-            <label class="dd-check" @click=${F.H}>
+            <label class="dd-check" @click=${X.H}>
               <ha-checkbox
                 @change=${this._customPopupValueChanged}
                 .checked=${this.customPopup}
@@ -1971,7 +1971,7 @@
               </div>
             </div>
           </div>
-        `}}De("dwains-edit-entity-popup-card",Me);var Te=i(3475);const{websocketReadStore:je}=m(),{installBlueprint:He}=a(),{ConnectedLoadOwner:Ue}=r(),{hassConnectionIdentity:We,hasHassConnectionChanged:Fe}=l(),{defineDwainsElement:Xe}=o(),{refreshLovelaceConfig:Ve}=h(),{dispatchMorePageSaved:Ye}=i(6392);class Ge extends g.WF{constructor(){super(),this._connectedLoadOwner=new Ue(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load more-page editor data"}),this._configReady=!1,this.blueprints={blueprints:{}},this._blueprintsLoading=!0}static get styles(){return[(0,F.F)(g.AH),g.AH`
+        `}}De("dwains-edit-entity-popup-card",Me);var Te=i(3475);const{websocketReadStore:je}=m(),{installBlueprint:He}=a(),{ConnectedLoadOwner:Ue}=r(),{hassConnectionIdentity:We,hasHassConnectionChanged:Xe}=l(),{defineDwainsElement:Fe}=o(),{refreshLovelaceConfig:Ve}=h(),{dispatchMorePageSaved:Ye}=i(6392);class Ge extends g.WF{constructor(){super(),this._connectedLoadOwner=new Ue(e=>this._loadEditor(e),{reportError:(e,t)=>console.error(e,t),errorMessage:"Failed to load more-page editor data"}),this._configReady=!1,this.blueprints={blueprints:{}},this._blueprintsLoading=!0}static get styles(){return[(0,X.F)(g.AH),g.AH`
         .edit-element {
           box-sizing: border-box;
           width: min(100%, 560px);
@@ -2207,7 +2207,7 @@
             padding-top: 0.75rem;
             padding-bottom: 0.75rem;
         }
-        `]}static get properties(){return{mode:{},blueprints:{},_hass:{},_saving:{state:!0},_saveError:{state:!0}}}set hass(e){const t=Fe(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();if(this._editorSessionInitialized=!0,this.mode=e.mode?e.mode:"pre-select",this.foldername=e.foldername?e.foldername:"",e.cardConfig){const t=structuredClone(e.cardConfig);delete t.input_entity,delete t.input_name,this.cardConfig=t}else this.cardConfig="";this.name=e.name?e.name:"",this._nameTouched=!!this.name,this._nameAutoGenerated=!1,this.icon=e.icon?e.icon:"",this.showInNavbar=!!e.showInNavbar&&e.showInNavbar,this._saving=!1,this._saveError=void 0,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=We(t),s=await je.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&We(this._hass)===i&&(this.blueprints=s?.blueprints?s:{blueprints:{}},this._blueprintsLoading=!1)}_loadBlueprints(){return this._connectedLoadOwner.reload()}magicStuff(e){this.cardConfig=structuredClone(e.detail.config),this._applyDefaultMorePageName(),this.mode="editor-element"}magicStuffSecond(e){}async _sendCard(){if(this._saving)return;this._syncMorePageSettingsFromDom();const e=this.renderRoot?.querySelector("dwains-card-config-editor"),t=await(e?.commitConfig?.()??e?.getConfig?.());if(t&&"object"==typeof t&&(this.cardConfig=t),this._applyDefaultMorePageName(),!this.name)return void alert((0,b.A)(this._hass,"more.name_required"));if(this.showInNavbar&&!this.icon)return void alert((0,b.A)(this._hass,"more.icon_required"));if(!this.cardConfig||"object"!=typeof this.cardConfig)return void(this._saveError=new Error("No valid Lovelace card is configured."));const i=!this.foldername;this._saving=!0,this._saveError=void 0;try{const e=await this._hass.callWS({type:"dwains_dashboard/edit_more_page",card_data:JSON.stringify(this.cardConfig),foldername:this.foldername,name:this.name,icon:this.icon,showInNavbar:this.showInNavbar});if(!e?.foldername)throw new Error("The backend did not return the saved page name.");this.foldername=e.foldername,je.invalidate(this._hass);const t=e.view_path||`more_page_${e.foldername}`,s=e.page||{foldername:e.foldername,name:this.name,icon:this.icon,show_in_navbar:this.showInNavbar,card:structuredClone(this.cardConfig)};Ye(window,s),i?(await Ve({viewPath:t}),(0,R.fs)(),(0,Te.oo)(window,`/dwains-dashboard/${t}`)):(0,R.fs)()}catch(e){this._saveError=e,console.error("Failed to save and refresh more page:",e)}finally{this._saving=!1}}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_deriveDefaultMorePageName(e=this.cardConfig){if(!e||"object"!=typeof e)return"";const t=[e.title,e.name,e.heading,e.card&&e.card.title,e.card&&e.card.name].find(e=>"string"==typeof e&&e.trim());return t?t.trim():""}_applyDefaultMorePageName(){if(this._nameTouched&&!this._nameAutoGenerated)return;const e=this._deriveDefaultMorePageName();e&&e!==this.name&&(this.name=e,this._nameAutoGenerated=!0)}_syncMorePageSettingsFromDom(){const e=this.shadowRoot?.querySelector("#more-page-name");e&&(this.name=e.value.trim());const t=this.shadowRoot?.querySelector(".more-page-settings ha-icon-picker");t&&void 0!==t.value&&(this.icon=t.value);const i=this.shadowRoot?.querySelector(".more-page-settings ha-checkbox");i&&(this.showInNavbar=i.checked)}_iconPickerChange(e){this.icon=e.detail.value}_showInMainNavbarValueChanged(e){this.showInNavbar=e.target.checked}_nameChanged(e){this.name=e.target.value,this._nameTouched=!0,this._nameAutoGenerated=!1}async _removeMorePage(){if(!this._saving&&(0,P.v7)(this._hass,this.name||this.foldername)){this._saving=!0,this._saveError=void 0;try{await this._hass.callWS({type:"dwains_dashboard/remove_more_page",foldername:this.foldername}),je.invalidate(this._hass),await Ve(),(0,R.fs)(),(0,Te.oo)(window,"/dwains-dashboard/more_page")}catch(e){this._saveError=e,console.error("Failed to remove and refresh more page:",e)}finally{this._saving=!1}}}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;(0,P.v7)(this._hass,t)&&this._hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{je.invalidate(this._hass),this._loadBlueprints(),this.requestUpdate()},e=>{(0,P.Ny)(this._hass,e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint;this.mode="editor-element",this.name=this.blueprints.blueprints[t].blueprint.name,this.cardConfig={type:"custom:dwains-blueprint-card",blueprint:t,card:this.blueprints.blueprints[t].card}}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){He({hass:this._hass,yamlCode:this.installBlueprintYaml,translate:e=>(0,b.A)(this._hass,e),onInstalled:()=>(je.invalidate(this._hass),this.requestUpdate(),this._loadBlueprints())})}_checkCustomCard(e){const t=customElements.get(e);return g.qy`
+        `]}static get properties(){return{mode:{},blueprints:{},_hass:{},_saving:{state:!0},_saveError:{state:!0}}}set hass(e){const t=Xe(this._hass,e);this._hass=e,t&&(this._connectedLoadOwner.disconnect(),this.isConnected&&this._connectedLoadOwner.connect()),this._startEditorIfReady()}setConfig(e){if(this._editorSessionInitialized)return this._configReady=!0,void this._startEditorIfReady();if(this._editorSessionInitialized=!0,this.mode=e.mode?e.mode:"pre-select",this.foldername=e.foldername?e.foldername:"",e.cardConfig){const t=structuredClone(e.cardConfig);delete t.input_entity,delete t.input_name,this.cardConfig=t}else this.cardConfig="";this.name=e.name?e.name:"",this._nameTouched=!!this.name,this._nameAutoGenerated=!1,this.icon=e.icon?e.icon:"",this.showInNavbar=!!e.showInNavbar&&e.showInNavbar,this._saving=!1,this._saveError=void 0,this._configReady=!0,this._startEditorIfReady()}connectedCallback(){super.connectedCallback(),this._connectedLoadOwner.connect(),this._startEditorIfReady()}disconnectedCallback(){super.disconnectedCallback(),this._connectedLoadOwner.disconnect()}_startEditorIfReady(){this._configReady&&this._hass&&this._connectedLoadOwner.ready()}async _loadEditor({isCurrent:e}){const t=this._hass,i=We(t),s=await je.read(t,{type:"dwains_dashboard/get_blueprints"});e()&&We(this._hass)===i&&(this.blueprints=s?.blueprints?s:{blueprints:{}},this._blueprintsLoading=!1)}_loadBlueprints(){return this._connectedLoadOwner.reload()}magicStuff(e){this.cardConfig=structuredClone(e.detail.config),this._applyDefaultMorePageName(),this.mode="editor-element"}magicStuffSecond(e){}async _sendCard(){if(this._saving)return;this._syncMorePageSettingsFromDom();const e=this.renderRoot?.querySelector("dwains-card-config-editor"),t=await(e?.commitConfig?.()??e?.getConfig?.());if(t&&"object"==typeof t&&(this.cardConfig=t),this._applyDefaultMorePageName(),!this.name)return void alert((0,b.A)(this._hass,"more.name_required"));if(this.showInNavbar&&!this.icon)return void alert((0,b.A)(this._hass,"more.icon_required"));if(!this.cardConfig||"object"!=typeof this.cardConfig)return void(this._saveError=new Error("No valid Lovelace card is configured."));const i=!this.foldername;this._saving=!0,this._saveError=void 0;try{const e=await this._hass.callWS({type:"dwains_dashboard/edit_more_page",card_data:JSON.stringify(this.cardConfig),foldername:this.foldername,name:this.name,icon:this.icon,showInNavbar:this.showInNavbar});if(!e?.foldername)throw new Error("The backend did not return the saved page name.");this.foldername=e.foldername,je.invalidate(this._hass);const t=e.view_path||`more_page_${e.foldername}`,s=e.page||{foldername:e.foldername,name:this.name,icon:this.icon,show_in_navbar:this.showInNavbar,card:structuredClone(this.cardConfig)};Ye(window,s),i?(await Ve({viewPath:t}),(0,R.fs)(),(0,Te.oo)(window,`/dwains-dashboard/${t}`)):(0,R.fs)()}catch(e){this._saveError=e,console.error("Failed to save and refresh more page:",e)}finally{this._saving=!1}}_switchMode(e){const t=e.currentTarget.mode;this.mode=t,this.requestUpdate()}_deriveDefaultMorePageName(e=this.cardConfig){if(!e||"object"!=typeof e)return"";const t=[e.title,e.name,e.heading,e.card&&e.card.title,e.card&&e.card.name].find(e=>"string"==typeof e&&e.trim());return t?t.trim():""}_applyDefaultMorePageName(){if(this._nameTouched&&!this._nameAutoGenerated)return;const e=this._deriveDefaultMorePageName();e&&e!==this.name&&(this.name=e,this._nameAutoGenerated=!0)}_syncMorePageSettingsFromDom(){const e=this.shadowRoot?.querySelector("#more-page-name");e&&(this.name=e.value.trim());const t=this.shadowRoot?.querySelector(".more-page-settings ha-icon-picker");t&&void 0!==t.value&&(this.icon=t.value);const i=this.shadowRoot?.querySelector(".more-page-settings ha-checkbox");i&&(this.showInNavbar=i.checked)}_iconPickerChange(e){this.icon=e.detail.value}_showInMainNavbarValueChanged(e){this.showInNavbar=e.target.checked}_nameChanged(e){this.name=e.target.value,this._nameTouched=!0,this._nameAutoGenerated=!1}async _removeMorePage(){if(!this._saving&&(0,P.v7)(this._hass,this.name||this.foldername)){this._saving=!0,this._saveError=void 0;try{await this._hass.callWS({type:"dwains_dashboard/remove_more_page",foldername:this.foldername}),je.invalidate(this._hass),await Ve(),(0,R.fs)(),(0,Te.oo)(window,"/dwains-dashboard/more_page")}catch(e){this._saveError=e,console.error("Failed to remove and refresh more page:",e)}finally{this._saving=!1}}}_handleDeleteBlueprintClicked(e){const t=e.currentTarget.blueprint;(0,P.v7)(this._hass,t)&&this._hass.callWS({type:"dwains_dashboard/delete_blueprint",blueprint:t}).then(e=>{je.invalidate(this._hass),this._loadBlueprints(),this.requestUpdate()},e=>{(0,P.Ny)(this._hass,e)})}_handleUseBlueprintClicked(e){const t=e.currentTarget.blueprint;this.mode="editor-element",this.name=this.blueprints.blueprints[t].blueprint.name,this.cardConfig={type:"custom:dwains-blueprint-card",blueprint:t,card:this.blueprints.blueprints[t].card}}_installBlueprintYamlChanged(e){this.installBlueprintYaml=e.target.value}_handleInstallBlueprintClicked(e){He({hass:this._hass,yamlCode:this.installBlueprintYaml,translate:e=>(0,b.A)(this._hass,e),onInstalled:()=>(je.invalidate(this._hass),this.requestUpdate(),this._loadBlueprints())})}_checkCustomCard(e){const t=customElements.get(e);return g.qy`
         <div>
         ${t?g.qy`
             <ha-icon
@@ -2336,7 +2336,7 @@
                 .value=${this.icon}
                 @value-changed=${this._iconPickerChange}
             ></ha-icon-picker>
-            <label class="dd-check" @click=${F.H}>
+            <label class="dd-check" @click=${X.H}>
               <ha-checkbox
                 @change=${this._showInMainNavbarValueChanged}
                 .checked=${this.showInNavbar}
@@ -2364,4 +2364,4 @@
             </ha-button>
             </div>
         </div>
-        `:void 0}}Xe("dwains-edit-more-page-card",Ge)}}]);
+        `:void 0}}Fe("dwains-edit-more-page-card",Ge)}}]);

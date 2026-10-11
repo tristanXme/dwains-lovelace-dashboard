@@ -25,6 +25,9 @@
   "editor": {
     "lovelace_card": "Lovelace 卡片",
     "create_lovelace_card": "从头开始创建新的 Lovelace 卡片",
+    "select_card_for": "选择卡片：",
+    "loading_card_editor": "正在加载卡片编辑器…",
+    "no_visual_editor": "此卡片没有可视化编辑器。请编辑其 JSON 配置：",
     "dwains_dashboard_blueprint": "Dwains 仪表板蓝图",
     "use_dwains_dashboard_blueprint": "使用 Dwain 仪表板蓝图创建卡片",
     "row_span": "行跨度",
@@ -56,6 +59,8 @@
     "hide_all": "隐藏所有实体",
     "exclude": "在 DD 中排除实体",
     "hide": "在 DD 中隐藏实体",
+    "hide_in_area": "在区域视图中隐藏",
+    "unhide_in_area": "在区域视图中显示",
     "unhide": "取消隐藏实体",
     "use_popup_card": "使用自己的弹出卡片",
     "use_entity_card": "使用自己的实体卡片",
@@ -303,6 +308,7 @@
     "name_required": "您必须为页面指定名称",
     "icon_required": "如果要添加到导航栏，必须选择一个图标！",
     "add_navbar": "将此更多页面添加到主导航栏",
+    "remove_navbar": "从主导航栏中移除此页面",
     "name": "更多页面名称",
     "icon": "更多页面图标"
   },

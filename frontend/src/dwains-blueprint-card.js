@@ -52,19 +52,18 @@ class DwainsBlueprintCard extends LitElement {
           this.cardConfig = config.card;
 
           const cardJson = JSON.stringify(config.card);
-          const regex = /\$([0-9]|[aA-zZ])*\$/g;
+          // $name$ placeholders. The values go into JSON text: escape them,
+          // or a name with a quote ("TV 55\"") breaks the whole card.
+          const regex = /\$([0-9A-Za-z_]+)\$/g;
+          const asJsonText = (value) => JSON.stringify(String(value)).slice(1, -1);
 
-          const cardParsed = cardJson.replace(regex, function($1,$2) {
-            const search = $1.slice(1, -1);
+          const cardParsed = cardJson.replace(regex, function(placeholder, search) {
             if(search == 'replace_with_input_entity'){
-              return input_entity;
+              return asJsonText(input_entity);
             } else if(search == 'replace_with_input_name'){
-              return input_name;
-            } else {
-              if(config.data){
-                return data[search];
-              }
+              return asJsonText(input_name);
             }
+            return asJsonText(config.data ? data[search] : undefined);
           });
           const cardParsedWithBooleans = cardParsed.replaceAll('"false"', 'false').replaceAll('"true"', 'true');
 

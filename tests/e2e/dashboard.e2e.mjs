@@ -285,6 +285,48 @@ for (const colorScheme of ["light", "dark"]) {
       assert.doesNotMatch(first, /\bAreas\b|Favorites|Good (morning|afternoon|evening)/);
     });
 
+    await step("own popups open, also when Home Assistant was opened on another page", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      await ws({
+        type: "dwains_dashboard/edit_device_popup", domain: "input_boolean",
+        cardData: JSON.stringify({ type: "markdown", content: "E2E popup for the lamp" }),
+      });
+      try {
+        // Home Assistant starts on another dashboard; the user then opens
+        // Dwains Dashboard from the sidebar.
+        await page.goto(BASE + "/lovelace/0");
+        await poll(() => page.evaluate(() => Boolean(document.querySelector("home-assistant")?.hass?.states)), "other dashboard");
+        await page.waitForTimeout(1000);
+        // Newer versions redirect to their own default dashboard.
+        const otherPath = await page.evaluate(() => location.pathname);
+        await page.evaluate(() => {
+          history.pushState(null, "", "/dwains-dashboard/home");
+          window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+        });
+        await poll(() => page.evaluate(() => Boolean(window.dwains_dashboard?.configuration)), "dashboard data loaded");
+        await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button"))), "homepage");
+        await page.evaluate(() => document.querySelector("home-assistant").dispatchEvent(new CustomEvent("hass-more-info", {
+          detail: { entityId: "input_boolean.e2e_lamp" }, bubbles: true, composed: true,
+        })));
+        // The markdown renders in shadow roots below the popup.
+        const text = await poll(() => deep(page, (all) => {
+          if (!all.some((el) => el.localName === "card-tools-popup" && el.open)) return "";
+          const markdown = all.find((el) => el.shadowRoot?.textContent.includes("E2E popup for"));
+          return markdown?.shadowRoot.textContent.replace(/\s+/g, " ").trim() || "";
+        }), "the device type's popup");
+        assert.match(text, /E2E popup for the lamp/);
+        // Closed in the page, the popup leaves no history entry behind:
+        // Back leaves the page right away.
+        await page.keyboard.press("Escape");
+        await poll(() => deep(page, (all) => !all.some((el) => el.localName === "card-tools-popup" && el.open)), "popup closed");
+        await poll(() => page.evaluate(() => !history.state?.cardToolsPopup), "history entry left");
+        await page.evaluate(() => history.back());
+        await poll(() => page.evaluate((otherPath) => location.pathname === otherPath, otherPath), "Back leaves the dashboard");
+      } finally {
+        await ws({ type: "dwains_dashboard/remove_device_popup", domain: "input_boolean" });
+      }
+    });
+
     await step("the areas menu switches edit mode and drag sorting on", async () => {
       await page.goto(BASE + "/dwains-dashboard/home");
       await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("°C"))), "homepage");

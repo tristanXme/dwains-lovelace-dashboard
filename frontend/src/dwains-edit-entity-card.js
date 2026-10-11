@@ -2,6 +2,7 @@ import { css, html, LitElement } from 'lit';
 import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import translateEngine from './translate-engine';
 import { closePopup } from "./helpers";
+import { showSaveError } from './save-error-toast';
 const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
 
@@ -103,16 +104,11 @@ class DwainsEditEntityCard extends LitElement {
           colSpanXl: this.colSpanXl,
           customCard: this.customCard,
           customPopup: this.customPopup,
-        });
-        await this.hass.callWS({
-          type: 'dwains_dashboard/edit_entity_bool_value',
-          entityId: this.entity,
-          key: 'hidden_in_area',
-          value: this.hideEntityInArea,
+          hideEntityInArea: this.hideEntityInArea,
         });
         closePopup();
       } catch (error) {
-        console.error('Failed to save entity settings:', error);
+        showSaveError(this.hass, error);
       }
     }
     _friendlyNameChanged(e) {

@@ -14,6 +14,9 @@ class PopupHistoryController {
     this._popup = undefined;
     this._reopen = undefined;
     this._started = false;
+    // History entries the open popups added (a popup opened from a popup
+    // adds one more).
+    this._entries = 0;
     this._popstateHandler = (event) => this._handlePopstate(event);
   }
 
@@ -27,6 +30,7 @@ class PopupHistoryController {
   }
 
   recordOpen(params) {
+    const fromPopup = Boolean(this._history?.state?.cardToolsPopup);
     const previousState = this._stateWith({ cardToolsPopup: false }, this._history?.state);
     const popupState = this._stateWith({ cardToolsPopup: true, params }, this._history?.state);
     try {
@@ -36,11 +40,21 @@ class PopupHistoryController {
       this._reportError("Failed to record popup navigation state", error);
       throw error;
     }
+    this._entries = fromPopup ? this._entries + 1 : 1;
   }
 
+  // Closed in the page (X, Escape, after saving): the entries the popups
+  // added are left, so that Back leaves the page instead of going through
+  // them first. Closed through Back the popup's entry is left already.
   markClosed() {
     if (!this._history?.state?.cardToolsPopup) return;
+    const entries = Math.max(1, this._entries);
+    this._entries = 0;
     try {
+      if (typeof this._history.go === "function") {
+        this._history.go(-entries);
+        return;
+      }
       this._history.replaceState(
         this._stateWith({ cardToolsPopup: false }, this._history.state),
         "",

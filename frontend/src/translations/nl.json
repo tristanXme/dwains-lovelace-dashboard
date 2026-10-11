@@ -25,6 +25,9 @@
   "editor": {
     "lovelace_card": "Lovelace Kaart",
     "create_lovelace_card": "Maak een nieuwe lovelace-kaart vanaf het begin",
+    "select_card_for": "Kies een kaart voor",
+    "loading_card_editor": "Kaarteditor laden…",
+    "no_visual_editor": "Deze kaart heeft geen visuele editor. Bewerk de JSON-configuratie:",
     "dwains_dashboard_blueprint": "Dwains Dashboard Blueprint",
     "use_dwains_dashboard_blueprint": "Een Dwain Dashboard Blueprint gebruiken om een kaart te maken",
     "row_span": "Rij span",
@@ -56,6 +59,8 @@
     "hide_all": "Alle entiteiten verbergen",
     "exclude": "Entiteit uitsluiten in DD",
     "hide": "Verberg entiteit in DD",
+    "hide_in_area": "Verbergen in ruimteweergaven",
+    "unhide_in_area": "Tonen in ruimteweergaven",
     "unhide": "Entiteit zichtbaar maken",
     "use_popup_card": "Eigen pop-upkaart gebruiken",
     "use_entity_card": "Eigen entiteitskaart gebruiken",
@@ -299,6 +304,7 @@
     "name_required": "U moet een naam voor de pagina opgeven",
     "icon_required": "Als u het aan de navigatiebalk wilt toevoegen, moet u een icoon selecteren!",
     "add_navbar": "Voeg deze meer pagina toe in de hoofdnavigatiebalk",
+    "remove_navbar": "Verwijder deze pagina uit de hoofdnavigatiebalk",
     "name": "Meer pagina naam",
     "icon": "Meer pagina icoon"
   },

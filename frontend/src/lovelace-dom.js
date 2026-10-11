@@ -102,7 +102,10 @@ function findLovelaceRoot(
   return resolveDom("the Lovelace root", () => _findLovelaceRoot(documentObject), options);
 }
 
-function findLovelaceConfig(documentObject, options) {
+function findLovelaceConfig(
+  documentObject = typeof document !== "undefined" ? document : undefined,
+  options,
+) {
   return resolveDom(
     "the Lovelace configuration",
     () => _findLovelaceRoot(documentObject)?.lovelace || null,

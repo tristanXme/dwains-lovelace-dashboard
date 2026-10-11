@@ -18,6 +18,7 @@ const { PopupOpenScheduler } = require('./popup-open-scheduler');
 const { ReloadableLoadOwner } = require('./reloadable-load-owner');
 const { hassConnectionIdentity, hasHassConnectionChanged } = require('./hass-connection');
 const { websocketReadStore } = require('./websocket-read-store');
+const { showSettledItems } = require('./optimistic-item');
 const { loadDashboardRegistrySnapshot } = require('./dashboard-registry-snapshot');
 const { registryOrderedEntityUnion } = require('./registry-indexes');
 const { resolveHass } = require('./hass-provider');
@@ -253,6 +254,8 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
         async _reloadCard(){
           await this._loads.reload();
           this.requestUpdate();
+          await this.updateComplete;
+          showSettledItems(this.shadowRoot);
         }
 
 	        _loadData(){

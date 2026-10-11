@@ -12,7 +12,7 @@ import { showSaveError } from './save-error-toast';
 import { saveEntityBoolValue } from './entity-bool-save';
 const { attachSortableLists } = require('./sortable-lists');
 const { applyLocalOrder } = require('./local-order');
-const { hideItemWhileSaving, hideWhileSaving } = require('./optimistic-item');
+const { hideItemWhileSaving, hideWhileSaving, showSettledItems } = require('./optimistic-item');
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
@@ -98,7 +98,7 @@ function getDwainsHass() {
       const connectionChanged = hasHassConnectionChanged(this._hass, hass);
       const previous = this._hass;
       this._hass = hass;
-      propagateHomepageHass(this, hass);
+      if(!this.startedUp) propagateHomepageHass(this, hass);
       if(this.startedUp){
         this._registryChanges.update(hass);
         this._update_hass(hass, hassChangeIsRelevant(previous, hass, this._isShownEntity));
@@ -432,6 +432,8 @@ function getDwainsHass() {
       await this._loads.reload();
       this.requestUpdate();
       this._scheduleIconRepoke();
+      await this.updateComplete;
+      showSettledItems(this.shadowRoot);
     }
 
     _loadData(){
@@ -1251,13 +1253,15 @@ function getDwainsHass() {
       closeParentDropdown(ev);
       ev.stopPropagation();
       const { entity, key, ddValue } = ev.currentTarget;
-      // The card leaves this list (hidden, disabled, excluded or shown again).
-      saveEntityBoolValue(this._hass, entity, key, ddValue, ev.currentTarget);
+      // The card leaves its list at once; an excluded entity keeps its card
+      // and only leaves the counts.
+      saveEntityBoolValue(this._hass, entity, key, ddValue, key === 'excluded' ? undefined : ev.currentTarget);
     }
     _handleEntityAreaVisibilityClick(ev, entityId, value) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      saveEntityBoolValue(this._hass, entityId, 'hidden_in_area', value);
+      // Hidden in area views, the card moves to the list of hidden ones.
+      saveEntityBoolValue(this._hass, entityId, 'hidden_in_area', value, ev.currentTarget);
     }
     _handleAreaEditBoolValueClick(ev) {
       closeParentDropdown(ev);

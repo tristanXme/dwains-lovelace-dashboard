@@ -168,6 +168,16 @@ class DwainsNavigationCard extends LitElement {
         };
       }
 
+      // Every state change in the house brings a new hass; the navigation
+      // shows texts, the sidebar button and the user's pages only.
+      shouldUpdate(changed) {
+        if (changed.size !== 1 || !changed.has('_hass')) return true;
+        const previous = changed.get('_hass');
+        const hass = this._hass;
+        return !previous || ['language', 'selectedLanguage', 'localize', 'dockedSidebar', 'user', 'config', 'locale']
+          .some((key) => previous[key] !== hass?.[key]);
+      }
+
       set hass(hass) {
         const connectionChanged = hasHassConnectionChanged(this._hass, hass);
         this._hass = hass;
@@ -378,6 +388,14 @@ class DwainsNavigationCard extends LitElement {
         this.requestUpdate();
     }
 
+      // Device pages shown in the navigation bar, in the order of the devices
+      // page. A hidden device type has no page to go to.
+      _navbarDevices(devices) {
+        return Object.entries(devices || {})
+          .filter(([, device]) => device?.show_in_navbar && !device.hidden)
+          .sort(([, x], [, y]) => (x.sort_order || 99) - (y.sort_order || 99));
+      }
+
       _toggleSidebarClick() {
         fireEvent('hass-toggle-menu', { open: true }, this);
       }
@@ -431,7 +449,7 @@ class DwainsNavigationCard extends LitElement {
                         <ha-icon icon="${"mdi:format-list-bulleted-type"}"></ha-icon>
                         <span>${translateEngine(this._hass, 'device.title_plural')}</span>
                     </button>
-                    ${Object.entries(configuration.devices || {}).map(([k,v]) =>
+                    ${this._navbarDevices(configuration.devices).map(([k,v]) =>
                         //, v["icon"]);
                         // k = path
                         html`

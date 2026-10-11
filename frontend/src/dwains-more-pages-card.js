@@ -382,7 +382,7 @@ class MorePagesCard extends LitElement {
         }
 
         // While a save runs, reloads keep showing its order (see
-        // _loadConfiguration).
+        // _loadConfiguration). The save fires the reload of this page.
         async _saveMorePageOrder(order) {
           if (!Array.isArray(order) || order.length === 0) return;
           this._pendingSortOrder = [...order];
@@ -396,15 +396,12 @@ class MorePagesCard extends LitElement {
             this._pendingSortOrder = undefined;
             throw error;
           }
-          this._invalidateMorePageReads();
           // A newer drag is shown already and saves next.
-          const current = () => JSON.stringify(this._shownSortOrder) === JSON.stringify(order);
-          if (!current()) return;
+          if (JSON.stringify(this._shownSortOrder) !== JSON.stringify(order)) return;
+          this._pendingSortOrder = undefined;
+          // The backend leaves out pages it does not know.
           const confirmedOrder = Array.isArray(response?.order) ? response.order : order;
-          this._pendingSortOrder = [...confirmedOrder];
-          await this._reloadCard();
-          if (current()) this._pendingSortOrder = undefined;
-          this.requestUpdate();
+          this.configuration = this._configurationWithMorePageOrder(this.configuration, confirmedOrder);
         }
 
         _morePageOrderFailed(error) {

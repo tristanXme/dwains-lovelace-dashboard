@@ -7,18 +7,18 @@ const { entityRecoveryActions } = require('../entity-settings-config');
 
 // Area detail view: entity cards, custom cards and grouping by domain.
 export const AreaViewMixin = (Base) => class extends Base {
-    _renderAreaViewCustomCards(data, position){
+    _renderAreaViewCustomCards(data, position, hass){
       return html`
       <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 my-4">
-        ${repeat(position == "bottom" ? data.customCardsBottom : data.customCardsTop, (i) => i.filename, (i) => this._renderAreaViewCustomCard(i))}
+        ${repeat(position == "bottom" ? data.customCardsBottom : data.customCardsTop, (i) => i.filename, (i) => this._renderAreaViewCustomCard(i, hass))}
       </div>
       `;
     }
-	    _renderAreaViewCustomCard(data){
+	    _renderAreaViewCustomCard(data, hass){
 	      return html`
 	      <div class="col-span-${data.colSpan} row-span-${data.rowSpan} lg-col-span-${data.colSpanLg} lg-row-span-${data.rowSpanLg} xl-col-span-${data.colSpanXl} xl-row-span-${data.rowSpanXl} relative">
 	        <div>
-	          <dd-lazy-card .card=${data.card} .cardFactory=${data.cardFactory} .hass=${this._hass}></dd-lazy-card>
+	          <dd-lazy-card .card=${data.card} .cardFactory=${data.cardFactory} .hass=${hass}></dd-lazy-card>
 	        </div>
         ${this.areaViewEditMode ? html`
         <ha-card>
@@ -63,7 +63,7 @@ export const AreaViewMixin = (Base) => class extends Base {
 	      });
 	    }
 
-	    _renderAreaViewCards(data){
+	    _renderAreaViewCards(data, hass){
 	      const cards = this._filterUnavailableCards(data.cards);
 	      if(!this.areaViewDisplayGrouped){
 	        cards.sort(function (x, y) {
@@ -74,7 +74,7 @@ export const AreaViewMixin = (Base) => class extends Base {
 
 	        return html`
 	        <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable ${this._areaViewGridLayout()}">
-	          ${repeat(cards, (i) => i.entity, (i) => this._renderAreaViewCard(i))}
+	          ${repeat(cards, (i) => i.entity, (i) => this._renderAreaViewCard(i, hass))}
 	        </div>
 	        `;
 	      } else {
@@ -109,7 +109,7 @@ export const AreaViewMixin = (Base) => class extends Base {
             <div class="mb-5">
               <h3 class="font-semibold capitalize text-gray">${deviceTypeName(this._hass, key)}</h3>
               <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable ${this._areaViewGridLayout()}">
-                ${repeat(group[key], (v) => v.entity, (v) => this._renderAreaViewCard(v))}
+                ${repeat(group[key], (v) => v.entity, (v) => this._renderAreaViewCard(v, hass))}
               </div>
             </div>
           `
@@ -137,7 +137,7 @@ export const AreaViewMixin = (Base) => class extends Base {
       `;
     }
 
-    _renderAreaViewCard(data){
+    _renderAreaViewCard(data, hass){
       return html`
 	      <div
 	        data-dd-item
@@ -145,7 +145,7 @@ export const AreaViewMixin = (Base) => class extends Base {
 	        class="col-span-${data.colSpan} row-span-${data.rowSpan} lg-col-span-${data.colSpanLg} lg-row-span-${data.rowSpanLg} xl-col-span-${data.colSpanXl} xl-row-span-${data.rowSpanXl} relative"
 	      >
 	        <div>
-	          <dd-lazy-card .card=${data.card} .cardFactory=${data.cardFactory} .hass=${this._hass}></dd-lazy-card>
+	          <dd-lazy-card .card=${data.card} .cardFactory=${data.cardFactory} .hass=${hass}></dd-lazy-card>
 	        </div>
         ${this.areaViewEditMode ? html`
         <ha-card>
@@ -284,6 +284,15 @@ export const AreaViewMixin = (Base) => class extends Base {
       `;
     }
 
+    // An area view stays in the page once opened, so its cards need not be
+    // created again. While it is not shown its cards keep the hass they had:
+    // a state change does not render them. Shown again, they get the current.
+    _areaViewHass(areaId, shown){
+      const kept = (this.__ddAreaViewHass ||= new Map());
+      if (shown || !kept.has(areaId)) kept.set(areaId, this._hass);
+      return kept.get(areaId);
+    }
+
     _renderAreaView(data){
         //Make the cards grid
         // var outObject = data.cards.reduce(function(a, e) {
@@ -312,6 +321,7 @@ export const AreaViewMixin = (Base) => class extends Base {
 	        }
 
         const visible = this.selectedArea == data.area.area_id ? "block" : "hidden";
+        const hass = this._areaViewHass(data.area.area_id, visible == "block");
 
         data.cards.sort(function (x, y) {
           let a = x.domain,
@@ -422,11 +432,11 @@ export const AreaViewMixin = (Base) => class extends Base {
               </span>
             </button>` : "" }
 
-            ${this._renderAreaViewCustomCards(data, "top")}
+            ${this._renderAreaViewCustomCards(data, "top", hass)}
 
-            ${this._renderAreaViewCards(data)}
+            ${this._renderAreaViewCards(data, hass)}
 
-            ${this._renderAreaViewCustomCards(data, "bottom")}
+            ${this._renderAreaViewCustomCards(data, "bottom", hass)}
 
             ${this.areaViewEditMode ? html `
               ${data.entitiesNoState.length ? html`

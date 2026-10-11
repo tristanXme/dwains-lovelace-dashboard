@@ -25,6 +25,9 @@
   "editor": {
     "lovelace_card": "Karta Lovelace",
     "create_lovelace_card": "Utwórz nową kartę Lovelace",
+    "select_card_for": "Wybierz kartę dla",
+    "loading_card_editor": "Ładowanie edytora karty…",
+    "no_visual_editor": "Ta karta nie ma edytora wizualnego. Edytuj jej konfigurację JSON:",
     "dwains_dashboard_blueprint": "Schemat Dwains Dashboard",
     "use_dwains_dashboard_blueprint": "Użyj schematu Dwains Dashboard do stworzenia karty",
     "row_span": "Szerokość wierszy",
@@ -56,6 +59,8 @@
     "hide_all": "Ukryj wszystkie encje",
     "exclude": "Wyłącz encje w DD",
     "hide": "Ukryj encje w DD",
+    "hide_in_area": "Ukryj w widokach obszarów",
+    "unhide_in_area": "Pokaż w widokach obszarów",
     "unhide": "Odkryj encje",
     "use_popup_card": "Użyj własnej wyskakującej karty",
     "use_entity_card": "Użyj własnej karty encji",
@@ -299,6 +304,7 @@
     "name_required": "Podaj nazwę strony:",
     "icon_required": "Jeśli chcesz dodać stronę do paska nawigacyjnego, wybierz jej ikonę!",
     "add_navbar": "Dodaj tę stronę do paska nawigacyjnego",
+    "remove_navbar": "Usuń tę stronę z głównego paska nawigacji",
     "name": "Więcej nazw stron",
     "icon": "Więcej ikon strony"
   },

@@ -186,9 +186,10 @@ class DwainsHouseInformationCard extends LitElement {
     `, subtleHouseInformationStyles(css)]
     }
 
+    // hass is no reactive property: the setter renders only for changes of
+    // the entities the bar shows (most state changes are others).
     static get properties() {
         return {
-            _hass: { type: Object },
             configuration: { type: Object },
             domains: { type: Object },
             persons: { type: Array }

@@ -228,23 +228,32 @@ export const AreaTilesMixin = (Base) => class extends Base {
     // Badges flow in columns from right to left; how many fit in a column
     // depends on the tile height. Keep at most two columns: if more would be
     // needed, the last place shows "+N" and its tooltip names the others.
+    // Runs after every render of the homepage: all tiles are measured in one
+    // go (reads and writes in separate passes), not one layout per tile.
     _fitAreaBadges() {
       if (!this.shadowRoot) return;
+      const tiles = [];
       this.shadowRoot.querySelectorAll('.area-button .info').forEach((info) => {
         const more = info.querySelector('.more-badge');
         if (!more) return;
         const badges = Array.from(info.children).filter((child) => child !== more);
-        badges.forEach((badge) => { if (badge.style.display) badge.style.display = ''; });
-        more.style.display = 'none';
         // Columns end above the area name and its values (on tiles with a
         // graph the name sits higher than the bottom of the badge area).
         const text = info.closest('.area-button')?.querySelector('h3')?.parentElement;
-        if (text && badges.length) {
-          const available = text.getBoundingClientRect().top - info.getBoundingClientRect().top - 4;
-          const height = `${Math.max(available, badges[0].offsetHeight)}px`;
-          if (info.style.maxHeight !== height) info.style.maxHeight = height;
-        }
-        // A new column starts where a badge is not below its predecessor.
+        tiles.push({ info, more, badges, text });
+      });
+      for (const { more, badges } of tiles) {
+        badges.forEach((badge) => { if (badge.style.display) badge.style.display = ''; });
+        more.style.display = 'none';
+      }
+      const heights = tiles.map(({ info, badges, text }) => (text && badges.length
+        ? `${Math.max(text.getBoundingClientRect().top - info.getBoundingClientRect().top - 4, badges[0].offsetHeight)}px`
+        : undefined));
+      tiles.forEach(({ info }, index) => {
+        if (heights[index] && info.style.maxHeight !== heights[index]) info.style.maxHeight = heights[index];
+      });
+      // A new column starts where a badge is not below its predecessor.
+      const layouts = tiles.map(({ badges }) => {
         let columns = badges.length ? 1 : 0;
         let perColumn = badges.length;
         for (let index = 1; index < badges.length; index++) {
@@ -253,6 +262,10 @@ export const AreaTilesMixin = (Base) => class extends Base {
             columns++;
           }
         }
+        return { columns, perColumn };
+      });
+      tiles.forEach(({ more, badges }, index) => {
+        const { columns, perColumn } = layouts[index];
         if (columns <= 2) return;
         const visibleCount = Math.max(1, perColumn * 2 - 1);
         const hidden = badges.slice(visibleCount);

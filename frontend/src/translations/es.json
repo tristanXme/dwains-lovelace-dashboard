@@ -25,6 +25,9 @@
   "editor": {
     "lovelace_card": "Lovelace Card",
     "create_lovelace_card": "Crea una nueva lovelace card desde cero",
+    "select_card_for": "Selecciona una tarjeta para",
+    "loading_card_editor": "Cargando el editor de tarjetas…",
+    "no_visual_editor": "Esta tarjeta no tiene editor visual. Edita su configuración JSON:",
     "dwains_dashboard_blueprint": "Dwains Dashboard Blueprint",
     "use_dwains_dashboard_blueprint": "Usar un Blueprint de Dwain Dashboard para crear una tarjeta",
     "row_span": "Intervalo de filas",
@@ -56,6 +59,8 @@
     "hide_all": "Hide all entities",
     "exclude": "Exclude entity in DD",
     "hide": "Ocultar entidad en DD",
+    "hide_in_area": "Ocultar en las vistas de áreas",
+    "unhide_in_area": "Mostrar en las vistas de áreas",
     "unhide": "Mostrar entidad",
     "use_popup_card": "Utilizar su propia tarjeta emergente",
     "use_entity_card": "Utilice su propia tarjeta de entidad",
@@ -299,6 +304,7 @@
     "name_required": "Debe especificar un nombre para la página.",
     "icon_required": "Si desea agregarla a la barra de navegación, debe seleccionar un icono.",
     "add_navbar": "Agregar esta página extra en la barra de navegación principal",
+    "remove_navbar": "Quitar esta página extra de la barra de navegación principal",
     "name": "Nombre de la página extra",
     "icon": "Icono de la página extra"
   },

@@ -25,6 +25,9 @@
   "editor": {
     "lovelace_card": "Lovelacekort",
     "create_lovelace_card": "Skapa ett nytt lovelacekort från början",
+    "select_card_for": "Välj ett kort för",
+    "loading_card_editor": "Läser in kortredigeraren…",
+    "no_visual_editor": "Det här kortet har ingen visuell redigerare. Redigera dess JSON-konfiguration:",
     "dwains_dashboard_blueprint": "Dwains Dashboard-blueprint",
     "use_dwains_dashboard_blueprint": "Använd en Dwains Dashboard-blueprint för att skapa ett kort",
     "row_span": "Radspann",
@@ -56,6 +59,8 @@
     "hide_all": "Göm alla entiteter",
     "exclude": "Exkludera entitet i DD",
     "hide": "Dölj entitet i DD",
+    "hide_in_area": "Dölj i områdesvyer",
+    "unhide_in_area": "Visa i områdesvyer",
     "unhide": "Ta fram entitet",
     "use_popup_card": "Använd eget pop up-kort",
     "use_entity_card": "Använd eget entitetskort",
@@ -299,6 +304,7 @@
     "name_required": "Du måste ange ett namn för sidan",
     "icon_required": "Om du vill lägga till den till navigationslisten måste du välja en ikon!",
     "add_navbar": "Lägg till denna mersida till huvudnavigationslisten",
+    "remove_navbar": "Ta bort den här sidan från huvudnavigeringen",
     "name": "Namn på mersida",
     "icon": "Ikon för mersida"
   },
