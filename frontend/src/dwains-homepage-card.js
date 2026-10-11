@@ -33,6 +33,7 @@ const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
 const { DisconnectGrace } = require('./disconnect-grace');
 const { CardReuse, attachDeferredCard, cardReuseKey } = require('./deferred-card');
+const { entityCardConfig } = require('./entity-card-config');
 const { entitySettingsFromConfiguration } = require('./entity-settings-config');
 const { createHomepageCardElement, propagateHomepageHass } = require('./homepage-card-runtime');
 const { areaSensorDeviceClasses, groupingMode, readBooleanCookie, resolveGroupingPreference } = require('./homepage-preferences');
@@ -506,170 +507,14 @@ function getDwainsHass() {
               const customPopup = this.configuration['entities'][entity] && this.configuration['entities'][entity]['custom_popup'] ? this.configuration['entities'][entity]['custom_popup'] : false;
               const isFavorite = this.configuration['entities'][entity] && this.configuration['entities'][entity]['favorite'] ? this.configuration['entities'][entity]['favorite'] : false;
 
-              let cardConfig = {};
-              let rowSpan = "1";
-              let colSpan = "1";
-              let rowSpanLg = "1";
-              let colSpanLg = "1";
-              let rowSpanXl = "1";
-              let colSpanXl = "1";
-              if(customCard && this.configuration['entity_cards'] && this.configuration['entity_cards'][entity]){
-                //If entity has a custom card set by user
-                cardConfig = {input_name: friendlyName, input_entity: entity,...this.configuration['entity_cards'][entity]};
-              } else if(this.configuration['devices_card'][domain]){
-                //If domain has a custom card set by user
-                cardConfig = {input_name: friendlyName, input_entity: entity,...this.configuration['devices_card'][domain]};
-	              } else if (domain === 'sensor' && this._hass && this._hass.states[entity]?.attributes?.unit_of_measurement
-	              && !this.configuration['homepage_header']['disable_sensor_graph']) {
-	                cardConfig = {
-	                  graph: "line",
-	                  type: "sensor",
-	                  hours_to_show: 24,
-	                  detail: 1,
-	                  entity: entity,
-	                  ...(friendlyName ? { name: friendlyName } : {})
-	                };
-	              } else {
-                switch(domain) {
-	                  default:
-                    // cardConfig = {
-                    //   type: "custom:dwains-button-card",
-                    //   friendly_name: friendlyName
-                    // };
-	                    cardConfig = friendlyName ? {
-	                      type: "tile",
-	                      name: friendlyName,
-	                    } : {
-	                      type: "tile",
-	                    }
-	                    break;
-	                  case "camera":
-	                    cardConfig = {
-	                      type: "picture-entity",
-	                      camera_view: "auto"
-	                    };
-                    rowSpan = "2";
-                    colSpan = "2";
-                    rowSpanLg = "2";
-                    colSpanLg = "2";
-                    rowSpanXl = "2";
-                    colSpanXl = "2";
-                    break;
-                  case "climate":
-                    // cardConfig = {
-                    //   type: "custom:dwains-thermostat-card",
-                    //   friendly_name: friendlyName
-                    // };
-	                    cardConfig = friendlyName ? {
-	                      type: "thermostat",
-	                      name: friendlyName,
-	                      features: [
-                        {
-                          type: "climate-fan-modes",
-                          fan_modes: ["quiet","low","medium","high"],
-                        },
-                        {
-                          type: "climate-hvac-modes",
-                          hvac_modes: ["heat_cool","heat","dry","fan_only","cool","off"]
-	                        }
-	                      ]
-	                    } : {
-	                      type: "thermostat",
-	                      features: [
-	                        {
-	                          type: "climate-fan-modes",
-	                          fan_modes: ["quiet","low","medium","high"],
-	                        },
-	                        {
-	                          type: "climate-hvac-modes",
-	                          hvac_modes: ["heat_cool","heat","dry","fan_only","cool","off"]
-	                        }
-	                      ]
-	                    }
-	                    break;
-                  case "cover":
-                    // cardConfig = {
-                    //   type: "custom:dwains-cover-card",
-                    //   friendly_name: friendlyName
-                    // };
-	                    cardConfig = friendlyName ? {
-	                      type: "tile",
-	                      name: friendlyName,
-	                      features: [
-                        {
-                          type: "cover-open-close"
-                        },
-                        {
-                          type: "cover-position"
-	                        }
-	                      ]
-	                    } : {
-	                      type: "tile",
-	                      features: [
-	                        {
-	                          type: "cover-open-close"
-	                        },
-	                        {
-	                          type: "cover-position"
-	                        }
-	                      ]
-	                    }
-	                    break;
-                  case "light":
-                    // cardConfig = {
-                    //   type: "custom:dwains-light-card",
-                    //   friendly_name: friendlyName
-                    // };
-	                    cardConfig = friendlyName ? {
-	                      type: "tile",
-	                      name: friendlyName,
-	                      features: [
-                        {
-                          type: "light-brightness",
-	                        }
-	                      ]
-	                    } : {
-	                      type: "tile",
-	                      features: [
-	                        {
-	                          type: "light-brightness",
-	                        }
-	                      ]
-	                    };
-	                    break;
-                }
-
-                cardConfig = {entity: entity,...cardConfig};
-              }
-
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['row_span']){
-                rowSpan = this.configuration['entities'][entity]['row_span'];
-              }
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['col_span']){
-                colSpan = this.configuration['entities'][entity]['col_span'];
-              }
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['row_span_lg']){
-                rowSpanLg = this.configuration['entities'][entity]['row_span_lg'];
-              }
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['col_span_lg']){
-                colSpanLg = this.configuration['entities'][entity]['col_span_lg'];
-              }
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['row_span_xl']){
-                rowSpanXl = this.configuration['entities'][entity]['row_span_xl'];
-              }
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['col_span_xl']){
-                colSpanXl = this.configuration['entities'][entity]['col_span_xl'];
-              }
+              const { config: cardConfig, spans } = entityCardConfig({
+                entityId: entity, domain, friendlyName, configuration: this.configuration, stateObj: this._hass?.states[entity],
+              });
 
 	              favoritesEntities.push(attachDeferredCard({
                 domain: domain,
                 entity: entity,
-                rowSpan: rowSpan,
-                colSpan: colSpan,
-                rowSpanLg: rowSpanLg,
-                colSpanLg: colSpanLg,
-                rowSpanXl: rowSpanXl,
-                colSpanXl: colSpanXl,
+                ...spans,
                 friendlyName: configuredFriendlyName,
                 hideEntity: hideEntity,
                 excludeEntity: excludeEntity,
@@ -733,171 +578,15 @@ function getDwainsHass() {
                     //Also add the entity to the normal area entities because a hidden entity is still used in area button (states)
                     areaEntities.add(entity.entity_id);
                   } else {
-                    let cardConfig = {};
-                    let rowSpan = "1";
-                    let colSpan = "1";
-                    let rowSpanLg = "1";
-                    let colSpanLg = "1";
-                    let rowSpanXl = "1";
-                    let colSpanXl = "1";
-                    if(customCard && this.configuration['entity_cards'] && this.configuration['entity_cards'][entity.entity_id]){
-                      //If entity has a custom card set by user
-                      cardConfig = {input_name: friendlyName,input_entity: entity.entity_id,...this.configuration['entity_cards'][entity.entity_id]};
-                    } else if(this.configuration['devices_card'][domain]){
-                      //If domain has a custom card set by user
-                      cardConfig = {input_name: friendlyName,input_entity: entity.entity_id,...this.configuration['devices_card'][domain]};
-	                    } else if (domain === 'sensor' && this._hass && this._hass.states[entity.entity_id]?.attributes?.unit_of_measurement
-	                    && !this.configuration['homepage_header']['disable_sensor_graph']) {
-	                      cardConfig = {
-	                        graph: "line",
-	                        type: "sensor",
-	                        hours_to_show: 24,
-	                        detail: 1,
-	                        entity: entity.entity_id,
-	                        ...(friendlyName ? { name: friendlyName } : {})
-	                      };
-	                    } else {
-                      switch(domain) {
-	                        default:
-                          // cardConfig = {
-                          //   type: "custom:dwains-button-card",
-                          //   friendly_name: friendlyName
-                          // };
-	                          cardConfig = friendlyName ? {
-	                            type: "tile",
-	                            name: friendlyName,
-	                          } : {
-	                            type: "tile",
-	                          }
-	                          break;
-	                        case "camera":
-	                          cardConfig = {
-	                            type: "picture-entity",
-	                            camera_view: "auto"
-	                          };
-                          rowSpan = "2";
-                          colSpan = "2";
-                          rowSpanLg = "2";
-                          colSpanLg = "2";
-                          rowSpanXl = "2";
-                          colSpanXl = "2";
-                          break;
-                        case "climate":
-                          // cardConfig = {
-                          //   type: "custom:dwains-thermostat-card",
-                          //   friendly_name: friendlyName
-                          // };
-	                          cardConfig = friendlyName ? {
-	                            type: "thermostat",
-	                            name: friendlyName,
-	                            features: [
-                              {
-                                type: "climate-fan-modes",
-                                fan_modes: ["quiet","low","medium","high"],
-                              },
-                              {
-                                type: "climate-hvac-modes",
-                                hvac_modes: ["heat_cool","heat","dry","fan_only","cool","off"]
-	                              }
-	                            ]
-	                          } : {
-	                            type: "thermostat",
-	                            features: [
-	                              {
-	                                type: "climate-fan-modes",
-	                                fan_modes: ["quiet","low","medium","high"],
-	                              },
-	                              {
-	                                type: "climate-hvac-modes",
-	                                hvac_modes: ["heat_cool","heat","dry","fan_only","cool","off"]
-	                              }
-	                            ]
-	                          }
-	                          break;
-                        case "cover":
-                          // cardConfig = {
-                          //   type: "custom:dwains-cover-card",
-                          //   friendly_name: friendlyName
-                          // };
-	                          cardConfig = friendlyName ? {
-	                            type: "tile",
-	                            name: friendlyName,
-	                            features: [
-                              {
-                                type: "cover-open-close"
-                              },
-                              {
-                                type: "cover-position"
-	                              }
-	                            ]
-	                          } : {
-	                            type: "tile",
-	                            features: [
-	                              {
-	                                type: "cover-open-close"
-	                              },
-	                              {
-	                                type: "cover-position"
-	                              }
-	                            ]
-	                          }
-	                          break;
-                        case "light":
-                          // cardConfig = {
-                          //   type: "custom:dwains-light-card",
-                          //   friendly_name: friendlyName
-                          // };
-	                          cardConfig = friendlyName ? {
-	                            type: "tile",
-	                            name: friendlyName,
-	                            features: [
-                              {
-                                type: "light-brightness",
-	                              }
-	                            ]
-	                          } : {
-	                            type: "tile",
-	                            features: [
-	                              {
-	                                type: "light-brightness",
-	                              }
-	                            ]
-	                          };
-	                          break;
-                      }
-
-                      cardConfig = {entity: entity.entity_id,...cardConfig};
-                    }
-
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['row_span']){
-                      rowSpan = this.configuration['entities'][entity.entity_id]['row_span'];
-                    }
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['col_span']){
-                      colSpan = this.configuration['entities'][entity.entity_id]['col_span'];
-                    }
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['row_span_lg']){
-                      rowSpanLg = this.configuration['entities'][entity.entity_id]['row_span_lg'];
-                    }
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['col_span_lg']){
-                      colSpanLg = this.configuration['entities'][entity.entity_id]['col_span_lg'];
-                    }
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['row_span_xl']){
-                      rowSpanXl = this.configuration['entities'][entity.entity_id]['row_span_xl'];
-                    }
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['col_span_xl']){
-                      colSpanXl = this.configuration['entities'][entity.entity_id]['col_span_xl'];
-                    }
+                    const { config: cardConfig, spans } = entityCardConfig({
+                      entityId: entity.entity_id, domain, friendlyName, configuration: this.configuration, stateObj,
+                    });
 
 
                     areaCardsByDomain.push(attachDeferredCard({
                       domain: domain,
                       entity: entity.entity_id,
-                      rowSpan: rowSpan,
-                      colSpan: colSpan,
-                      rowSpanLg: rowSpanLg,
-                      colSpanLg: colSpanLg,
-                      rowSpanXl: rowSpanXl,
-                      colSpanXl: colSpanXl,
+                      ...spans,
                       friendlyName: configuredFriendlyName,
                       hideEntity: hideEntity,
                       excludeEntity: excludeEntity,
