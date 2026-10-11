@@ -1,5 +1,7 @@
 {
   "global": {
+    "confirm_delete": "Really delete? This cannot be undone.",
+    "confirm_delete_named": "Delete “{name}”? This cannot be undone.",
     "save_failed": "Saving failed",
     "reload_after_update": "Dwains Dashboard was updated. Reload the page to use all of it again.",
     "reload": "Reload",

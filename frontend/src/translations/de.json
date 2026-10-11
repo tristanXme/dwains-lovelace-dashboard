@@ -1,5 +1,7 @@
 {
   "global": {
+    "confirm_delete": "Wirklich löschen? Das lässt sich nicht rückgängig machen.",
+    "confirm_delete_named": "„{name}“ löschen? Das lässt sich nicht rückgängig machen.",
     "save_failed": "Speichern fehlgeschlagen",
     "reload_after_update": "Dwains Dashboard wurde aktualisiert. Lade die Seite neu, um wieder alles nutzen zu können.",
     "reload": "Neu laden",

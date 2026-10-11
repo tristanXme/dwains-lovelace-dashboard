@@ -1,5 +1,7 @@
 {
   "global": {
+    "confirm_delete": "确定删除吗？此操作无法撤销。",
+    "confirm_delete_named": "删除“{name}”吗？此操作无法撤销。",
     "save_failed": "保存失败",
     "reload_after_update": "Dwains Dashboard 已更新。请重新加载页面以继续使用全部功能。",
     "reload": "重新加载",

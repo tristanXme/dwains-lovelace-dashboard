@@ -1,5 +1,7 @@
 {
   "global": {
+    "confirm_delete": "Eliminar mesmo? Não é possível anular.",
+    "confirm_delete_named": "Eliminar «{name}»? Não é possível anular.",
     "save_failed": "Falha ao guardar",
     "reload_after_update": "O Dwains Dashboard foi atualizado. Recarregue a página para voltar a usar tudo.",
     "reload": "Recarregar",

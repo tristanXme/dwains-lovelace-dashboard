@@ -28,7 +28,10 @@ Security, stability and performance release of DD3.
   `secrets.yaml` values, dashboard templates run in a Jinja sandbox.
   `!include` and Jinja includes only read files inside the dashboard folders
   (`dwains-dashboard/` without its backups, `hki-user/` and the bundled
-  views).
+  views). The `dwains_dashboard.reload` service is for administrators only,
+  like Home Assistant's own reload services.
+- **Changed:** deleting a more page, a custom card or popup, or a blueprint
+  asks first; these files are deleted without a backup.
 - **Changed: `!secret` is no longer supported in dashboard files.** Every
   value in the dashboard is visible to every user who can open it, so a
   secret resolved there was not secret anymore. A dashboard file that still

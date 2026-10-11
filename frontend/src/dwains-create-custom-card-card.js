@@ -1,6 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import translateEngine from './translate-engine';
-import { showSaveError } from './save-error-toast';
+import { askDelete, showSaveError } from './save-error-toast';
 import { closePopup } from "./helpers";
 const { readSelectEvent } = require('./select-event-value');
 const { websocketReadStore } = require('./websocket-read-store');
@@ -314,6 +314,7 @@ class DwainsCreateCustomCardCard extends LitElement {
       );
     }
     _removeCard(){
+      if (!askDelete(this.hass)) return;
       this.hass.callWS({
         type: 'dwains_dashboard/remove_card',
         area_id: this.area_id,
@@ -336,6 +337,7 @@ class DwainsCreateCustomCardCard extends LitElement {
     }
     _handleDeleteBlueprintClicked(ev){
       const blueprint = ev.currentTarget.blueprint;
+      if (!askDelete(this.hass, blueprint)) return;
       this.hass.callWS({
         type: 'dwains_dashboard/delete_blueprint',
         blueprint: blueprint

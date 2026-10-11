@@ -518,6 +518,38 @@ for (const colorScheme of ["light", "dark"]) {
       await page.waitForTimeout(500);
     });
 
+    await step("deleting a more page asks first", async () => {
+      await page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), { type: "dwains_dashboard/edit_more_page", name: "Zum Löschen", card_data: '{"type":"markdown"}' });
+      await page.goto(BASE + "/dwains-dashboard/more_page");
+      const pageKey = () => deep(page, (all) => {
+        const pages = all.find((el) => el.localName === "more-pages-card")?.configuration?.more_pages || {};
+        return Object.keys(pages).find((key) => pages[key].name === "Zum Löschen") || "";
+      });
+      const key = await poll(pageKey, "new more page");
+      // The page menus are shown in edit mode.
+      await deep(page, (all) => { all.find((el) => el.localName === "more-pages-card").editMode = true; });
+      await poll(() => deep(page, (all, key) => [...(all.find((el) => el.localName === "more-pages-card")?.shadowRoot?.querySelectorAll("ha-dropdown-item") || [])].some((item) => item.more_page === key), key), "page menu");
+      const clickRemove = () => deep(page, (all, key) => {
+        const card = all.find((el) => el.localName === "more-pages-card");
+        [...card.shadowRoot.querySelectorAll("ha-dropdown-item")]
+          .find((item) => item.more_page === key && item.querySelector("ha-icon")?.icon === "mdi:trash-can")
+          .click();
+      }, key);
+      const messages = [];
+      // Cancelled: the page stays.
+      page.once("dialog", (dialog) => { messages.push(dialog.message()); dialog.dismiss(); });
+      await clickRemove();
+      await page.waitForTimeout(1500);
+      assert.equal(await pageKey(), key);
+      // Confirmed: it is removed.
+      page.once("dialog", (dialog) => { messages.push(dialog.message()); dialog.accept(); });
+      await clickRemove();
+      await poll(async () => (await pageKey()) === "", "more page removed");
+      assert.equal(messages.length, 2);
+      assert.match(messages[0], /„Zum Löschen“ löschen\?/);
+      await deep(page, (all) => { all.find((el) => el.localName === "more-pages-card").editMode = false; });
+    });
+
     // The integration's options (Settings → Devices & services → Dwains
     // Dashboard → Configure), used through Home Assistant's own dialog.
     const flow = page.locator("dialog-data-entry-flow");

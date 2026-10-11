@@ -3,7 +3,7 @@ import {
   SUPPORTED_CARDS_WITH_ENTITY
  } from './variables'
 import translateEngine from './translate-engine';
-import { showSaveError } from './save-error-toast';
+import { askDelete, showSaveError } from './save-error-toast';
 import { closePopup } from "./helpers";
 const { websocketReadStore } = require('./websocket-read-store');
 const { installBlueprint } = require('./blueprint-install');
@@ -300,6 +300,7 @@ class DwainsEditEntityCardCard extends LitElement {
       this.requestUpdate();
     }
     _removeCard(){
+      if (!askDelete(this.hass)) return;
       this.hass.callWS({
         type: 'dwains_dashboard/remove_entity_card',
         entityId: this.entity_id,
@@ -314,6 +315,7 @@ class DwainsEditEntityCardCard extends LitElement {
     }
     _handleDeleteBlueprintClicked(ev){
       const blueprint = ev.currentTarget.blueprint;
+      if (!askDelete(this.hass, blueprint)) return;
       this.hass.callWS({
         type: 'dwains_dashboard/delete_blueprint',
         blueprint: blueprint

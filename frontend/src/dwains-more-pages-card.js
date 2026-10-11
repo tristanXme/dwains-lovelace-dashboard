@@ -7,7 +7,7 @@ import { mdiDotsVertical, mdiNotePlus, mdiCog, mdiPencil } from "@mdi/js";
 import { css, html, LitElement } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import translateEngine from './translate-engine';
-import { showSaveError } from './save-error-toast';
+import { askDelete, showSaveError } from './save-error-toast';
 const { loadSortable } = require('./lazy-modules');
 import { subtleMorePagesStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
@@ -225,6 +225,7 @@ class MorePagesCard extends LitElement {
           closeParentDropdown(ev);
           ev.stopPropagation();
           const morePage = ev.currentTarget.more_page;
+          if (!askDelete(this._hass, this.configuration?.more_pages?.[morePage]?.name || morePage)) return;
           this._hass.callWS({
             type: 'dwains_dashboard/remove_more_page',
             foldername: morePage,

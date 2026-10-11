@@ -2,7 +2,7 @@ import { navigate } from './frontend-helpers';
 import { css, html, LitElement } from 'lit';
 import { checkRowStyles, toggleCheckRow } from './styles/form-styles';
 import translateEngine from './translate-engine';
-import { showSaveError } from './save-error-toast';
+import { askDelete, showSaveError } from './save-error-toast';
 import { closePopup } from "./helpers";
 const { websocketReadStore } = require('./websocket-read-store');
 const { installBlueprint } = require('./blueprint-install');
@@ -494,6 +494,7 @@ class DwainsEditMorePageCard extends LitElement {
 
     async _removeMorePage(){
     if(this._saving) return;
+    if (!askDelete(this._hass, this.name || this.foldername)) return;
     this._saving = true;
     this._saveError = undefined;
     try {
@@ -514,6 +515,7 @@ class DwainsEditMorePageCard extends LitElement {
     }
     _handleDeleteBlueprintClicked(ev){
     const blueprint = ev.currentTarget.blueprint;
+    if (!askDelete(this._hass, blueprint)) return;
     this._hass.callWS({
         type: 'dwains_dashboard/delete_blueprint',
         blueprint: blueprint

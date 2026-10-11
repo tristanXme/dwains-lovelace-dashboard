@@ -1,5 +1,7 @@
 {
   "global": {
+    "confirm_delete": "Vraiment supprimer ? Cette action est irréversible.",
+    "confirm_delete_named": "Supprimer « {name} » ? Cette action est irréversible.",
     "save_failed": "L'enregistrement a échoué",
     "reload_after_update": "Dwains Dashboard a été mis à jour. Rechargez la page pour pouvoir tout utiliser à nouveau.",
     "reload": "Recharger",

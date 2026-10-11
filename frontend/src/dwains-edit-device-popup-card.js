@@ -1,6 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import translateEngine from './translate-engine';
-import { showSaveError } from './save-error-toast';
+import { askDelete, showSaveError } from './save-error-toast';
 import { closePopup } from "./helpers";
 const { websocketReadStore } = require('./websocket-read-store');
 const { installBlueprint } = require('./blueprint-install');
@@ -259,6 +259,7 @@ class DwainsEditDevicePopupCard extends LitElement {
         this.requestUpdate();
       }
       _removeCard(){
+        if (!askDelete(this.hass)) return;
         this.hass.callWS({
           type: 'dwains_dashboard/remove_device_popup',
           domain: this.domain,
@@ -273,6 +274,7 @@ class DwainsEditDevicePopupCard extends LitElement {
       }
       _handleDeleteBlueprintClicked(ev){
         const blueprint = ev.currentTarget.blueprint;
+        if (!askDelete(this.hass, blueprint)) return;
         this.hass.callWS({
           type: 'dwains_dashboard/delete_blueprint',
           blueprint: blueprint

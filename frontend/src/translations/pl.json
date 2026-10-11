@@ -1,5 +1,7 @@
 {
   "global": {
+    "confirm_delete": "Na pewno usunąć? Tego nie można cofnąć.",
+    "confirm_delete_named": "Usunąć „{name}”? Tego nie można cofnąć.",
     "save_failed": "Zapisywanie nie powiodło się",
     "reload_after_update": "Dwains Dashboard został zaktualizowany. Odśwież stronę, aby znów korzystać ze wszystkich funkcji.",
     "reload": "Odśwież",
