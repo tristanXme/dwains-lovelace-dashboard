@@ -24,8 +24,7 @@ for (const file of readdirSync(translations).filter((name) => name.endsWith(".js
 }
 
 // Small modules registered globally by the integration; not bundled. The
-// preloaded layout gets the layout styles the bundle uses, the loader the
-// language file names.
+// preloaded layout gets its styles, the loader the language file names.
 const fillIn = (source, placeholder, value) => {
   if (!source.includes(placeholder)) throw new Error(`${placeholder} not found`);
   return source.replace(placeholder, () => JSON.stringify(value));

@@ -2,57 +2,15 @@ import { selectTree } from "./card-tools-compat";
 import {
   computeDomain
 } from './frontend-helpers';
-const { isInvalidDwainsCardElement } = require('./card-element-validation');
-const { defineDwainsElement } = require('./custom-element-registration');
+const { isDwainsElementName } = require('./custom-element-registration');
 const { closeCardToolsPopup } = require('./popup-host');
-const { getDwainsRuntimeState } = require('./runtime-state');
 const { isEditorTag, loadEditors } = require('./lazy-modules');
 
-const getUsableDwainsConstructor = (tag) => {
-  const runtimeState = getDwainsRuntimeState();
-  const usable = (ctor) => Boolean(
-    ctor?.prototype && typeof ctor.prototype.setConfig === 'function'
-  );
-  return (usable(runtimeState.originalConstructors?.[tag]) && runtimeState.originalConstructors[tag])
-    || (usable(runtimeState.constructors?.[tag]) && runtimeState.constructors[tag])
-    || (usable(customElements.get(tag)) && customElements.get(tag));
-};
-
-const waitForDwainsConstructor = async (tag) => {
-  let ctor = getUsableDwainsConstructor(tag);
-  // The blueprint card is registered asynchronously. Wait for its real class
-  // instead of letting HA create an un-upgraded element without setConfig().
-  for (let attempt = 0; !ctor && attempt < 100; attempt++) {
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    ctor = getUsableDwainsConstructor(tag);
-  }
-  return ctor;
-};
-
-const createDwainsElement = async (tag, ctor, config, hassObj) => {
-  const fixedTag = `${tag}-ddfix`;
-  if (!customElements.get(fixedTag)) {
-    defineDwainsElement(fixedTag, class extends ctor {});
-  }
-  const element = document.createElement(fixedTag);
-  if (customElements.upgrade) customElements.upgrade(element);
-  if (typeof element.setConfig !== 'function') {
-    throw new TypeError(`${fixedTag}.setConfig is not a function`);
-  }
-  // Cards and dialogs read hass in setConfig; give it to them first.
-  if (hassObj) element.hass = hassObj;
-  await element.setConfig(config);
-  return element;
-};
-
-/** Create a Lovelace card while surviving HA scoped-registry replacements. */
+/** Create a Lovelace card, a Dwains card ready configured. */
 export async function createCardElementSafe(cardHelpers, config, hassObj) {
   const tag = typeof config?.type === 'string'
     ? config.type.replace(/^custom:/, '')
     : '';
-  const isDwainsCard = tag.startsWith('dwains-')
-    || ['homepage-card', 'devices-card', 'more-page-card', 'more-pages-card'].includes(tag);
-  let originalError;
 
   if (isEditorTag(tag)) {
     try {
@@ -62,32 +20,21 @@ export async function createCardElementSafe(cardHelpers, config, hassObj) {
     }
   }
 
-  if (isDwainsCard) {
-    const ctor = await waitForDwainsConstructor(tag);
-    if (ctor) {
-      try {
-        const element = await createDwainsElement(tag, ctor, config, hassObj);
-        return element;
-      } catch (err) {
-        originalError = err;
-      }
+  if (isDwainsElementName(tag) && customElements.get(tag)) {
+    // Dwains cards and dialogs read hass in setConfig and some set up
+    // asynchronously, so they get hass first and are awaited. An error
+    // leaves it to Home Assistant, which shows it in an error card.
+    try {
+      const element = document.createElement(tag);
+      if (hassObj) element.hass = hassObj;
+      await element.setConfig(config);
+      return element;
+    } catch (err) {
+      console.error(`Dwains Dashboard: failed to create ${tag}`, err);
     }
   }
 
-  let element;
-  try {
-    element = await cardHelpers.createCardElement(config);
-  } catch (err) {
-    originalError = originalError || err;
-  }
-
-  const invalidDwainsElement = isInvalidDwainsCardElement(element, isDwainsCard);
-  if (invalidDwainsElement) {
-    const ctor = getUsableDwainsConstructor(tag);
-    if (ctor) element = await createDwainsElement(tag, ctor, config);
-  }
-
-  if (!element) throw originalError || new Error(`Unable to create card: ${config?.type || 'unknown'}`);
+  const element = await cardHelpers.createCardElement(config);
   if (hassObj) element.hass = hassObj;
   return element;
 }

@@ -13,7 +13,7 @@ const bundleUrl = "http://ha.local/dwains_dashboard/js/dwains-dashboard.js?versi
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 // Runs the loader the way postbuild.mjs ships it, with a fake window.
-function runLoader({ language, hassLanguage, fetch, languageFiles = { de: "lang/de.1234.json" } } = {}) {
+function runLoader({ language, hassLanguage, fetch, languageFiles = { de: "lang/de.1234.json" }, customElements } = {}) {
   const imports = [];
   const preloads = [];
   const window = {
@@ -30,6 +30,7 @@ function runLoader({ language, hassLanguage, fetch, languageFiles = { de: "lang/
       head: { appendChild: (link) => preloads.push(link) },
     },
     fetch,
+    customElements,
     addEventListener() {},
   };
   const run = new Function(
@@ -95,4 +96,61 @@ test("loader still starts the bundle when the strings fail", async () => {
   } finally {
     console.error = originalError;
   }
+});
+
+// Before Home Assistant's app has run, window.customElements is the registry
+// the app replaces.
+function registryBeforeApp() {
+  let define;
+  const defined = new Promise((resolve) => { define = resolve; });
+  return {
+    define,
+    customElements: {
+      get: () => undefined,
+      whenDefined: (name) => {
+        assert.equal(name, "home-assistant");
+        return defined;
+      },
+    },
+  };
+}
+
+test("loader runs the bundle only once Home Assistant's registry is final", async () => {
+  const registry = registryBeforeApp();
+  const { imports, preloads } = runLoader({ customElements: registry.customElements });
+  await tick();
+  assert.deepEqual(imports, [], "the bundle waits for the app");
+  assert.equal(preloads[0].rel, "modulepreload", "but it downloads meanwhile");
+  assert.equal(preloads[0].href, bundleUrl);
+
+  registry.define();
+  await tick();
+  assert.deepEqual(imports, [bundleUrl]);
+});
+
+test("loader waits for the strings and the registry, in any order", async () => {
+  const registry = registryBeforeApp();
+  let respond;
+  const fetch = () => new Promise((resolve) => { respond = resolve; });
+  const { imports, preloads } = runLoader({ language: "de", fetch, customElements: registry.customElements });
+  assert.equal(preloads.length, 1);
+  registry.define();
+  await tick();
+  assert.deepEqual(imports, [], "the strings are still loading");
+
+  respond({ ok: true, json: async () => ({}) });
+  await tick();
+  await tick();
+  assert.deepEqual(imports, [bundleUrl]);
+});
+
+test("loader does not wait once Home Assistant's app has run", async () => {
+  const customElements = {
+    get: (name) => (name === "home-assistant" ? class {} : undefined),
+    whenDefined: () => assert.fail("nothing to wait for"),
+  };
+  const { imports, preloads } = runLoader({ customElements });
+  await tick();
+  assert.deepEqual(imports, [bundleUrl]);
+  assert.deepEqual(preloads, []);
 });

@@ -346,12 +346,12 @@ for (const colorScheme of ["light", "dark"]) {
         return Boolean(button);
       }, token.areaId), "edit button");
       return poll(() => deep(page, (all) => {
-        const card = all.find((el) => el.tagName.startsWith("DWAINS-EDIT-AREA-BUTTON-CARD"));
+        const card = all.find((el) => el.localName === "dwains-edit-area-button-card");
         return card?.shadowRoot?.querySelector("ha-entity-picker") && card;
       }), "edit dialog");
     };
     const areaDialog = (fn) => deep(page, (all, src) => {
-      const card = all.find((el) => el.tagName.startsWith("DWAINS-EDIT-AREA-BUTTON-CARD"));
+      const card = all.find((el) => el.localName === "dwains-edit-area-button-card");
       return new Function("card", src)(card);
     }, fn);
 
@@ -371,7 +371,7 @@ for (const colorScheme of ["light", "dark"]) {
       assert.equal(await areaDialog("return card.hideIcon"), true);
       assert.equal(await areaDialog(`return ${label}.querySelector('ha-checkbox').checked`), true);
       await areaDialog("card.shadowRoot.querySelector('ha-button[slot=primaryAction]').click()");
-      await poll(() => deep(page, (all) => !all.some((el) => el.tagName.startsWith("DWAINS-EDIT-AREA-BUTTON-CARD") && el.isConnected && el.offsetParent)), "dialog closed");
+      await poll(() => deep(page, (all) => !all.some((el) => el.localName === "dwains-edit-area-button-card" && el.isConnected && el.offsetParent)), "dialog closed");
       await page.waitForTimeout(1500);
       await openAreaDialog();
       await poll(() => areaDialog("return card.hideIcon === true"), "saved setting");
@@ -456,8 +456,7 @@ for (const colorScheme of ["light", "dark"]) {
     // The editors of own cards and popups, opened from the menus.
     const configurationGet = () => page.evaluate(() => document.querySelector("home-assistant").hass.callWS({ type: "dwains_dashboard/configuration/get" }));
     const inEditor = (tag, src) => deep(page, (all, [tag, src]) => {
-      // Registered with a suffix (defineDwainsElement).
-      const editor = all.find((el) => el.localName.startsWith(tag) && el.isConnected);
+      const editor = all.find((el) => el.localName === tag && el.isConnected);
       return editor ? new Function("editor", src)(editor) : undefined;
     }, [tag, src]);
     const clickItem = async (match, text) => {
@@ -731,7 +730,7 @@ for (const colorScheme of ["light", "dark"]) {
       await page.goto(BASE + "/dwains-dashboard/more_page");
       await poll(() => deep(page, (all) => all.find((el) => el.localName === "more-pages-card")?.shadowRoot?.querySelector("ha-dropdown")), "more pages");
       await clickMenuItem(page, "more-pages-card", "", ".");
-      await poll(() => deep(page, (all) => all.some((el) => el.tagName.startsWith("DWAINS-EDIT-MORE-PAGE-CARD") && el.shadowRoot?.childElementCount)), "create dialog");
+      await poll(() => deep(page, (all) => all.some((el) => el.localName === "dwains-edit-more-page-card" && el.shadowRoot?.childElementCount)), "create dialog");
       // The popup shows its title in Home Assistant's dialog header.
       const title = await deep(page, (all) => {
         const heading = all.find((el) => el.localName === "card-tools-popup")?.shadowRoot?.querySelector('[slot="headerTitle"]');
@@ -892,6 +891,32 @@ for (const colorScheme of ["light", "dark"]) {
         for (let index = errors.length - 1; index >= 0; index -= 1) {
           if (/failed to load the editors|editors\.[0-9a-f]+\.js|ChunkLoadError|Loading chunk/i.test(errors[index])) errors.splice(index, 1);
         }
+      }
+    });
+
+    await step("the dashboard loads also when its files arrive before Home Assistant's app", async () => {
+      // On a slow connection the dashboard's small files run before Home
+      // Assistant's app, which then replaces window.customElements. Holding
+      // the app back makes that order certain.
+      const slow = await context.newPage();
+      const messages = [];
+      slow.on("console", (message) => {
+        if (["warning", "error"].includes(message.type())) messages.push(message.text());
+      });
+      slow.on("pageerror", (error) => messages.push(error.message));
+      await slow.route(/\/frontend_latest\/app\.[0-9a-f]+\.js/, async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        await route.continue();
+      });
+      try {
+        await slow.goto(BASE + "/dwains-dashboard/home");
+        await poll(() => deep(slow, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("°C"))), "homepage");
+        await slow.waitForTimeout(1000);
+        const errorCards = await deep(slow, (all) => all.filter((el) => el.localName === "hui-error-card" && el.offsetParent !== null).length);
+        assert.equal(errorCards, 0, "no error cards");
+        assert.deepEqual(messages.filter((text) => /dwains|Illegal constructor/i.test(text)), []);
+      } finally {
+        await slow.close();
       }
     });
   }

@@ -9,15 +9,15 @@ const { version } = require("./custom_components/dwains_dashboard/manifest.json"
 
 // Every module registers its custom elements as a side effect, so all of
 // them are entry points. The order matches the 3.10.1 bundle: runtime fixes
-// first, the layout before the cards that render inside it. The editors
-// (frontend/src/editors.js) and Sortable are split off and loaded on first
-// use, see frontend/src/lazy-modules.js. Strings for languages other than
-// English are separate files written by scripts/postbuild.mjs.
+// first. The view layout is not bundled; the integration loads it on every
+// page (frontend/src/standalone/dwains-dashboard-layout-preload.js). The
+// editors (frontend/src/editors.js) and Sortable are split off and loaded on
+// first use, see frontend/src/lazy-modules.js. Strings for languages other
+// than English are separate files written by scripts/postbuild.mjs.
 const ENTRIES = [
     "./frontend/src/dwains-runtime-fixes.js",
     "./frontend/src/dwains-blueprint-card.js",
     "./frontend/src/dwains-more-pages-card.js",
-    "./frontend/src/dwains-dashboard-layout.js",
     "./frontend/src/dwains-heading-card.js",
     "./frontend/src/dwains-more-page-card.js",
     "./frontend/src/dwains-house-information-more-info-card.js",
@@ -60,12 +60,6 @@ module.exports = (_env, argv) => ({
           compress: { pure_funcs: ["console.log"] },
         },
       }),
-    ],
-  },
-  module: {
-    rules: [
-      // Plain stylesheets are imported as text (see dwains-dashboard-layout.js).
-      { test: /\.css$/, type: "asset/source" },
     ],
   },
   plugins: [

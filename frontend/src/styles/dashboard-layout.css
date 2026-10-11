@@ -1,6 +1,5 @@
-/* Styles of the dwains-dashboard-layout view. Used by the bundle
-   (dwains-dashboard-layout.js) and, written in by scripts/postbuild.mjs, by
-   the preloaded layout (standalone/dwains-dashboard-layout-preload.js). */
+/* Styles of the dwains-dashboard-layout view, written into
+   standalone/dwains-dashboard-layout-preload.js by scripts/postbuild.mjs. */
 
 /* The Lovelace header is hidden, and with it the space it keeps for the
    notch / status bar (viewport-fit=cover). Keep that space here; the values

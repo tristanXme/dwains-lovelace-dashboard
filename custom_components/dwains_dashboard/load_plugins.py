@@ -37,9 +37,9 @@ def remove_frontend_plugins(hass) -> None:
 async def load_plugins(hass, name):
     #_LOGGER.warning(f"load_plugins() version: {VERSION}")
 
-    # Load the tiny layout preload FIRST so the custom view layout element is
-    # defined before HA renders the dashboard view (the big bundle loads async
-    # and otherwise loses the race -> "Configuration error" on the whole view).
+    # The tiny layout preload and the loader run on every page: the view
+    # layout is defined before HA shows the dashboard, and the loader loads the
+    # bundle with the cards on the dashboard's routes.
     register_frontend_plugins(hass)
 
     domain_data = get_domain_data(hass)

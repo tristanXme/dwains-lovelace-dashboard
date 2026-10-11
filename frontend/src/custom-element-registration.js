@@ -1,29 +1,15 @@
 "use strict";
 
-const { getDwainsRuntimeState } = require("./runtime-state");
-
 function isDwainsElementName(name) {
   if (typeof name !== "string") return false;
-  const publicName = name.endsWith("-ddfix") ? name.slice(0, -6) : name;
   return (
-    publicName.startsWith("dwains-")
-    || publicName === "homepage-card"
-    || publicName === "devices-card"
-    || publicName === "more-page-card"
-    || publicName === "more-pages-card"
-    || publicName === "dwainsboard-navigation-card"
+    name.startsWith("dwains-")
+    || name === "homepage-card"
+    || name === "devices-card"
+    || name === "more-page-card"
+    || name === "more-pages-card"
+    || name === "dwainsboard-navigation-card"
   );
-}
-
-function captureDwainsConstructor(name, constructor, windowObject, reportError) {
-  try {
-    const state = getDwainsRuntimeState(windowObject);
-    (state.constructors ||= {})[name] = constructor;
-    const originals = (state.originalConstructors ||= {});
-    if (!originals[name]) originals[name] = constructor;
-  } catch (error) {
-    reportError("[dwains] failed to capture constructor:", name, error);
-  }
 }
 
 function defineOwnedElement(
@@ -54,12 +40,7 @@ function defineDwainsElement(name, constructor, options = {}) {
   if (!isDwainsElementName(name)) {
     throw new TypeError(`Not a Dwains custom-element name: ${name}`);
   }
-  const {
-    windowObject = typeof window === "undefined" ? undefined : window,
-    reportError = (...args) => console.error(...args),
-  } = options;
-  captureDwainsConstructor(name, constructor, windowObject, reportError);
-  return defineOwnedElement(name, constructor, { ...options, reportError });
+  return defineOwnedElement(name, constructor, options);
 }
 
 module.exports = {

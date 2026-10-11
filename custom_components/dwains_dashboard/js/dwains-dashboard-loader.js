@@ -105,20 +105,31 @@
 
   const LANGUAGE_WAIT_MS = 3000;
 
+  // When its app starts, Home Assistant replaces window.customElements with
+  // a scoped registry polyfill, and elements defined before that stay
+  // unknown to it. This file loads in parallel with the app, so the bundle,
+  // which defines its elements when it runs, waits for the final registry:
+  // the app defines <home-assistant> on it right after the replacement.
+  const registryWait = () => {
+    const registry = window.customElements;
+    if (!registry || registry.get("home-assistant")) return undefined;
+    return registry.whenDefined("home-assistant");
+  };
+
   const load = () => {
     if (!isDwainsRoute() || runtimeState.routeBundleRequested) return;
     runtimeState.routeBundleRequested = true;
     const url = bundleUrl();
     const code = languageCode();
-    let ready = Promise.resolve();
+    const waits = [registryWait()].filter(Boolean);
     if (code && !runtimeState.translations?.[code]) {
-      preloadModule(url);
-      ready = Promise.race([
+      waits.push(Promise.race([
         requestLanguage(code),
         new Promise((resolve) => setTimeout(resolve, LANGUAGE_WAIT_MS)),
-      ]);
+      ]));
     }
-    ready.then(() => import(url)).catch((err) => {
+    if (waits.length) preloadModule(url);
+    Promise.all(waits).then(() => import(url)).catch((err) => {
       runtimeState.routeBundleRequested = false;
       console.error("Dwains Dashboard: failed to load route bundle", err);
     });

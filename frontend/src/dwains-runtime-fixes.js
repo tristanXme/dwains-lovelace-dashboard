@@ -1,7 +1,3 @@
-const {
-  reportRuntimeWindowError,
-  reportUnhandledRejection,
-} = require('./runtime-error-reporter');
 const { iconDbRecovery } = require('./icon-db-recovery');
 const { registerLazyCard } = require('./lazy-card');
 const { getDwainsRuntimeState } = require('./runtime-state');
@@ -17,6 +13,12 @@ import { showReloadHint } from './save-error-toast';
     return;
   }
   runtimeState.bundleLoaded = true;
+  // Injected by webpack from manifest.json, the single source of the version.
+  console.info(
+    `%c DWAINS-DASHBOARD-JS \n%c Version ${__DD_VERSION__}`,
+    "color: #2fbae5; font-weight: bold; background: black",
+    "color: white; font-weight: bold; background: dimgray"
+  );
 
   iconDbRecovery.start();
 
@@ -24,9 +26,5 @@ import { showReloadHint } from './save-error-toast';
 
   // Parts that cannot be loaded after an update: ask for a reload.
   setLoadFailureHandler(showReloadHint);
-
-  // Error handler: log diagnostics without suppressing browser error reporting.
-  window.addEventListener('error', reportRuntimeWindowError, true);
-  window.addEventListener('unhandledrejection', reportUnhandledRejection);
 
 })();
