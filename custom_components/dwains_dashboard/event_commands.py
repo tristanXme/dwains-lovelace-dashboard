@@ -1,6 +1,7 @@
 """Permission-safe WebSocket subscriptions for dashboard-owned events."""
 
-from typing import Any, Mapping
+from typing import Any
+from collections.abc import Mapping
 
 import voluptuous as vol
 

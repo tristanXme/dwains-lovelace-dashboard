@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import Any, Mapping
+from typing import Any
+from collections.abc import Mapping
 
 import voluptuous as vol
 from homeassistant.components import websocket_api

@@ -3,7 +3,8 @@ import voluptuous as vol
 import homeassistant.util.dt as dt_util
 
 from collections import OrderedDict
-from typing import Any, Mapping, MutableMapping, Optional
+from typing import Any
+from collections.abc import Mapping, MutableMapping
 
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
@@ -65,8 +66,8 @@ def dismiss(hass, notification_id):
 def async_create(
     hass: HomeAssistant,
     message: str,
-    title: Optional[str] = None,
-    notification_id: Optional[str] = None,
+    title: str | None = None,
+    notification_id: str | None = None,
 ) -> None:
     """Generate a notification."""
     data = {

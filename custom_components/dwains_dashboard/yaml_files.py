@@ -7,7 +7,8 @@ import os
 import stat
 import tempfile
 from collections import OrderedDict
-from typing import Any, Callable, TextIO
+from typing import Any, TextIO
+from collections.abc import Callable
 
 import yaml
 from yaml.representer import Representer
