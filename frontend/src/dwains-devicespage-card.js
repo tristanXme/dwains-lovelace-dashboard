@@ -677,7 +677,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                             ${translateEngine(this._hass, 'device.title_plural')}
                           </h2>
                           <span class="text-gray">
-                            ${Object.keys(this.data).length} ${translateEngine(this._hass, 'device.title_plural')}
+                            ${Object.keys(this.data).length} ${translateEngine(this._hass, 'device.types')}
                           </span>
                         </div>
                         <div>

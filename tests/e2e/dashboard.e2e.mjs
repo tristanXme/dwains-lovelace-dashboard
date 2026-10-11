@@ -514,6 +514,13 @@ for (const colorScheme of ["light", "dark"]) {
       await poll(() => deep(page, (all) => all.find((el) => el.localName === "more-pages-card")?.shadowRoot?.querySelector("ha-dropdown")), "more pages");
       await clickMenuItem(page, "more-pages-card", "", ".");
       await poll(() => deep(page, (all) => all.some((el) => el.tagName.startsWith("DWAINS-EDIT-MORE-PAGE-CARD") && el.shadowRoot?.childElementCount)), "create dialog");
+      // The popup shows its title in Home Assistant's dialog header.
+      const title = await deep(page, (all) => {
+        const heading = all.find((el) => el.localName === "card-tools-popup")?.shadowRoot?.querySelector('[slot="headerTitle"]');
+        const rect = heading?.getBoundingClientRect();
+        return rect?.width && rect?.height ? heading.textContent.trim() : "";
+      });
+      assert.match(title, /Weitere Seite/);
       await page.keyboard.press("Escape");
       await page.waitForTimeout(500);
     });

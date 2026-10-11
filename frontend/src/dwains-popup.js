@@ -114,27 +114,12 @@ export async function popUp(title, card, large=false, style={}, fullscreen=false
             <ha-dialog
               open
               @closed=${this.closeDialog}
-              .heading=${true}
-              hideActions
+              .width=${this.fullscreen ? "full" : this.large ? "large" : "medium"}
               @ll-rebuild=${this._handleCardRebuild}
             >
-            ${this.fullscreen
-              ? html`<div slot="heading"></div>`
-              : html`
-                <app-toolbar slot="heading">
-                  <ha-icon-button
-                    label=${"dismiss"}
-                    dialogAction="cancel"
-                  >
-                    <ha-icon
-                      .icon=${"mdi:close"}
-                    ></ha-icon>
-                  </ha-icon-button>
-                  <div class="main-title" @click=${this._enlarge}>
-                    ${this.title}
-                  </div>
-                </app-toolbar>
-              `}
+            ${this.fullscreen ? "" : html`
+              <span slot="headerTitle" class="main-title" @click=${this._enlarge}>${this.title}</span>
+            `}
               <div class="content">
                 ${this.card}
               </div>
@@ -144,39 +129,10 @@ export async function popUp(title, card, large=false, style={}, fullscreen=false
 
         static get styles() {
           return [css`
-          ha-dialog {
-            --mdc-dialog-min-width: 400px;
-            --mdc-dialog-max-width: min(95vw, 960px);
-            --mdc-dialog-heading-ink-color: var(--primary-text-color);
-            --mdc-dialog-content-ink-color: var(--primary-text-color);
-            --justify-action-buttons: space-between;
-          }
-          @media all and (max-width: 450px), all and (max-height: 500px) {
-            ha-dialog {
-              --mdc-dialog-min-width: 100vw;
-              --mdc-dialog-max-width: 100vw;
-              --mdc-dialog-min-height: 100%;
-              --mdc-dialog-max-height: 100%;
-              --mdc-shape-medium: 0px;
-              --vertial-align-dialog: flex-end;
-            }
-          }
-
-          app-toolbar {
-            flex-shrink: 0;
-            color: var(--primary-text-color);
-            // background-color: var(--secondary-background-color);
-            display: flex;
-            flex-direction: row;
-            align-items: flex-start;
-          }
-
+          /* Home Assistant's dialog (since 2026.5): the title goes into its
+             headerTitle slot, the size is its width (medium, large, full). */
           .main-title {
-            flex: 1;
-            font-size: 22px;
-            line-height: 28px;
-            font-weight: 400;
-            padding: 14px 4px 10px 4px;
+            display: block;
             min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -199,29 +155,6 @@ export async function popUp(title, card, large=false, style={}, fullscreen=false
             min-width: 0;
           }
 
-          @media all and (max-width: 450px), all and (max-height: 500px) {
-            app-toolbar {
-              background-color: var(--app-header-background-color);
-              color: var(--app-header-text-color, white);
-            }
-          }
-
-          @media all and (min-width: 451px) and (min-height: 501px) {
-            ha-dialog {
-              --mdc-dialog-max-width: 90vw;
-            }
-
-            .content {
-              width: min(600px, calc(90vw - 48px));
-            }
-            :host([large]) .content {
-              width: calc(90vw - 48px);
-            }
-
-            :host([large]) app-toolbar {
-              max-width: calc(90vw - 32px);
-            }
-          }
           `, subtlePopupStyles(css)];
         }
 

@@ -215,6 +215,8 @@
     }
   },
   "device": {
+    "types": "enhetstyper",
+    "tts": "Text till tal",
     "opening": "Öppning",
     "garage_door": "Garageport",
     "valve": "Ventil",
@@ -289,6 +291,8 @@
     "empty_no_entities_hint": "Enhetssidan visar entiteter som hör till ett område samt personer, väder och larm. Tilldela enheter eller entiteter till områden i Home Assistant."
   },
   "more": {
+    "empty": "Inga fler sidor ännu",
+    "empty_hint": "Fler sidor visar valfria kort, till exempel kameror, kalendrar eller diagram. De visas här och, om du vill, i navigeringsfältet.",
     "title": "Mer",
     "title_plural": "Mersidor",
     "pages": "sidor",

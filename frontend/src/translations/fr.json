@@ -215,6 +215,8 @@
     }
   },
   "device": {
+    "types": "types d'appareils",
+    "tts": "Synthèse vocale",
     "opening": "Ouverture",
     "garage_door": "Porte de garage",
     "valve": "Vanne",
@@ -288,6 +290,8 @@
     "empty_no_entities_hint": "La page des appareils affiche les entités rattachées à une pièce, ainsi que les personnes, la météo et l'alarme. Attribuez des appareils ou des entités à des pièces dans Home Assistant."
   },
   "more": {
+    "empty": "Pas encore de pages supplémentaires",
+    "empty_hint": "Les pages supplémentaires affichent n'importe quelle carte, par exemple des caméras, des calendriers ou des graphiques. Elles apparaissent ici et, si vous le souhaitez, dans la barre de navigation.",
     "title": "Ajouter",
     "title_plural": "Ajouter une page",
     "pages": "Pages",

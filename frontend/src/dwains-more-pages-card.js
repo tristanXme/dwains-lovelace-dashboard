@@ -7,6 +7,7 @@ import { mdiDotsVertical, mdiNotePlus, mdiCog, mdiPencil } from "@mdi/js";
 import { css, html, LitElement } from 'lit';
 import { keyed } from 'lit/directives/keyed.js';
 import translateEngine from './translate-engine';
+import { emptyStateStyles, renderEmptyState } from './empty-state-view';
 import { askDelete, showSaveError } from './save-error-toast';
 const { loadSortable } = require('./lazy-modules');
 import { subtleMorePagesStyles } from './styles/dwains-subtle-style';
@@ -612,6 +613,14 @@ class MorePagesCard extends LitElement {
                         ${this._sortError.message || this._sortError}
                       </div>
                     ` : ""}
+                    ${morePages.length ? "" : renderEmptyState(
+                      this._hass,
+                      'more',
+                      'no_more_pages',
+                      this._hass.user?.is_admin
+                        ? { label: translateEngine(this._hass, 'more.create'), onClick: (ev) => this._handleCreateMorePageClicked(ev) }
+                        : undefined,
+                    )}
                     ${keyed(this._gridRevision, html`
                       <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 xl-grid-cols-4 gap-4 sortable">
                         ${morePages.map(([key, data]) => this._renderPageButton(key, data))}
@@ -622,7 +631,7 @@ class MorePagesCard extends LitElement {
         }
 
         static get styles() {
-          return [css`
+          return [emptyStateStyles, css`
             :host {
               display: block;
               box-sizing: border-box;

@@ -1,6 +1,7 @@
 "use strict";
 
-// What the homepage and the devices page show when they have nothing to list,
+// What the homepage, the devices page and the more pages show when they have
+// nothing to list,
 // and a safe selection for an empty list.
 
 // The selected id while it is still listed, else the first one, or "" when
@@ -32,6 +33,7 @@ const EMPTY_STATE_TEXTS = Object.freeze({
   no_entities: { title: "area.empty_no_entities", hint: "area.empty_no_entities_hint", icon: "mdi:devices" },
   all_domains_hidden: { title: "device.empty_all_hidden", hint: "device.empty_all_hidden_hint", icon: "mdi:eye-off-outline" },
   no_devices: { title: "device.empty_no_entities", hint: "device.empty_no_entities_hint", icon: "mdi:devices" },
+  no_more_pages: { title: "more.empty", hint: "more.empty_hint", icon: "mdi:view-grid-plus-outline" },
 });
 
 function emptyStateTexts(page, reason) {

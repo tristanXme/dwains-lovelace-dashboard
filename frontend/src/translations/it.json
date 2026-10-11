@@ -215,6 +215,8 @@
     }
   },
   "device": {
+    "types": "tipi di dispositivo",
+    "tts": "Sintesi vocale",
     "opening": "Apertura",
     "garage_door": "Porta del garage",
     "valve": "Valvola",
@@ -289,6 +291,8 @@
     "empty_no_entities_hint": "La pagina dei dispositivi mostra le entità che appartengono a un'area, oltre a persone, meteo e allarme. Assegna dispositivi o entità alle aree in Home Assistant."
   },
   "more": {
+    "empty": "Ancora nessuna pagina aggiuntiva",
+    "empty_hint": "Le pagine aggiuntive mostrano qualsiasi scheda, per esempio telecamere, calendari o grafici. Compaiono qui e, se vuoi, nella barra di navigazione.",
     "title": "Di più",
     "title_plural": "Più pagine",
     "pages": "pagine",

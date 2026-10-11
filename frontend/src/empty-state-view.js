@@ -2,8 +2,9 @@ import { css, html } from 'lit';
 import translateEngine from './translate-engine';
 const { emptyStateTexts } = require('./empty-state');
 
-// The message a page shows instead of its tiles when it has none.
-export function renderEmptyState(hass, page, reason) {
+// The message a page shows instead of its tiles when it has none, with an
+// optional button ({ label, onClick }) for the first step.
+export function renderEmptyState(hass, page, reason, action = undefined) {
   const texts = emptyStateTexts(page, reason);
   if (!texts) return '';
   return html`
@@ -11,6 +12,7 @@ export function renderEmptyState(hass, page, reason) {
       <ha-icon .icon=${texts.icon}></ha-icon>
       <h3>${translateEngine(hass, texts.title)}</h3>
       <p>${translateEngine(hass, texts.hint)}</p>
+      ${action ? html`<ha-button @click=${action.onClick}>${action.label}</ha-button>` : ''}
     </div>
   `;
 }

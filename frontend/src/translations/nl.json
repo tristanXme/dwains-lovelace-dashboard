@@ -215,6 +215,8 @@
     }
   },
   "device": {
+    "types": "apparaattypen",
+    "tts": "Tekst-naar-spraak",
     "opening": "Opening",
     "garage_door": "Garagedeur",
     "valve": "Klep",
@@ -289,6 +291,8 @@
     "empty_no_entities_hint": "De apparatenpagina toont entiteiten die bij een ruimte horen, plus personen, weer en alarm. Wijs in Home Assistant apparaten of entiteiten toe aan ruimtes."
   },
   "more": {
+    "empty": "Nog geen extra pagina's",
+    "empty_hint": "Extra pagina's tonen willekeurige kaarten, bijvoorbeeld camera's, agenda's of grafieken. Ze verschijnen hier en desgewenst in de navigatiebalk.",
     "title": "Meer",
     "title_plural": "Meer pagina's",
     "pages": "pagina's",

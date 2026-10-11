@@ -2,6 +2,7 @@ import { html } from 'lit';
 import { mdiDotsVertical, mdiCog } from "@mdi/js";
 import { clientPreferences } from '../client-preferences';
 import translateEngine from '../translate-engine';
+import { deviceTypeName } from '../device-type-name';
 const { closeParentDropdown } = require('../dropdown-controller');
 const { entityRecoveryActions } = require('../entity-settings-config');
 
@@ -225,7 +226,7 @@ export const DeviceViewMixin = (Base) => class extends Base {
             <div class="dd-detail-view-header flex justify-between">
               <div class="dd-detail-view-title">
                 <h2 class="font-semibold text-lg capitalize">
-                  ${translateEngine(this._hass, 'device.'+data.domain)}
+                  ${deviceTypeName(this._hass, data.domain)}
                 </h2>
                 <span class="text-gray">
                   ${data.cards.length} ${translateEngine(this._hass, 'entity.title_plural')}

@@ -2,6 +2,7 @@ import { html } from 'lit';
 import { mdiDotsVertical } from "@mdi/js";
 import { DOMAIN_ICONS } from '../variables';
 import translateEngine from '../translate-engine';
+import { deviceTypeName } from '../device-type-name';
 
 // The overview of device type buttons on the devices page.
 export const DeviceButtonsMixin = (Base) => class extends Base {
@@ -10,7 +11,7 @@ export const DeviceButtonsMixin = (Base) => class extends Base {
         <div>
           <ha-card class="p-2">
             <span class="break-words">
-            ${translateEngine(this._hass, 'device.'+domain)}
+            ${deviceTypeName(this._hass, domain)}
             </span>
           </ha-card>
           <ha-card>
@@ -52,7 +53,7 @@ _renderDeviceButton(data){
               ></ha-icon>` : ""}
           </div>
           <div class="w-full">
-            <h3 class="font-semibold text-lg capitalize">${translateEngine(this._hass, 'device.'+deviceDomain)}</h3>
+            <h3 class="font-semibold text-lg capitalize">${deviceTypeName(this._hass, deviceDomain)}</h3>
           </div>
         </div>
             <div class="row-span-2 text-right space-y-0.5 info">

@@ -215,6 +215,8 @@
     }
   },
   "device": {
+    "types": "种设备类型",
+    "tts": "文字转语音",
     "opening": "开合",
     "garage_door": "车库门",
     "valve": "阀门",
@@ -293,6 +295,8 @@
     "empty_no_entities_hint": "设备页面显示属于某个区域的实体，以及人员、天气和警报。请在 Home Assistant 中为区域分配设备或实体。"
   },
   "more": {
+    "empty": "还没有更多页面",
+    "empty_hint": "更多页面可以显示任意卡片，例如摄像头、日历或图表。它们显示在这里，也可以按需显示在导航栏中。",
     "title": "更多",
     "title_plural": "更多页面",
     "pages": "页",

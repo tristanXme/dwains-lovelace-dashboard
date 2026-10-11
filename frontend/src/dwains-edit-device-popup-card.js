@@ -1,5 +1,6 @@
 import { css, html, LitElement } from 'lit';
 import translateEngine from './translate-engine';
+import { deviceTypeName } from './device-type-name';
 import { askDelete, showSaveError } from './save-error-toast';
 import { closePopup } from "./helpers";
 const { websocketReadStore } = require('./websocket-read-store');
@@ -431,7 +432,7 @@ class DwainsEditDevicePopupCard extends LitElement {
           return html`
             <div class="edit-element">
               <p>
-                ${translateEngine(this.hass,'device.current_blueprint_popup')} ${translateEngine(this.hass,'device.'+this.domain)}:<br>
+                ${translateEngine(this.hass,'device.current_blueprint_popup')} ${deviceTypeName(this.hass, this.domain)}:<br>
                 <strong>${this.blueprints['blueprints'][this.cardConfig.blueprint]["blueprint"]["name"]}</strong><br>
                 ${this.blueprints['blueprints'][this.cardConfig.blueprint]["blueprint"]["description"]}
               </p>

@@ -222,6 +222,8 @@
     }
   },
   "device": {
+    "types": "Gerätetypen",
+    "tts": "Sprachausgabe",
     "opening": "Öffnung",
     "garage_door": "Garagentor",
     "valve": "Ventil",
@@ -300,6 +302,8 @@
     "empty_no_entities_hint": "Die Geräteseite zeigt Entitäten, die zu einem Bereich gehören, dazu Personen, Wetter und Alarm. Ordne in Home Assistant Geräte oder Entitäten Bereichen zu."
   },
   "more": {
+    "empty": "Noch keine weiteren Seiten",
+    "empty_hint": "Weitere Seiten zeigen beliebige Karten, z. B. Kameras, Kalender oder Grafiken. Sie erscheinen hier und auf Wunsch in der Navigationsleiste.",
     "title": "Weitere",
     "title_plural": "Weitere Seiten",
     "pages": "Seiten",

@@ -222,6 +222,8 @@
     }
   },
   "device": {
+    "types": "device types",
+    "tts": "Text to speech",
     "opening": "Opening",
     "garage_door": "Garage door",
     "valve": "Valve",
@@ -300,6 +302,8 @@
     "empty_no_entities_hint": "The devices page lists entities that belong to an area, plus people, weather and alarm. Assign devices or entities to areas in Home Assistant."
   },
   "more": {
+    "empty": "No more pages yet",
+    "empty_hint": "More pages show any cards, for example cameras, calendars or charts. They appear here and, if you like, in the navigation bar.",
     "title": "More",
     "title_plural": "More pages",
     "pages": "pages",

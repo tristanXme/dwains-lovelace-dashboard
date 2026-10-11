@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { navigate } from './frontend-helpers';
 import { fireEvent } from './card-tools-compat';
 import translateEngine from './translate-engine';
+import { deviceTypeName } from './device-type-name';
 import { subtleNavigationStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
 const { EventListenerOwner } = require('./event-listener-owner');
@@ -442,7 +443,7 @@ class DwainsNavigationCard extends LitElement {
                                     .path=${"/dwains-dashboard/devices#"+k}
                                 >
                                     <ha-icon icon="${v["icon"]}"></ha-icon>
-                                    <span>${translateEngine(this._hass,'device.'+k)}</span>
+                                    <span>${deviceTypeName(this._hass, k)}</span>
                                 </button>`: ""}
                         `
                     )}

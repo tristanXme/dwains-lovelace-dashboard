@@ -215,6 +215,8 @@
     }
   },
   "device": {
+    "types": "tipos de dispositivo",
+    "tts": "Texto para voz",
     "opening": "Abertura",
     "garage_door": "Portão da garagem",
     "valve": "Válvula",
@@ -284,6 +286,8 @@
     "empty_no_entities_hint": "A página de dispositivos mostra entidades que pertencem a uma área, além de pessoas, meteorologia e alarme. Atribua dispositivos ou entidades a áreas no Home Assistant."
   },
   "more": {
+    "empty": "Ainda sem páginas adicionais",
+    "empty_hint": "As páginas adicionais mostram quaisquer cartões, por exemplo câmaras, calendários ou gráficos. Aparecem aqui e, se quiser, na barra de navegação.",
     "title": "Mais",
     "title_plural": "Páginas adicionais",
     "pages": "Páginas",

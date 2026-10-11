@@ -2,6 +2,7 @@ import { popUp } from "../dwains-popup";
 import { fireEvent } from "../card-tools-compat";
 const { loadSortable } = require('../lazy-modules');
 import translateEngine from '../translate-engine';
+import { deviceTypeName } from '../device-type-name';
 import { showSaveError } from '../save-error-toast';
 const { savingSortableOptions } = require('../sortable-save');
 const { closeParentDropdown } = require('../dropdown-controller');
@@ -230,7 +231,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
 
       this._popupOpens.schedule(() => {
         fireEvent("hass-more-info", {entityId: ""}, this);
-        popUp(translateEngine(this._hass, 'device.edit_device_card')+translateEngine(this._hass, 'device.'+domain), {
+        popUp(translateEngine(this._hass, 'device.edit_device_card')+deviceTypeName(this._hass, domain), {
           type: "custom:dwains-edit-device-card-card",
           domain: domain,
           cardConfig: cardConfig,
@@ -253,7 +254,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
 
       this._popupOpens.schedule(() => {
         fireEvent("hass-more-info", {entityId: ""}, this);
-        popUp(translateEngine(this._hass, 'device.edit_device_popup')+translateEngine(this._hass, 'device.'+domain), {
+        popUp(translateEngine(this._hass, 'device.edit_device_popup')+deviceTypeName(this._hass, domain), {
           type: "custom:dwains-edit-device-popup-card",
           domain: domain,
           cardConfig: cardConfig,

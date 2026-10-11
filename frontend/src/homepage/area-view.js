@@ -1,6 +1,7 @@
 import { mdiArrowLeft, mdiDotsVertical, mdiCog } from '@mdi/js';
 import { html } from 'lit';
 import translateEngine from '../translate-engine';
+import { deviceTypeName } from '../device-type-name';
 const { entityRecoveryActions } = require('../entity-settings-config');
 
 // Area detail view: entity cards, custom cards and grouping by domain.
@@ -111,7 +112,7 @@ export const AreaViewMixin = (Base) => class extends Base {
         ${sortedGroup.map((key) =>
           html`
             <div class="mb-5">
-              <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'device.'+key)}</h3>
+              <h3 class="font-semibold capitalize text-gray">${deviceTypeName(this._hass, key)}</h3>
               <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable ${this._areaViewGridLayout()}">
                 ${Object.entries(group[key]).map(([k,v]) => html`${this._renderAreaViewCard(v)}`)}
               </div>

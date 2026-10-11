@@ -215,6 +215,8 @@
     }
   },
   "device": {
+    "types": "typy urządzeń",
+    "tts": "Zamiana tekstu na mowę",
     "opening": "Otwarcie",
     "garage_door": "Brama garażowa",
     "valve": "Zawór",
@@ -289,6 +291,8 @@
     "empty_no_entities_hint": "Strona urządzeń pokazuje encje należące do obszaru oraz osoby, pogodę i alarm. Przypisz urządzenia lub encje do obszarów w Home Assistant."
   },
   "more": {
+    "empty": "Brak dodatkowych stron",
+    "empty_hint": "Dodatkowe strony pokazują dowolne karty, np. kamery, kalendarze lub wykresy. Pojawiają się tutaj i, jeśli chcesz, na pasku nawigacji.",
     "title": "Więcej",
     "title_plural": "Więcej stron",
     "pages": "Strony",
