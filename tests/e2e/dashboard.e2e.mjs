@@ -329,6 +329,34 @@ for (const colorScheme of ["light", "dark"]) {
       await page.waitForTimeout(1500);
     });
 
+    await step("the area dialog chooses which sensor counts per type", async () => {
+      const tile = () => deep(page, (all, areaId) => all.find((el) => el.classList?.contains("area-button") && el.dataset.areaId === areaId)?.querySelector(".sensors")?.textContent.replace(/\s+/g, " ").trim(), token.areaId);
+      await openAreaDialog();
+      const temperature = "[...card.shadowRoot.querySelectorAll('ha-entity-picker.sensor-type')].find((row) => row.includeEntities.includes('sensor.thermometer_sofa'))";
+      // Both thermometers of the room are offered; empty is the average.
+      assert.deepEqual([...await areaDialog(`return ${temperature}.includeEntities`)].sort(), ["sensor.temperatur_wohnzimmer", "sensor.thermometer_sofa"]);
+      assert.equal(await areaDialog(`return ${temperature}.value`), "");
+      assert.match(await areaDialog(`return ${temperature}.placeholder`), /^Durchschnitt aller \(2\)$/);
+      // Every entity picker of the dialog shows the entity ids, and sensors
+      // can be added like the binary sensors.
+      assert.deepEqual(await areaDialog("return [...card.shadowRoot.querySelectorAll('ha-entity-picker')].map((picker) => picker.showEntityId)").then((ids) => [...new Set(ids)]), [true]);
+      assert.ok(await areaDialog("return Boolean(card.shadowRoot.querySelector('ha-entity-picker.extra-sensors')) && Boolean(card.shadowRoot.querySelector('ha-entity-picker.entity-list-binary_sensor'))"));
+      await areaDialog(`${temperature}.dispatchEvent(new CustomEvent('value-changed', { detail: { value: 'sensor.thermometer_sofa' } }))`);
+      assert.deepEqual(await areaDialog("return card.sensorEntities"), ["sensor.thermometer_sofa"]);
+      await areaDialog("card.shadowRoot.querySelector('ha-button[slot=primaryAction]').click()");
+      // The tile shows that sensor instead of the average.
+      await poll(async () => /^19 °C/.test(await tile() || ""), "chosen sensor on the tile");
+      await page.waitForTimeout(1000);
+      await openAreaDialog();
+      assert.equal(await areaDialog(`return ${temperature}.value`), "sensor.thermometer_sofa");
+      // Back to the average for the remaining tests.
+      await areaDialog(`${temperature}.dispatchEvent(new CustomEvent('value-changed', { detail: { value: '' } }))`);
+      assert.deepEqual(await areaDialog("return card.sensorEntities"), []);
+      await areaDialog("card.shadowRoot.querySelector('ha-button[slot=primaryAction]').click()");
+      await poll(async () => !/^19 °C/.test(await tile() || "19"), "average on the tile");
+      await page.waitForTimeout(1000);
+    });
+
     await step("the devices page lists the device types and opens one", async () => {
       await page.goto(BASE + "/dwains-dashboard/devices");
       const types = await poll(() => deep(page, (all) => {

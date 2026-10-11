@@ -24,6 +24,11 @@ template:
         device_class: temperature
         state_class: measurement
         state: "{{ (21 + (now().minute % 5) / 2) | round(1) }}"
+      - name: "Thermometer Sofa"
+        unique_id: e2e_temp_sofa
+        unit_of_measurement: "°C"
+        device_class: temperature
+        state: "19"
       - name: "Luftfeuchte Wohnzimmer"
         unique_id: e2e_hum_living
         unit_of_measurement: "%"

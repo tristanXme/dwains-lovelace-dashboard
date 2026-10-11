@@ -78,8 +78,11 @@
     "title": "Home"
   },
   "area": {
-    "sensor_entities": "Sensors below the area name",
-    "sensor_entities_helper": "Their values are shown below the area name. A chosen sensor replaces the average of its kind in this area (for example one thermometer instead of the average of all).",
+    "sensor_values": "Values below the area name",
+    "sensor_values_helper": "Per sensor type the average of all sensors in the area (field empty) or one chosen sensor. The integration settings decide which types appear.",
+    "sensor_average": "Average of all ({count})",
+    "extra_sensor_entities": "More sensors below the area name",
+    "extra_sensor_entities_helper": "Sensors of other types whose value is also shown below the area name (for example rain or wind).",
     "binary_sensor_entities": "Binary sensors below the area name",
     "binary_sensor_entities_helper": "Their state is shown after the values, for example \"Window: Open\".",
     "title": "Area",

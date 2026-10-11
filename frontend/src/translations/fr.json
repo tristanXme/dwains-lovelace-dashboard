@@ -71,8 +71,11 @@
     "title": "Accueil"
   },
   "area": {
-    "sensor_entities": "Capteurs sous le nom de la pièce",
-    "sensor_entities_helper": "Leurs valeurs s'affichent sous le nom de la pièce. Un capteur choisi remplace la moyenne de son type dans cette pièce (par exemple un thermomètre au lieu de la moyenne de tous).",
+    "sensor_values": "Valeurs sous le nom de la pièce",
+    "sensor_values_helper": "Par type de capteur, la moyenne de tous les capteurs de la pièce (champ vide) ou un capteur choisi. Les paramètres de l'intégration définissent les types affichés.",
+    "sensor_average": "Moyenne de tous ({count})",
+    "extra_sensor_entities": "Autres capteurs sous le nom de la pièce",
+    "extra_sensor_entities_helper": "Capteurs d'autres types dont la valeur s'affiche en plus sous le nom de la pièce (par exemple pluie ou vent).",
     "binary_sensor_entities": "Capteurs binaires sous le nom de la pièce",
     "binary_sensor_entities_helper": "Leur état s'affiche après les valeurs, par exemple « Fenêtre : Ouverte ».",
     "graph_entity": "Graphique dans la tuile de la pièce",

@@ -71,8 +71,11 @@
     "title": "Strona główna"
   },
   "area": {
-    "sensor_entities": "Czujniki pod nazwą obszaru",
-    "sensor_entities_helper": "Ich wartości są pokazywane pod nazwą obszaru. Wybrany czujnik zastępuje w tym obszarze średnią swojego rodzaju (np. jeden termometr zamiast średniej ze wszystkich).",
+    "sensor_values": "Wartości pod nazwą obszaru",
+    "sensor_values_helper": "Dla każdego rodzaju czujnika średnia ze wszystkich czujników w obszarze (puste pole) lub jeden wybrany czujnik. Ustawienia integracji decydują, które rodzaje są pokazywane.",
+    "sensor_average": "Średnia ze wszystkich ({count})",
+    "extra_sensor_entities": "Dodatkowe czujniki pod nazwą obszaru",
+    "extra_sensor_entities_helper": "Czujniki innych rodzajów, których wartość jest pokazywana dodatkowo pod nazwą obszaru (np. deszcz lub wiatr).",
     "binary_sensor_entities": "Czujniki binarne pod nazwą obszaru",
     "binary_sensor_entities_helper": "Ich stan jest pokazywany po wartościach, np. \"Okno: Otwarte\".",
     "graph_entity": "Wykres na kafelku obszaru",

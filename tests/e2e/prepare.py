@@ -91,6 +91,7 @@ async def _setup(config_dir: Path) -> None:
             )
             entity_ids = (
                 "sensor.temperatur_wohnzimmer",
+                "sensor.thermometer_sofa",
                 "sensor.luftfeuchte_wohnzimmer",
                 "binary_sensor.fenster_wohnzimmer",
                 "input_boolean.e2e_lamp",

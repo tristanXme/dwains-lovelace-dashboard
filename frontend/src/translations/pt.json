@@ -71,8 +71,11 @@
     "title": "Inicio"
   },
   "area": {
-    "sensor_entities": "Sensores sob o nome da divisão",
-    "sensor_entities_helper": "Os seus valores aparecem sob o nome da divisão. Um sensor escolhido substitui nesta divisão a média do seu tipo (por exemplo um termómetro em vez da média de todos).",
+    "sensor_values": "Valores sob o nome da divisão",
+    "sensor_values_helper": "Por tipo de sensor, a média de todos os sensores da divisão (campo vazio) ou um sensor escolhido. As definições da integração decidem que tipos aparecem.",
+    "sensor_average": "Média de todos ({count})",
+    "extra_sensor_entities": "Mais sensores sob o nome da divisão",
+    "extra_sensor_entities_helper": "Sensores de outros tipos cujo valor também aparece sob o nome da divisão (por exemplo chuva ou vento).",
     "binary_sensor_entities": "Sensores binários sob o nome da divisão",
     "binary_sensor_entities_helper": "O seu estado aparece depois dos valores, por exemplo \"Janela: Aberta\".",
     "graph_entity": "Gráfico no bloco da divisão",

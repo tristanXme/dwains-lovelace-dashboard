@@ -31,7 +31,7 @@ const { DisconnectGrace } = require('./disconnect-grace');
 const { CardReuse, attachDeferredCard, cardReuseKey } = require('./deferred-card');
 const { entitySettingsFromConfiguration } = require('./entity-settings-config');
 const { createHomepageCardElement, propagateHomepageHass } = require('./homepage-card-runtime');
-const { groupingMode, readBooleanCookie, resolveGroupingPreference } = require('./homepage-preferences');
+const { areaSensorDeviceClasses, groupingMode, readBooleanCookie, resolveGroupingPreference } = require('./homepage-preferences');
 const { formatValueWithUnit } = require('./value-format');
 import { homepageCardStyles } from './styles/homepage-card-styles';
 import { AreaTilesMixin } from './homepage/area-tiles';
@@ -1206,6 +1206,7 @@ function getDwainsHass() {
           graphEntity: configuredArea['graph_entity'] || "",
           graphHours: configuredArea['graph_hours'],
           sensorEntities: configuredArea['sensor_entities'] || [],
+          sensorDeviceClasses: areaSensorDeviceClasses(this.configuration),
           binarySensorEntities: configuredArea['binary_sensor_entities'] || [],
         }, false, '');
       });

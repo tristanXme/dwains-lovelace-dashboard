@@ -71,8 +71,11 @@
     "title": "首页"
   },
   "area": {
-    "sensor_entities": "区域名称下方的传感器",
-    "sensor_entities_helper": "它们的数值显示在区域名称下方。所选传感器会替代此区域中同类传感器的平均值（例如用一个温度计代替所有温度计的平均值）。",
+    "sensor_values": "区域名称下方的数值",
+    "sensor_values_helper": "每种传感器类型显示此区域所有传感器的平均值（字段留空），或一个所选传感器。显示哪些类型由集成设置决定。",
+    "sensor_average": "全部平均值（{count}）",
+    "extra_sensor_entities": "区域名称下方的更多传感器",
+    "extra_sensor_entities_helper": "其他类型的传感器，其数值也显示在区域名称下方（例如雨量或风速）。",
     "binary_sensor_entities": "区域名称下方的二元传感器",
     "binary_sensor_entities_helper": "它们的状态显示在数值之后，例如“窗户：打开”。",
     "graph_entity": "区域卡片中的图表",

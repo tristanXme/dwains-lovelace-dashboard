@@ -71,8 +71,11 @@
     "title": "Home"
   },
   "area": {
-    "sensor_entities": "Sensori sotto il nome della stanza",
-    "sensor_entities_helper": "I loro valori compaiono sotto il nome della stanza. Un sensore scelto sostituisce in questa stanza la media del suo tipo (per esempio un termometro invece della media di tutti).",
+    "sensor_values": "Valori sotto il nome della stanza",
+    "sensor_values_helper": "Per tipo di sensore la media di tutti i sensori della stanza (campo vuoto) o un sensore scelto. Le impostazioni dell'integrazione decidono quali tipi compaiono.",
+    "sensor_average": "Media di tutti ({count})",
+    "extra_sensor_entities": "Altri sensori sotto il nome della stanza",
+    "extra_sensor_entities_helper": "Sensori di altri tipi il cui valore compare in più sotto il nome della stanza (per esempio pioggia o vento).",
     "binary_sensor_entities": "Sensori binari sotto il nome della stanza",
     "binary_sensor_entities_helper": "Il loro stato compare dopo i valori, per esempio \"Finestra: Aperta\".",
     "graph_entity": "Grafico nel riquadro della stanza",

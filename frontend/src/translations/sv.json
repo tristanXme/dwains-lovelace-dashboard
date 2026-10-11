@@ -71,8 +71,11 @@
     "title": "Hem"
   },
   "area": {
-    "sensor_entities": "Sensorer under rummets namn",
-    "sensor_entities_helper": "Deras värden visas under rummets namn. En vald sensor ersätter medelvärdet av sin typ i det här rummet (till exempel en termometer i stället för medelvärdet av alla).",
+    "sensor_values": "Värden under rummets namn",
+    "sensor_values_helper": "Per sensortyp medelvärdet av alla sensorer i rummet (tomt fält) eller en vald sensor. Integrationens inställningar avgör vilka typer som visas.",
+    "sensor_average": "Medelvärde av alla ({count})",
+    "extra_sensor_entities": "Fler sensorer under rummets namn",
+    "extra_sensor_entities_helper": "Sensorer av andra typer vars värde också visas under rummets namn (till exempel regn eller vind).",
     "binary_sensor_entities": "Binära sensorer under rummets namn",
     "binary_sensor_entities_helper": "Deras tillstånd visas efter värdena, till exempel \"Fönster: Öppen\".",
     "graph_entity": "Diagram i rummets ruta",

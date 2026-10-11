@@ -92,19 +92,22 @@ export const homepageCardStyles = (css) => css`
           flex: 1;
           min-width: 0;
         }
-        .with-graphs .area-button {
-          height: 13.5rem;
-        }
+        /* The graph is a strip along the bottom edge; name and values move
+           up into the free space below the icon, so a tile with a graph is
+           as high as one without. */
         .area-button.has-graph {
           overflow: hidden;
-          padding-bottom: 3.5rem;
+          padding-bottom: 2.5rem;
+        }
+        .area-button.has-graph .info {
+          bottom: 6rem;
         }
         .area-graph {
           position: absolute;
           left: 0;
           right: 0;
           bottom: 0;
-          height: 3rem;
+          height: 2.25rem;
           cursor: pointer;
           z-index: 4;
         }

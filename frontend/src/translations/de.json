@@ -78,8 +78,11 @@
     "title": "Home"
   },
   "area": {
-    "sensor_entities": "Sensoren unter dem Raumnamen",
-    "sensor_entities_helper": "Ihre Werte stehen unter dem Raumnamen. Ein gewählter Sensor ersetzt in diesem Raum den Durchschnitt seiner Art (z. B. ein bestimmtes Thermometer statt des Durchschnitts aller).",
+    "sensor_values": "Werte unter dem Raumnamen",
+    "sensor_values_helper": "Pro Sensorart der Durchschnitt aller Sensoren im Raum (Feld leer) oder ein bestimmter Sensor. Welche Arten erscheinen, legen die Einstellungen der Integration fest.",
+    "sensor_average": "Durchschnitt aller ({count})",
+    "extra_sensor_entities": "Weitere Sensoren unter dem Raumnamen",
+    "extra_sensor_entities_helper": "Sensoren anderer Art, deren Wert zusätzlich unter dem Raumnamen steht (z. B. Regen oder Wind).",
     "binary_sensor_entities": "Binärsensoren unter dem Raumnamen",
     "binary_sensor_entities_helper": "Ihr Zustand steht hinter den Werten, z. B. „Fenster: Offen“.",
     "title": "Bereich",

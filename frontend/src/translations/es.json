@@ -71,8 +71,11 @@
     "title": "Home"
   },
   "area": {
-    "sensor_entities": "Sensores bajo el nombre del área",
-    "sensor_entities_helper": "Sus valores aparecen bajo el nombre del área. Un sensor elegido sustituye en esta área la media de su tipo (por ejemplo un termómetro en lugar de la media de todos).",
+    "sensor_values": "Valores bajo el nombre del área",
+    "sensor_values_helper": "Por tipo de sensor, la media de todos los sensores del área (campo vacío) o un sensor elegido. Los ajustes de la integración deciden qué tipos aparecen.",
+    "sensor_average": "Media de todos ({count})",
+    "extra_sensor_entities": "Más sensores bajo el nombre del área",
+    "extra_sensor_entities_helper": "Sensores de otros tipos cuyo valor también aparece bajo el nombre del área (por ejemplo lluvia o viento).",
     "binary_sensor_entities": "Sensores binarios bajo el nombre del área",
     "binary_sensor_entities_helper": "Su estado aparece después de los valores, por ejemplo \"Ventana: Abierta\".",
     "graph_entity": "Gráfico en la tarjeta del área",

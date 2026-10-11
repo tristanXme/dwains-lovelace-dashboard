@@ -71,8 +71,11 @@
     "title": "Home"
   },
   "area": {
-    "sensor_entities": "Sensoren onder de ruimtenaam",
-    "sensor_entities_helper": "Hun waarden staan onder de ruimtenaam. Een gekozen sensor vervangt in deze ruimte het gemiddelde van zijn soort (bijvoorbeeld één thermometer in plaats van het gemiddelde van alle).",
+    "sensor_values": "Waarden onder de ruimtenaam",
+    "sensor_values_helper": "Per sensorsoort het gemiddelde van alle sensoren in de ruimte (veld leeg) of één gekozen sensor. De instellingen van de integratie bepalen welke soorten verschijnen.",
+    "sensor_average": "Gemiddelde van alle ({count})",
+    "extra_sensor_entities": "Meer sensoren onder de ruimtenaam",
+    "extra_sensor_entities_helper": "Sensoren van een andere soort waarvan de waarde ook onder de ruimtenaam staat (bijvoorbeeld regen of wind).",
     "binary_sensor_entities": "Binaire sensoren onder de ruimtenaam",
     "binary_sensor_entities_helper": "Hun status staat achter de waarden, bijvoorbeeld \"Raam: Open\".",
     "graph_entity": "Grafiek in de ruimtetegel",

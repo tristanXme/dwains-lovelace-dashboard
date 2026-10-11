@@ -69,8 +69,9 @@ Security, stability and performance release of DD3.
   toggles it).
 - **New:** sensors and binary sensors below the area name are chosen per area
   under *Edit* of the area tile (only the entities of that area are offered).
-  A chosen sensor replaces the average of its device class on that tile. The
-  global lists of earlier versions are moved into the areas automatically on
+  For each sensor type shown as an average (temperature, humidity, …) the
+  dialog offers the average of all sensors of the area or one of them; sensors
+  of other types can be added as more values. The global lists of earlier versions are moved into the areas automatically on
   the first start (backup in `dwains-dashboard/backups/`).
 - **New:** renaming an entity in Home Assistant now takes its dashboard
   settings, custom card and popup along automatically.
@@ -107,7 +108,8 @@ Security, stability and performance release of DD3.
   sensor empty for no graph. All tiles share one recorder request per period
   and refresh together every 10 minutes; periods of 2 and 7 days use the
   hourly long-term statistics (sensors without statistics fall back to their
-  history). A click on the graph opens the sensor's history.
+  history). A click on the graph opens the sensor's history. The graph is a
+  strip along the bottom edge and the tile keeps its height.
 - **Refresh:** values below the area name follow the Home Assistant language
   (`24,1 °C · 48 %` in German) and are separated by `·`; area badges are
   rounder.
