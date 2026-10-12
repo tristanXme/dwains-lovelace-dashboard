@@ -9,6 +9,7 @@ const { CardBuildOwner } = require('./card-build-owner');
 const { popupHistoryController } = require('./popup-history-controller');
 const { handlePopupCardRebuild } = require('./popup-rebuild-policy');
 const { defineOwnedElement } = require('./custom-element-registration');
+const { releaseSlidersWhenGone } = require('./slider-release');
 const {
   closeCardToolsPopup,
   findCardToolsPopup,
@@ -81,6 +82,7 @@ export async function popUp(title, card, large=false, style={}, fullscreen=false
         disconnectedCallback() {
           super.disconnectedCallback();
           this._cardBuilds.invalidate();
+          releaseSlidersWhenGone(this);
         }
 
         async _applyStyles() {

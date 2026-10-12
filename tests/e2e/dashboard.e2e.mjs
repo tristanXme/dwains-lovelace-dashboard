@@ -646,6 +646,41 @@ for (const colorScheme of ["light", "dark"]) {
       }
     });
 
+    await step("thermostats let go of the page when they leave it, and work when they come back", async () => {
+      // Home Assistant's circular slider (thermostat card) keeps its gesture
+      // listeners on window when it leaves the page, and with them the whole
+      // dashboard; the dashboard releases them.
+      const go = (path) => page.evaluate((path) => {
+        history.pushState(null, "", path);
+        window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+      }, path);
+      const shownSlider = () => deep(page, (all) => {
+        const slider = all.find((el) => el.localName === "ha-control-circular-slider" && el.isConnected);
+        if (slider?._managers?.length > 0) window.__e2eSlider = slider;
+        return slider?._managers?.length > 0;
+      });
+      const released = () => page.evaluate(() => !window.__e2eSlider.isConnected && window.__e2eSlider._managers.length === 0);
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      // The devices page lists the entities of areas.
+      await ws({ type: "config/entity_registry/update", entity_id: "climate.thermostat_wohnzimmer", area_id: token.areaId });
+      try {
+        await page.goto(BASE + "/dwains-dashboard/devices#climate");
+        await poll(shownSlider, "thermostat with its listeners");
+        // Another device type: the thermostat's view leaves the page.
+        await go("/dwains-dashboard/devices#sensor");
+        await poll(released, "slider released after a device type switch", 10000);
+        // Back again: the thermostat can be used.
+        await go("/dwains-dashboard/devices#climate");
+        await poll(shownSlider, "thermostat with its listeners again", 10000);
+        // Another dashboard.
+        await go("/lovelace/0");
+        await poll(released, "slider released after leaving the dashboard", 10000);
+      } finally {
+        await page.evaluate(() => { delete window.__e2eSlider; });
+        await ws({ type: "config/entity_registry/update", entity_id: "climate.thermostat_wohnzimmer", area_id: null });
+      }
+    });
+
     await step("registries are read from Home Assistant, changes show up live", async () => {
       // HA requests the device, area and floor lists itself to fill hass;
       // the full entity list is what the dashboard used to download.
