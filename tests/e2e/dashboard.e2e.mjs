@@ -147,6 +147,31 @@ for (const colorScheme of ["light", "dark"]) {
     await poll(() => deep(page, (all) => Boolean(all.find((el) => el.id === "favorites")?.querySelector('[data-entity="input_boolean.e2e_lamp"]'))), "favorite");
   });
 
+  await step(`${colorScheme}: the strip behind the status bar has the theme's app color`, async () => {
+    // The companion apps pick the status bar's text color for the app
+    // color; the dashboard leaves Home Assistant's theme-color alone.
+    const meta = () => page.evaluate(() => document.querySelector('meta[name="theme-color"]').content);
+    await page.goto(BASE + "/lovelace/0");
+    await poll(() => page.evaluate(() => document.querySelector("home-assistant")?.hass), "Home Assistant");
+    const haThemeColor = await meta();
+    await page.evaluate(() => {
+      history.pushState(null, "", "/dwains-dashboard/home");
+      window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+    });
+    const colors = await poll(() => deep(page, (all) => {
+      const layout = all.find((el) => el.localName === "dwains-dashboard-layout" && el.isConnected);
+      if (!layout || !all.some((el) => el.classList?.contains("area-button"))) return undefined;
+      const probe = document.createElement("div");
+      document.body.appendChild(probe);
+      probe.style.backgroundColor = "var(--app-theme-color)";
+      const appColor = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return { strip: getComputedStyle(layout, "::before").backgroundColor, appColor };
+    }), "dashboard");
+    assert.equal(colors.strip, colors.appColor);
+    assert.equal(await meta(), haThemeColor);
+  });
+
   if (colorScheme === "light") {
     await step("the status bar scrolls only sideways and shows its entries whole", async () => {
       const bar = await poll(() => deep(page, (all) => {
@@ -194,6 +219,32 @@ for (const colorScheme of ["light", "dark"]) {
       });
       // The tooltip names the open window.
       assert.match(hit, /^1 Fenster offen \(Fenster Wohnzimmer\)$/);
+    });
+
+    await step("a lock and a lock sensor share one badge and one status bar entry", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const assign = (areaId) => Promise.all(["lock.haustur", "binary_sensor.gartentor_schloss"].map((entityId) => (
+        ws({ type: "config/entity_registry/update", entity_id: entityId, area_id: areaId })
+      )));
+      await assign(token.areaId);
+      try {
+        await page.goto(BASE + "/dwains-dashboard/home");
+        const badges = await poll(() => deep(page, (all) => {
+          const tile = all.find((el) => el.classList?.contains("area-button") && el.textContent.includes("Wohnzimmer"));
+          const locks = [...(tile?.querySelectorAll(".info-badge") || [])]
+            .filter((badge) => /lock/.test(badge.querySelector("ha-icon")?.icon || ""));
+          return locks.some((badge) => badge.title.startsWith("2 ")) ? locks.map((badge) => badge.title) : undefined;
+        }), "lock badge");
+        assert.deepEqual(badges, ["2 Schlösser entriegelt (Haustür, Gartentor Schloss)"]);
+        const entries = await poll(() => deep(page, (all) => {
+          const locks = all.filter((el) => el.classList?.contains("domain-badge-card") && el.domain === "lock");
+          return locks.length ? locks.map((el) => el.textContent.replace(/\s+/g, " ").trim()) : undefined;
+        }), "status bar entry");
+        assert.deepEqual(entries, ["Schloss 2 offen"]);
+        assert.equal(await deep(page, (all) => all.filter((el) => el.classList?.contains("domain-badge-card") && el.deviceClass === "lock").length), 0);
+      } finally {
+        await assign(null);
+      }
     });
 
     await step("graph click opens the sensor history", async () => {

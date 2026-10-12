@@ -367,7 +367,7 @@ class DwainsHouseInformationCard extends LitElement {
         } else {
             const domain = ev.currentTarget.domain;
             const deviceClass = ev.currentTarget.deviceClass;
-            const configured = this.domains?.[domain]?.entities;
+            const configured = domain === 'lock' ? this._lockEntities() : this.domains?.[domain]?.entities;
             const entities = domain === 'climate' && (!configured || configured.length === 0)
                 ? Object.keys(this._hass.states)
                     .filter((entityId) =>
@@ -490,6 +490,31 @@ class DwainsHouseInformationCard extends LitElement {
         );
     }
 
+    // Locks and lock sensors are one entry: for the user both are a lock. The
+    // lock sensor of a counted lock is left out.
+    _lockEntities() {
+        const lockDevices = this._countedLockDevices();
+        return [
+            ...(this.domains?.lock?.entities || []),
+            ...(this.domains?.binary_sensor?.entities || []).filter((entity) => {
+                const stateObj = this._hass.states[entity.entity_id];
+                return stateObj?.attributes.device_class === 'lock'
+                    && !isLockSensorOfLock(stateObj, this._hass.entities, lockDevices);
+            }),
+        ];
+    }
+
+    _renderLocks() {
+        if (!this._showsEntry('lock')) return;
+        const states = this._lockEntities()
+            .map((entity) => this._hass.states[entity.entity_id])
+            .filter(Boolean);
+        const on = this._isOn(states, 'lock');
+        if (on) {
+            return this._renderDomainBadgeCard('lock', deviceTypeName(this._hass, 'lock'), DOMAIN_STATE_ICONS.lock.on, on, '');
+        }
+    }
+
     _renderDomain(domain) {
         const entitiesByDomain = [];
         const lockDevices = domain.domain === 'binary_sensor' ? this._countedLockDevices() : new Set();
@@ -514,6 +539,9 @@ class DwainsHouseInformationCard extends LitElement {
         } else if (ALERT_DOMAINS.includes(domain.domain)) {
             //If domain is alert domain binary_sensor (check device_classes ("motion", "door", "window"))
             return DEVICE_CLASSES[domain.domain].map((deviceClass) => {
+                // Lock sensors belong to the lock entry; it stands here only
+                // in a home without lock entities.
+                if (deviceClass === 'lock') return this.domains?.lock ? undefined : this._renderLocks();
                 if (!this._showsEntry(deviceClass)) return;
                 const on = this._isOn(entitiesByDomain, domain.domain, deviceClass);
                 if (on) {
@@ -541,6 +569,7 @@ class DwainsHouseInformationCard extends LitElement {
                 return this._renderDomainBadgeCard(domain.domain, deviceTypeName(this._hass, domain.domain), DOMAIN_STATE_ICONS[domain.domain][on ? "on" : "off"], on, '');
             }
         } else if (OTHER_DOMAINS.includes(domain.domain)) {
+            if (domain.domain === 'lock') return this._renderLocks();
             if (!this._showsEntry(domain.domain)) return;
             //Its other domain
             const on = this._isOn(entitiesByDomain, domain);

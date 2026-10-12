@@ -39,6 +39,18 @@ template:
         unique_id: e2e_window_living
         device_class: window
         state: "on"
+      # A lock sensor and a lock, both unlocked; assigned to an area by the
+      # test that needs them.
+      - name: "Gartentor Schloss"
+        unique_id: e2e_gate_lock
+        device_class: lock
+        state: "on"
+  - lock:
+      - name: "Haustür"
+        unique_id: e2e_front_door_lock
+        state: "unlocked"
+        lock: []
+        unlock: []
 input_boolean:
   e2e_lamp:
     name: Stehlampe

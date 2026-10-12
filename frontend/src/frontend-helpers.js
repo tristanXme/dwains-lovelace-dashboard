@@ -13,7 +13,9 @@ function navigate(_node, path, replace = false) {
   return dashboardRouteState.navigate(path, { replace });
 }
 
-function applyThemesOnElement(element, themes, localTheme, updateMeta = false) {
+// Home Assistant keeps <meta name="theme-color"> at its app color, which
+// the browsers and apps use for the status bar; it is left alone here.
+function applyThemesOnElement(element, themes, localTheme) {
   if (!element?.style || !themes?.themes) return false;
 
   let themeName = themes.default_theme;
@@ -33,19 +35,6 @@ function applyThemesOnElement(element, themes, localTheme, updateMeta = false) {
     if (!nextVariables.has(variable)) element.style.removeProperty(variable);
   }
   appliedThemeVariables.set(element, nextVariables);
-
-  if (updateMeta && typeof document !== "undefined") {
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) {
-      if (!meta.hasAttribute("default-content")) {
-        meta.setAttribute("default-content", meta.getAttribute("content"));
-      }
-      const themeColor = theme["primary-color"]
-        || theme["--primary-color"]
-        || meta.getAttribute("default-content");
-      if (themeColor) meta.setAttribute("content", themeColor);
-    }
-  }
   return true;
 }
 

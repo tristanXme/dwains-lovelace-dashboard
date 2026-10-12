@@ -5,7 +5,7 @@ import translateEngine from '../translate-engine';
 const { areaBinarySensorDeviceClasses, areaBinarySensorEntities, areaSensorDeviceClasses, areaSensorEntities } = require('../homepage-preferences');
 const { collectAreaBinarySensorValues, entityBelongsToArea, summaryTranslationKey } = require('../area-binary-sensors');
 const { collectAreaSensorValues } = require('../area-sensors');
-const { isEntityHiddenInArea, isLockSensorOfLock, lockDeviceIds } = require('../entity-aggregation');
+const { activeLocks, isEntityHiddenInArea, isLockSensorOfLock, lockDeviceIds } = require('../entity-aggregation');
 require('../dwains-area-graph');
 
 
@@ -176,6 +176,8 @@ export const AreaTilesMixin = (Base) => class extends Base {
       for (const domain of ALERT_DOMAINS) {
         if (!(domain in entitiesByDomain)) continue;
         for (const deviceClass of DEVICE_CLASSES[domain]) {
+          // Lock sensors are counted with the locks below.
+          if (domain === 'binary_sensor' && deviceClass === 'lock') continue;
           const active = this._activeEntities(entitiesByDomain, domain, deviceClass);
           const icon = DOMAIN_STATE_ICONS[domain][deviceClass];
           if (active.length && icon) {
@@ -192,10 +194,14 @@ export const AreaTilesMixin = (Base) => class extends Base {
         }
       }
       for (const domain of OTHER_DOMAINS) {
-        if (!(domain in entitiesByDomain)) continue;
+        if (domain === 'lock' || !(domain in entitiesByDomain)) continue;
         const active = this._activeEntities(entitiesByDomain, domain);
         if (active.length) add(5, DOMAIN_STATE_ICONS[domain].on, active.length, this._badgeTitle(domain, active.length, active));
       }
+      // Locks and lock sensors share one badge, next to the open doors and
+      // windows.
+      const locks = activeLocks(entitiesByDomain, { unavailableStates: UNAVAILABLE_STATES, statesOff: STATES_OFF });
+      if (locks.length) add(3, DOMAIN_STATE_ICONS.lock.on, locks.length, this._badgeTitle('lock', locks.length, locks));
       // Stable sort: within a priority the order of DEVICE_CLASSES and the
       // domain lists is kept.
       badges.sort((a, b) => a.priority - b.priority);

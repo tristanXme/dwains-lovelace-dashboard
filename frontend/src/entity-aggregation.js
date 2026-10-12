@@ -57,6 +57,16 @@ function countActiveEntities(data, domain, deviceClass, options) {
   return activeEntities(data, domain, deviceClass, options)?.length;
 }
 
+// Unlocked locks: lock entities and lock binary sensors together, because
+// for the user both are a lock (one badge, one status bar entry). The lock
+// sensor of a counted lock entity is left out before (isLockSensorOfLock).
+function activeLocks(data, options) {
+  return [
+    ...(activeEntities(data, "lock", undefined, options) || []),
+    ...(activeEntities(data, "binary_sensor", "lock", options) || []),
+  ];
+}
+
 function localizedClimateState(
   data,
   domain,
@@ -166,6 +176,7 @@ function isLockSensorOfLock(stateObj, registryEntities, lockDevices) {
 
 module.exports = {
   activeEntities,
+  activeLocks,
   averageEntityStates,
   countActiveEntities,
   groupEntityStatesByDomain,
