@@ -23,6 +23,13 @@ export async function closePopUp() {
   return closeCardToolsPopup({ root, selectTree });
 }
 
+// The dashboard's own dialogs, its settings and editors, keep their size. A
+// popup in place of Home Assistant's more-info dialog grows and shrinks with
+// a click on its title, as that one does.
+function keepsSize(card) {
+  return /^custom:dwains-(edit|create)-/.test(card?.type || "");
+}
+
 export async function popUp(title, card, large=false, style={}, fullscreen=false, recordHistory=true) {
   if(!customElements.get("card-tools-popup"))
   {
@@ -113,6 +120,7 @@ export async function popUp(title, card, large=false, style={}, fullscreen=false
         }
 
         _enlarge() {
+          if (keepsSize(this._card)) return;
           this.large = !this.large;
         }
 

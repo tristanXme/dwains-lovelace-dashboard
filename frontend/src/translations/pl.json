@@ -55,7 +55,7 @@
     "ungroup": "Rozgrupuj według urządzeń",
     "enable": "Włącz ponownie",
     "disable": "Wyłącz w panelu",
-    "disable_help": "Nie ma jej w widokach obszarów ani na stronie urządzeń. Nigdzie nie jest liczona.",
+    "disable_help": "Nie ma jej w widokach obszarów, na stronie urządzeń ani w Ulubionych. Nigdzie nie jest liczona.",
     "disable_all": "Wyłącz wszystkie encje",
     "hide_all": "Ukryj wszystkie encje",
     "exclude": "Nie licz",

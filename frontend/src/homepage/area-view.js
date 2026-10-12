@@ -4,7 +4,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import translateEngine from '../translate-engine';
 import { deviceTypeName } from '../device-type-name';
 const { entityRecoveryActions } = require('../entity-settings-config');
-import { renderEntityMenuItems, renderEntityStateHint } from '../entity-menu';
+import { renderEntityMenuItems, renderEntityStateHint, switchDescription } from '../entity-menu';
 
 // Area detail view: entity cards, custom cards and grouping by domain.
 export const AreaViewMixin = (Base) => class extends Base {
@@ -176,6 +176,7 @@ export const AreaViewMixin = (Base) => class extends Base {
                   .entity="${entity}"
                   .key=${action.key}
                   .ddValue=${false}
+                  title=${switchDescription(this._hass, action.key, true)}
                   @click=${this._handleEntityEditBoolValueClick}
                 >
                   ${translateEngine(this._hass, action.translationKey)}

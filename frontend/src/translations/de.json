@@ -57,7 +57,7 @@
     "ungroup": "Gruppierung nach Geräten aufheben",
     "enable": "Wieder aktivieren",
     "disable": "Im Dashboard deaktivieren",
-    "disable_help": "Nicht in Bereichsansichten und auf der Geräteseite. Zählt nirgends mit.",
+    "disable_help": "Nicht in Bereichsansichten, auf der Geräteseite und in den Favoriten. Zählt nirgends mit.",
     "disable_all": "Deaktiviere alle Entitäten",
     "hide_all": "Blende alle Entitäten aus",
     "exclude": "Nicht mitzählen",

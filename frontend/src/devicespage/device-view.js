@@ -6,7 +6,7 @@ import translateEngine from '../translate-engine';
 import { deviceTypeName } from '../device-type-name';
 const { closeParentDropdown } = require('../dropdown-controller');
 const { entityRecoveryActions } = require('../entity-settings-config');
-import { renderEntityMenuItems, renderEntityStateHint } from '../entity-menu';
+import { renderEntityMenuItems, renderEntityStateHint, switchDescription } from '../entity-menu';
 
 // The page of one device type: its entities, grouped by area or not, and custom cards.
 export const DeviceViewMixin = (Base) => class extends Base {
@@ -112,6 +112,7 @@ export const DeviceViewMixin = (Base) => class extends Base {
                   .entity="${entity}"
                   .key=${action.key}
                   .ddValue=${false}
+                  title=${switchDescription(this._hass, action.key, true)}
                   @click=${this._handleEntityEditBoolValueClick}
                 >
                   ${translateEngine(this._hass, action.translationKey)}

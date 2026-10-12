@@ -52,6 +52,7 @@ function getDwainsHass() {
       return {
         data: {},
         favorites: {},
+        favoritesDisabled: {},
         favoriteEditMode: {},
         selectedArea: {},
         areaEditMode: {},
@@ -477,6 +478,7 @@ function getDwainsHass() {
           this.data = [];
           this.disabledAreas = [];
           this.favorites = [];
+          this.favoritesDisabled = [];
           this.selectedArea = "";
           this.startedUp = true;
         }
@@ -503,8 +505,14 @@ function getDwainsHass() {
         //Favorites load part
         if(this.configuration['entities']){
           const favoritesEntities = [];
+          const favoritesDisabled = [];
           await Promise.all(Object.entries(this.configuration['entities']).map(async ([entity,v]) => {
-            if(v['favorite']){
+            // A disabled entity leaves the favorites too; it stays marked,
+            // so enabling it again brings it back. Until then it is listed
+            // in the favorites' edit mode, also when no area lists it.
+            if(v['favorite'] && v['disabled']){
+              favoritesDisabled.push(entity);
+            } else if(v['favorite']){
               const domain = computeDomain(entity);
               const hideEntity = this.configuration['entities'][entity] ? (this.configuration['entities'][entity]['hidden'] ? true : false) : false;
               const excludeEntity = this.configuration['entities'][entity] ? (this.configuration['entities'][entity]['excluded'] ? true : false) : false;
@@ -534,6 +542,7 @@ function getDwainsHass() {
           }));
 
           this.favorites = favoritesEntities;
+          this.favoritesDisabled = favoritesDisabled.sort();
         }
 
         for(const area of this.areas){
@@ -1295,7 +1304,8 @@ function getDwainsHass() {
       `;
     }
     _renderFavorites(){
-      if(this.favorites.length == 0){
+      const disabled = this._hass.user.is_admin ? (this.favoritesDisabled || []) : [];
+      if(this.favorites.length == 0 && disabled.length == 0){
         return html``;
       }
       this.favorites.sort(function (x, y) {
@@ -1349,6 +1359,13 @@ function getDwainsHass() {
           <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4 sortable favorites-sortable ${this.favoriteEditMode || !this._masonryEnabled() ? "" : "dd-fav-masonry"}">
             ${repeat(this.favorites, (i) => i.entity, (i) => this._renderFavoriteViewCard(i))}
           </div>
+          ${this.favoriteEditMode && disabled.length ? html`
+            <div class="mt-4">
+              <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.disabled')}</h3>
+              <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
+                ${repeat(disabled, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'disabled'))}
+              </div>
+            </div>` : ""}
         </div>
         `;
     }
