@@ -606,9 +606,11 @@ for (const colorScheme of ["light", "dark"]) {
         return Boolean(entry);
       }, [entityId, button]), `button ${button}`, 15000);
 
+      // Loaded again: the step before left this view in edit mode.
       await page.goto(`${BASE}/dwains-dashboard/home#${areaId}`);
+      await page.reload();
       await poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell)), areaCell), "area view");
-      await clickMenuItem(page, "homepage-card", "Wohnzimmer", "Bearbeitungsmodus");
+      await clickMenuItem(page, "homepage-card", "Wohnzimmer", "Aktiviere Bearbeitungsmodus");
       await poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell) && el.querySelector("ha-dropdown")), areaCell), "edit mode");
       const counted = { card: "shown", tile: ["1 Fenster offen (Fenster Wohnzimmer)"], bar: ["Fenster 1 offen"] };
       const notCounted = { tile: [], bar: [] };
@@ -645,7 +647,7 @@ for (const colorScheme of ["light", "dark"]) {
         await page.goto(BASE + "/dwains-dashboard/devices#binary_sensor");
         const deviceCell = `[data-dd-item][data-entity="${entityId}"]`;
         await poll(() => deep(page, (all) => all.find((el) => el.localName === "devices-card")?.selectedDevice === "binary_sensor"), "binary sensors");
-        await clickMenuItem(page, "devices-card", "Binärsensoren", "Bearbeitungsmodus");
+        await clickMenuItem(page, "devices-card", "Binärsensoren", "Aktiviere Bearbeitungsmodus");
         await poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell) && el.querySelector("ha-dropdown")), deviceCell), "card menu");
         assert.deepEqual(await menuOf(deviceCell), menu);
         await page.keyboard.press("Escape");
