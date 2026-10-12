@@ -55,7 +55,7 @@
     "ungroup": "Avgruppera efter enheter",
     "enable": "Aktivera igen",
     "disable": "Inaktivera i instrumentpanelen",
-    "disable_help": "Borta överallt, även från alla räkningar.",
+    "disable_help": "Visas inte i områdesvyer eller på enhetssidan. Räknas ingenstans.",
     "disable_all": "Inaktivera alla entiteter",
     "hide_all": "Göm alla entiteter",
     "exclude": "Räkna inte med",

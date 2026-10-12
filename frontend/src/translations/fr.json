@@ -55,7 +55,7 @@
     "ungroup": "Dégrouper par entités",
     "enable": "Réactiver",
     "disable": "Désactiver dans le tableau de bord",
-    "disable_help": "Absente partout, y compris de tous les comptes.",
+    "disable_help": "Absente des vues des pièces et de la page des appareils. N’est comptée nulle part.",
     "disable_all": "Désactiver toutes les entités",
     "hide_all": "Masquer toutes les entités",
     "exclude": "Ne pas compter",

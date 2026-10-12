@@ -55,7 +55,7 @@
     "ungroup": "Separa per dispositivi",
     "enable": "Riabilita",
     "disable": "Disabilita nella dashboard",
-    "disable_help": "Sparisce ovunque, anche da tutti i conteggi.",
+    "disable_help": "Non compare nelle viste delle aree né nella pagina dei dispositivi. Non viene conteggiata da nessuna parte.",
     "disable_all": "Disable all entities",
     "hide_all": "Hide all entities",
     "exclude": "Non contare",

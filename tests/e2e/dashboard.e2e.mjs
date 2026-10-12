@@ -570,17 +570,19 @@ for (const colorScheme of ["light", "dark"]) {
     await step("an entity's menu switches its card and what counts it, and each switch back", async () => {
       // As a user does it: the card's menu in edit mode, and for a card that
       // left the view the button in the list below it. Seen each time: the
-      // card, the window badge on the area's tile and the bar's window entry.
+      // card, the window badge on the area's tile, the window chosen for the
+      // values below the area name, and the bar's window entry.
       const entityId = "binary_sensor.fenster_wohnzimmer";
       const areaId = token.areaId;
       const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
       const seen = () => deep(page, (all, [areaId, entityId]) => {
         const view = all.find((el) => el.classList?.contains("dd-area-view") && el.id === areaId);
         const cell = view?.querySelector(`.area-view-entity-sortable > [data-entity="${entityId}"]`);
-        const tile = all.find((el) => el.classList?.contains("area-button") && el.textContent.includes("Wohnzimmer"));
+        const tile = all.find((el) => el.classList?.contains("area-button") && el.dataset.areaId === areaId);
         return {
           card: cell ? cell.querySelector(".dd-entity-hint")?.textContent.trim() || "shown" : "gone",
           tile: [...(tile?.querySelectorAll(".info-badge") || [])].map((badge) => badge.title).filter((title) => /Fenster/.test(title)),
+          belowName: /Fenster Wohnzimmer/.test(tile?.querySelector(".sensors")?.textContent || ""),
           bar: all.filter((el) => el.classList?.contains("domain-badge-card") && el.deviceClass === "window")
             .map((el) => el.textContent.replace(/\s+/g, " ").trim()),
         };
@@ -606,23 +608,31 @@ for (const colorScheme of ["light", "dark"]) {
         return Boolean(entry);
       }, [entityId, button]), `button ${button}`, 15000);
 
-      // Loaded again: the step before left this view in edit mode.
+      // The window is also chosen for the values below the area name.
+      const chooseBelowName = (binarySensorEntities) => ws({
+        type: "dwains_dashboard/edit_area_button", areaId, icon: "mdi:sofa",
+        graphEntity: "sensor.temperatur_wohnzimmer", graphHours: 24, binarySensorEntities,
+      });
+      const areaView = () => poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell)), areaCell), "area view");
       await page.goto(`${BASE}/dwains-dashboard/home#${areaId}`);
-      await page.reload();
-      await poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell)), areaCell), "area view");
-      await clickMenuItem(page, "homepage-card", "Wohnzimmer", "Aktiviere Bearbeitungsmodus");
-      await poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell) && el.querySelector("ha-dropdown")), areaCell), "edit mode");
-      const counted = { card: "shown", tile: ["1 Fenster offen (Fenster Wohnzimmer)"], bar: ["Fenster 1 offen"] };
-      const notCounted = { tile: [], bar: [] };
-      await expect(counted, "the window counted");
-      const menu = await menuOf(areaCell);
-      await page.keyboard.press("Escape");
-      assert.deepEqual(menu, [
-        "Einstellungen …", "Eigene Karte …", "Eigenes Pop-up …", "Zu Favoriten hinzufügen", "—",
-        "Karte ausblenden", "Aus dem Bereich nehmen", "Nicht mitzählen", "—",
-        "Im Dashboard deaktivieren",
-      ]);
+      await areaView();
+      await chooseBelowName([entityId]);
       try {
+        // Loaded again: the step before left this view in edit mode.
+        await page.reload();
+        await areaView();
+        await clickMenuItem(page, "homepage-card", "Wohnzimmer", "Aktiviere Bearbeitungsmodus");
+        await poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell) && el.querySelector("ha-dropdown")), areaCell), "edit mode");
+        const counted = { card: "shown", tile: ["1 Fenster offen (Fenster Wohnzimmer)"], belowName: true, bar: ["Fenster 1 offen"] };
+        const notCounted = { tile: [], belowName: false, bar: [] };
+        await expect(counted, "the window counted");
+        const menu = await menuOf(areaCell);
+        await page.keyboard.press("Escape");
+        assert.deepEqual(menu, [
+          "Einstellungen …", "Eigene Karte …", "Eigenes Pop-up …", "Zu Favoriten hinzufügen", "—",
+          "Karte ausblenden", "Aus dem Bereich nehmen", "Nicht mitzählen", "—",
+          "Im Dashboard deaktivieren",
+        ]);
         await fromMenu("Nicht mitzählen");
         await expect({ card: "Nicht mitgezählt", ...notCounted }, "card stays, not counted");
         await fromMenu("Wieder mitzählen");
@@ -655,6 +665,7 @@ for (const colorScheme of ["light", "dark"]) {
         for (const key of ["excluded", "hidden", "hidden_in_area", "disabled"]) {
           await ws({ type: "dwains_dashboard/edit_entity_bool_value", entityId, key, value: false });
         }
+        await chooseBelowName([]);
       }
     });
 

@@ -148,6 +148,14 @@ function isEntityHiddenInArea(entityConfig) {
   return entityConfig?.hidden_in_area === true;
 }
 
+// Whether an entity counts in its area's numbers (badges and the values below
+// the area name), also when it was chosen for them explicitly. "Nicht
+// mitzählen", "Aus dem Bereich nehmen" and disabling leave it out; a hidden
+// card still counts.
+function isEntityCounted(entityConfig) {
+  return !(entityConfig?.excluded || entityConfig?.disabled || isEntityHiddenInArea(entityConfig));
+}
+
 // Devices of the given lock entities that are counted (available).
 function lockDeviceIds(lockStates, registryEntities, unavailableStates = []) {
   const deviceIds = new Set();
@@ -180,6 +188,7 @@ module.exports = {
   averageEntityStates,
   countActiveEntities,
   groupEntityStatesByDomain,
+  isEntityCounted,
   isEntityHiddenInArea,
   isLockSensorOfLock,
   localizedClimateState,

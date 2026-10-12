@@ -55,7 +55,7 @@
     "ungroup": "Desagrupar por dispositivos",
     "enable": "Ativar novamente",
     "disable": "Desativar no painel",
-    "disable_help": "Desaparece de todo o lado, também de todas as contagens.",
+    "disable_help": "Não aparece nas vistas de áreas nem na página de dispositivos. Não conta em lado nenhum.",
     "disable_all": "Disable all entities",
     "hide_all": "Hide all entities",
     "exclude": "Não contar",

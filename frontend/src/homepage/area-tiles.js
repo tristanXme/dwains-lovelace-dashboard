@@ -5,7 +5,7 @@ import translateEngine from '../translate-engine';
 const { areaBinarySensorDeviceClasses, areaBinarySensorEntities, areaSensorDeviceClasses, areaSensorEntities } = require('../homepage-preferences');
 const { collectAreaBinarySensorValues, entityBelongsToArea, summaryTranslationKey } = require('../area-binary-sensors');
 const { collectAreaSensorValues } = require('../area-sensors');
-const { activeLocks, isEntityHiddenInArea, isLockSensorOfLock, lockDeviceIds } = require('../entity-aggregation');
+const { activeLocks, isEntityCounted, isLockSensorOfLock, lockDeviceIds } = require('../entity-aggregation');
 require('../dwains-area-graph');
 
 
@@ -104,6 +104,10 @@ export const AreaTilesMixin = (Base) => class extends Base {
       return areaSensorEntities(this.configuration, areaId);
     }
 
+    _countedEntityIds(entityIds) {
+      return entityIds.filter((entityId) => isEntityCounted(this.configuration['entities']?.[entityId]));
+    }
+
     _areaBinarySensorLabel(deviceClass) {
       return translateEngine(this._hass, `device.${deviceClass}`, undefined, deviceClass.replace(/_/g, " "));
     }
@@ -139,19 +143,18 @@ export const AreaTilesMixin = (Base) => class extends Base {
       });
     }
 
-    // The same entities as the badges and averages of the tile: hidden in
-    // the area also leaves the summary below the area name, and so does a
-    // lock sensor of a lock that the badges count.
+    // The same entities as the badges and averages of the tile: one that
+    // does not count also leaves the summary below the area name, and so
+    // does a lock sensor of a lock that the badges count.
     _areaEntityIdsForArea(areaId) {
       const entityIds = (this.entitiesByAreaId?.get(areaId) || [])
         .filter((entity) => !entity.hidden_by)
-        .filter((entity) => !(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['disabled']))
-        .filter((entity) => !isEntityHiddenInArea(this.configuration['entities'][entity.entity_id]))
+        .filter((entity) => isEntityCounted(this.configuration['entities'][entity.entity_id]))
         .filter((entity) => this._hass.states[entity.entity_id])
         .map((entity) => entity.entity_id);
       const lockDevices = lockDeviceIds(
         entityIds
-          .filter((entityId) => entityId.startsWith('lock.') && !this.configuration['entities'][entityId]?.['excluded'])
+          .filter((entityId) => entityId.startsWith('lock.'))
           .map((entityId) => this._hass.states[entityId]),
         this._hass.entities,
         UNAVAILABLE_STATES,
@@ -314,7 +317,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
         areaEntityIds: this._areaEntityIdsForArea(areaId),
         states: this._hass.states,
         deviceClasses: this._areaBinarySensorDeviceClasses(),
-        explicitEntityIds: this._areaBinarySensorEntities(areaId),
+        explicitEntityIds: this._countedEntityIds(this._areaBinarySensorEntities(areaId)),
         unavailableStates: UNAVAILABLE_STATES,
         offStates: STATES_OFF,
         belongsToArea: (entityId, targetAreaId) => (
@@ -335,7 +338,7 @@ export const AreaTilesMixin = (Base) => class extends Base {
         average: (deviceClass) => SENSOR_DOMAINS
           .map((domain) => this._average(entitiesByDomain, domain, deviceClass))
           .find(Boolean),
-        explicitEntityIds: this._areaSensorEntities(data.area.area_id),
+        explicitEntityIds: this._countedEntityIds(this._areaSensorEntities(data.area.area_id)),
         states: this._hass.states,
         unavailableStates: UNAVAILABLE_STATES,
         belongsToArea: (entityId, areaId) => this._entityBelongsToArea(entityId, areaId),

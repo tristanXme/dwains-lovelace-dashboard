@@ -55,7 +55,7 @@
     "ungroup": "Groep entiteiten opheffen",
     "enable": "Weer inschakelen",
     "disable": "Uitschakelen in dashboard",
-    "disable_help": "Overal weg, ook uit alle tellingen.",
+    "disable_help": "Niet in ruimteweergaven en niet op de apparatenpagina. Telt nergens mee.",
     "disable_all": "Alle entiteiten uitschakelen",
     "hide_all": "Alle entiteiten verbergen",
     "exclude": "Niet meetellen",
