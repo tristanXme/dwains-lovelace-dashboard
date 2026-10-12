@@ -1,5 +1,8 @@
 {
   "global": {
+    "confirm_delete": "确定删除吗？此操作无法撤销。",
+    "confirm_delete_named": "删除“{name}”吗？此操作无法撤销。",
+    "edit_named": "编辑{name}",
     "save_failed": "保存失败",
     "reload_after_update": "Dwains Dashboard 已更新。请重新加载页面以继续使用全部功能。",
     "reload": "重新加载",
@@ -22,6 +25,9 @@
   "editor": {
     "lovelace_card": "Lovelace 卡片",
     "create_lovelace_card": "从头开始创建新的 Lovelace 卡片",
+    "select_card_for": "选择卡片：",
+    "loading_card_editor": "正在加载卡片编辑器…",
+    "no_visual_editor": "此卡片没有可视化编辑器。请编辑其 JSON 配置：",
     "dwains_dashboard_blueprint": "Dwains 仪表板蓝图",
     "use_dwains_dashboard_blueprint": "使用 Dwain 仪表板蓝图创建卡片",
     "row_span": "行跨度",
@@ -38,7 +44,6 @@
     "title": "实体",
     "title_plural": "实体",
     "add_card_to": "将卡片添加到",
-    "edit_entity": "编辑实体",
     "edit_entity_card": "编辑实体卡片",
     "edit_entity_popup_card": "编辑实体弹出卡片",
     "add_to_favorites": "添加到收藏夹",
@@ -54,6 +59,8 @@
     "hide_all": "隐藏所有实体",
     "exclude": "在 DD 中排除实体",
     "hide": "在 DD 中隐藏实体",
+    "hide_in_area": "在区域视图中隐藏",
+    "unhide_in_area": "在区域视图中显示",
     "unhide": "取消隐藏实体",
     "use_popup_card": "使用自己的弹出卡片",
     "use_entity_card": "使用自己的实体卡片",
@@ -71,8 +78,11 @@
     "title": "首页"
   },
   "area": {
-    "sensor_entities": "区域名称下方的传感器",
-    "sensor_entities_helper": "它们的数值显示在区域名称下方。所选传感器会替代此区域中同类传感器的平均值（例如用一个温度计代替所有温度计的平均值）。",
+    "sensor_values": "区域名称下方的数值",
+    "sensor_values_helper": "每种传感器类型显示此区域所有传感器的平均值（字段留空），或一个所选传感器。显示哪些类型由集成设置决定。",
+    "sensor_average": "全部平均值（{count}）",
+    "extra_sensor_entities": "区域名称下方的更多传感器",
+    "extra_sensor_entities_helper": "其他类型的传感器，其数值也显示在区域名称下方（例如雨量或风速）。",
     "binary_sensor_entities": "区域名称下方的二元传感器",
     "binary_sensor_entities_helper": "它们的状态显示在数值之后，例如“窗户：打开”。",
     "graph_entity": "区域卡片中的图表",
@@ -88,7 +98,6 @@
     "toggle_all_on": "点击：打开此区域中的所有{domain}",
     "title": "区域",
     "title_plural": "区域",
-    "edit_area_button": "编辑区域按钮",
     "group_by_floor": "按楼层分组",
     "ungroup_by_floor": "取消按楼层分组",
     "icon": "区域图标",
@@ -210,6 +219,8 @@
     }
   },
   "device": {
+    "types": "种设备类型",
+    "tts": "文字转语音",
     "opening": "开合",
     "garage_door": "车库门",
     "valve": "阀门",
@@ -224,7 +235,6 @@
     "shutter": "卷帘",
     "title": "设备",
     "title_plural": "设备",
-    "edit_device_button": "编辑设备按钮",
     "edit_device_card": "为领域设置自定义实体卡片",
     "edit_device_popup": "为领域设置自定义弹出实体",
     "current_blueprint_card": "您当前正在使用以下蓝图为领域中所有实体卡片：",
@@ -288,6 +298,8 @@
     "empty_no_entities_hint": "设备页面显示属于某个区域的实体，以及人员、天气和警报。请在 Home Assistant 中为区域分配设备或实体。"
   },
   "more": {
+    "empty": "还没有更多页面",
+    "empty_hint": "更多页面可以显示任意卡片，例如摄像头、日历或图表。它们显示在这里，也可以按需显示在导航栏中。",
     "title": "更多",
     "title_plural": "更多页面",
     "pages": "页",
@@ -296,6 +308,7 @@
     "name_required": "您必须为页面指定名称",
     "icon_required": "如果要添加到导航栏，必须选择一个图标！",
     "add_navbar": "将此更多页面添加到主导航栏",
+    "remove_navbar": "从主导航栏中移除此页面",
     "name": "更多页面名称",
     "icon": "更多页面图标"
   },

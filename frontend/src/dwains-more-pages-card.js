@@ -5,10 +5,11 @@ import { popUp } from "./dwains-popup";
 import { fireEvent } from "./card-tools-compat";
 import { mdiDotsVertical, mdiNotePlus, mdiCog, mdiPencil } from "@mdi/js";
 import { css, html, LitElement } from 'lit';
-import { keyed } from 'lit/directives/keyed.js';
+import { repeat } from 'lit/directives/repeat.js';
 import translateEngine from './translate-engine';
-import { showSaveError } from './save-error-toast';
-const { loadSortable } = require('./lazy-modules');
+import { emptyStateStyles, renderEmptyState } from './empty-state-view';
+import { askDelete, showSaveError } from './save-error-toast';
+const { attachSortableLists } = require('./sortable-lists');
 import { subtleMorePagesStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
 const { TimerOwner } = require('./timer-owner');
@@ -37,7 +38,6 @@ class MorePagesCard extends LitElement {
             _loading: { state: true },
             _loadError: { state: true },
             _actionError: { state: true },
-            _sortError: { state: true },
           };
         }
 
@@ -55,11 +55,7 @@ class MorePagesCard extends LitElement {
           this._configReady = false;
           this._loading = true;
           this.editMode = false;
-          this._sortGeneration = 0;
-          this._gridRevision = 0;
           this._pendingSortOrder = undefined;
-          this._dragActive = false;
-          this._reloadAfterSort = false;
           this._confirmedVisibility = new Map();
         }
 
@@ -121,10 +117,7 @@ class MorePagesCard extends LitElement {
           this._subscriptions.disconnect();
           this._timers.disconnect();
           this._startedHass = undefined;
-          this._sortGeneration += 1;
           this._pendingSortOrder = undefined;
-          this._dragActive = false;
-          this._reloadAfterSort = false;
           this._loads.invalidate();
           this._destroySortable();
         }
@@ -150,10 +143,6 @@ class MorePagesCard extends LitElement {
               websocketReadStore.invalidate(this._hass, {
                 type: 'dwains_dashboard/more_pages/get',
               });
-              if (this._dragActive || this._pendingSortOrder) {
-                this._reloadAfterSort = true;
-                return;
-              }
               this._reloadCard().catch((error) => {
                 console.error('Error reloading more pages card:', error);
               });
@@ -225,6 +214,7 @@ class MorePagesCard extends LitElement {
           closeParentDropdown(ev);
           ev.stopPropagation();
           const morePage = ev.currentTarget.more_page;
+          if (!askDelete(this._hass, this.configuration?.more_pages?.[morePage]?.name || morePage)) return;
           this._hass.callWS({
             type: 'dwains_dashboard/remove_more_page',
             foldername: morePage,
@@ -355,34 +345,20 @@ class MorePagesCard extends LitElement {
         async _syncSortable() {
           this._destroySortable();
           if (!this.editMode || !this.isConnected) return;
+          // A later sync or leaving edit mode while Sortable loads wins.
           const generation = (this._sortableGeneration = (this._sortableGeneration || 0) + 1);
-          let Sortable;
-          try {
-            Sortable = await loadSortable();
-          } catch (err) {
-            console.error('Dwains Dashboard: failed to load drag and drop (reload the page after an update)', err);
-            return;
-          }
-          if (generation !== this._sortableGeneration || !this.editMode || !this.isConnected) return;
-          this._destroySortable();
-          const sortableElement = this.shadowRoot?.querySelector('.sortable');
-          if (!sortableElement) return;
-          const card = this;
-          this._sortable = [new Sortable(sortableElement, {
-            forceFallback: true,
-            animation: 150,
+          await attachSortableLists({
+            isActive: () => generation === this._sortableGeneration && this.editMode && this.isConnected,
+            lists: () => [this.shadowRoot?.querySelector('.sortable')].filter(Boolean),
             dataIdAttr: "data-more_page",
-            handle: '.sortable-move',
-            onStart() {
-              card._dragActive = true;
+            save: (order) => this._saveMorePageOrder(order),
+            onError: (error) => this._morePageOrderFailed(error),
+            applyOrder: (order) => this._showMorePageOrder(order),
+            replace: (sortables) => {
+              this._destroySortable();
+              this._sortable = sortables;
             },
-            onEnd() {
-              const order = this.toArray();
-              card._dragActive = false;
-              card._reloadAfterSort = false;
-              void card._saveMorePageOrder(order);
-            },
-          })];
+          });
         }
 
         _configurationWithMorePageOrder(configuration, order) {
@@ -399,59 +375,50 @@ class MorePagesCard extends LitElement {
           return { ...(configuration || {}), more_pages: morePages };
         }
 
+        _showMorePageOrder(order) {
+          this._shownSortOrder = [...order];
+          this.configuration = this._configurationWithMorePageOrder(this.configuration, order);
+          this.requestUpdate();
+        }
+
+        // While a save runs, reloads keep showing its order (see
+        // _loadConfiguration). The save fires the reload of this page.
         async _saveMorePageOrder(order) {
           if (!Array.isArray(order) || order.length === 0) return;
-          const generation = ++this._sortGeneration;
           this._pendingSortOrder = [...order];
-          this._gridRevision += 1;
-          this._sortError = undefined;
-          this.configuration = this._configurationWithMorePageOrder(
-            this.configuration,
-            order,
-          );
-          this.requestUpdate();
+          let response;
           try {
-            const response = await this._hass.callWS({
+            response = await this._hass.callWS({
               type: 'dwains_dashboard/sort_more_page',
               sortData: JSON.stringify(order),
             });
-            if (generation !== this._sortGeneration) return;
-            const confirmedOrder = Array.isArray(response?.order)
-              ? response.order
-              : order;
-            this._pendingSortOrder = [...confirmedOrder];
-            this.configuration = this._configurationWithMorePageOrder(
-              this.configuration,
-              confirmedOrder,
-            );
-            websocketReadStore.invalidate(this._hass, {
-              type: 'dwains_dashboard/configuration/get',
-            });
-            websocketReadStore.invalidate(this._hass, {
-              type: 'dwains_dashboard/more_pages/get',
-            });
-            this._reloadAfterSort = false;
-            await this._reloadCard();
-            if (generation !== this._sortGeneration) return;
-            this._pendingSortOrder = undefined;
-            this._reloadAfterSort = false;
-            this.requestUpdate();
           } catch (error) {
-            if (generation !== this._sortGeneration) return;
             this._pendingSortOrder = undefined;
-            this._reloadAfterSort = false;
-            this._sortError = error;
-            console.error('Failed to save More Page order:', error);
-            websocketReadStore.invalidate(this._hass, {
-              type: 'dwains_dashboard/configuration/get',
-            });
-            websocketReadStore.invalidate(this._hass, {
-              type: 'dwains_dashboard/more_pages/get',
-            });
-            await this._reloadCard().catch((reloadError) => {
-              console.error('Failed to restore More Page order:', reloadError);
-            });
+            throw error;
           }
+          // A newer drag is shown already and saves next.
+          if (JSON.stringify(this._shownSortOrder) !== JSON.stringify(order)) return;
+          this._pendingSortOrder = undefined;
+          // The backend leaves out pages it does not know.
+          const confirmedOrder = Array.isArray(response?.order) ? response.order : order;
+          this.configuration = this._configurationWithMorePageOrder(this.configuration, confirmedOrder);
+        }
+
+        _morePageOrderFailed(error) {
+          showSaveError(this._hass, error);
+          this._invalidateMorePageReads();
+          this._reloadCard().catch((reloadError) => {
+            console.error('Failed to restore More Page order:', reloadError);
+          });
+        }
+
+        _invalidateMorePageReads() {
+          websocketReadStore.invalidate(this._hass, {
+            type: 'dwains_dashboard/configuration/get',
+          });
+          websocketReadStore.invalidate(this._hass, {
+            type: 'dwains_dashboard/more_pages/get',
+          });
         }
 
         _destroySortable(){
@@ -606,22 +573,23 @@ class MorePagesCard extends LitElement {
                     </div>
                     </div>
 
-                    ${this._sortError ? html`
-                      <div class="sort-error" role="alert">
-                        ${this._sortError.message || this._sortError}
-                      </div>
-                    ` : ""}
-                    ${keyed(this._gridRevision, html`
-                      <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 xl-grid-cols-4 gap-4 sortable">
-                        ${morePages.map(([key, data]) => this._renderPageButton(key, data))}
-                      </div>
-                    `)}
+                    ${morePages.length ? "" : renderEmptyState(
+                      this._hass,
+                      'more',
+                      'no_more_pages',
+                      this._hass.user?.is_admin
+                        ? { label: translateEngine(this._hass, 'more.create'), onClick: (ev) => this._handleCreateMorePageClicked(ev) }
+                        : undefined,
+                    )}
+                    <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 xl-grid-cols-4 gap-4 sortable">
+                      ${repeat(morePages, ([key]) => key, ([key, data]) => this._renderPageButton(key, data))}
+                    </div>
                 </div>
             `;
         }
 
         static get styles() {
-          return [css`
+          return [emptyStateStyles, css`
             :host {
               display: block;
               box-sizing: border-box;
@@ -634,13 +602,6 @@ class MorePagesCard extends LitElement {
               width: 100%;
               min-width: 0;
               max-width: 100%;
-            }
-            .sort-error {
-              margin: 0 0 1rem;
-              padding: .75rem;
-              border-radius: .25rem;
-              color: var(--error-color);
-              background: color-mix(in srgb, var(--error-color) 10%, transparent);
             }
             @media (max-width: 599px) {
               #more_pages {

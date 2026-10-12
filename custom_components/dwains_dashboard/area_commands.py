@@ -109,6 +109,8 @@ async def ws_handle_edit_area_button(
         )
 
     hass.bus.async_fire("dwains_dashboard_homepage_card_reload")
+    # A disabled area also leaves the devices page.
+    hass.bus.async_fire("dwains_dashboard_devicespage_card_reload")
     connection.send_result(msg["id"], {"succesfull": "Area button saved"})
 
 
@@ -251,6 +253,10 @@ async def ws_handle_sort_area_button(
         hass.config.path(AREAS_PATH),
         areas,
     )
+    # The dragging page shows the order already; other open dashboards and
+    # cached configurations get it through the reload.
+    hass.bus.async_fire("dwains_dashboard_homepage_card_reload")
+    hass.bus.async_fire("dwains_dashboard_devicespage_card_reload")
     connection.send_result(
         msg["id"], {"succesfull": "Area buttons sorted succesfully"}
     )

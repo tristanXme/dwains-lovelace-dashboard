@@ -2,12 +2,17 @@ import { moreInfo } from './card-tools-compat';
 import { popUp } from './dwains-popup';
 import { mdiDotsVertical, mdiCog } from '@mdi/js';
 import { css, html, LitElement } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { clientPreferences } from './client-preferences';
 import { WEATHER_ICONS, STATES_OFF, UNAVAILABLE_STATES, SENSOR_DOMAINS, ALERT_DOMAINS, COVER_DOMAINS, TOGGLE_DOMAINS, CLIMATE_DOMAINS, OTHER_DOMAINS, DEVICE_CLASSES, ALARM_ICONS } from './variables';
 import { computeDomain } from './frontend-helpers';
 import translateEngine from './translate-engine';
+import { editTitle, entityEditTitle } from './edit-title';
 import { showSaveError } from './save-error-toast';
-const { savingSortableOptions } = require('./sortable-save');
+import { saveEntityBoolValue } from './entity-bool-save';
+const { attachSortableLists } = require('./sortable-lists');
+const { applyLocalOrder } = require('./local-order');
+const { hideItemWhileSaving, hideWhileSaving, showSettledItems } = require('./optimistic-item');
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
@@ -20,7 +25,6 @@ const { websocketReadStore } = require('./websocket-read-store');
 const { loadDashboardRegistrySnapshot } = require('./dashboard-registry-snapshot');
 const { resolveHass } = require('./hass-provider');
 const { loadCardHelpers } = require('./card-helpers-loader');
-const { loadSortable } = require('./lazy-modules');
 const { RegistryChangeWatcher } = require('./registry-change-watcher');
 const { homepageEmptyReason, initialSelection } = require('./empty-state');
 import { emptyStateStyles, renderEmptyState } from './empty-state-view';
@@ -29,9 +33,10 @@ const { closeParentDropdown } = require('./dropdown-controller');
 const { defineDwainsElement } = require('./custom-element-registration');
 const { DisconnectGrace } = require('./disconnect-grace');
 const { CardReuse, attachDeferredCard, cardReuseKey } = require('./deferred-card');
+const { entityCardConfig } = require('./entity-card-config');
 const { entitySettingsFromConfiguration } = require('./entity-settings-config');
 const { createHomepageCardElement, propagateHomepageHass } = require('./homepage-card-runtime');
-const { groupingMode, readBooleanCookie, resolveGroupingPreference } = require('./homepage-preferences');
+const { areaSensorDeviceClasses, groupingMode, readBooleanCookie, resolveGroupingPreference } = require('./homepage-preferences');
 const { formatValueWithUnit } = require('./value-format');
 import { homepageCardStyles } from './styles/homepage-card-styles';
 import { AreaTilesMixin } from './homepage/area-tiles';
@@ -94,9 +99,11 @@ function getDwainsHass() {
       const connectionChanged = hasHassConnectionChanged(this._hass, hass);
       const previous = this._hass;
       this._hass = hass;
-      propagateHomepageHass(this, hass);
+      if(!this.startedUp) propagateHomepageHass(this, hass);
+      // Also while the page loads: it is built from the registries the load
+      // started with (see _loadConfiguration).
+      if(this.isConnected) this._registryChanges.update(hass);
       if(this.startedUp){
-        this._registryChanges.update(hass);
         this._update_hass(hass, hassChangeIsRelevant(previous, hass, this._isShownEntity));
       }
       if (connectionChanged && this.isConnected) {
@@ -286,9 +293,9 @@ function getDwainsHass() {
 	        "dwains_dashboard_homepage_card_reload",
 	        () => {
 	          websocketReadStore.invalidate(this._hass);
-	          this._reloadCard().catch((error) => {
-	            console.error('Error reloading homepage card:', error);
-	          });
+	          // One change fires several dashboard events at once; reload
+	          // after all of them, with one read of the configuration.
+	          this._timers.schedule('event-reload', () => this._reloadCard(), 0);
 	        },
 	      );
 	    }
@@ -428,6 +435,8 @@ function getDwainsHass() {
       await this._loads.reload();
       this.requestUpdate();
       this._scheduleIconRepoke();
+      await this.updateComplete;
+      showSettledItems(this.shadowRoot);
     }
 
     _loadData(){
@@ -437,6 +446,10 @@ function getDwainsHass() {
     async _loadConfiguration({ isCurrent = () => true } = {}){
       this.startedUp = false;
 
+      // The page is built from the registries in this hass; a later change,
+      // also one while this load runs, builds it again.
+      this._registryChanges.reset();
+      this._registryChanges.update(this._hass);
       const snapshot = await loadDashboardRegistrySnapshot(
         this._hass,
         { includeFloors: true },
@@ -500,170 +513,14 @@ function getDwainsHass() {
               const customPopup = this.configuration['entities'][entity] && this.configuration['entities'][entity]['custom_popup'] ? this.configuration['entities'][entity]['custom_popup'] : false;
               const isFavorite = this.configuration['entities'][entity] && this.configuration['entities'][entity]['favorite'] ? this.configuration['entities'][entity]['favorite'] : false;
 
-              let cardConfig = {};
-              let rowSpan = "1";
-              let colSpan = "1";
-              let rowSpanLg = "1";
-              let colSpanLg = "1";
-              let rowSpanXl = "1";
-              let colSpanXl = "1";
-              if(customCard && this.configuration['entity_cards'] && this.configuration['entity_cards'][entity]){
-                //If entity has a custom card set by user
-                cardConfig = {input_name: friendlyName, input_entity: entity,...this.configuration['entity_cards'][entity]};
-              } else if(this.configuration['devices_card'][domain]){
-                //If domain has a custom card set by user
-                cardConfig = {input_name: friendlyName, input_entity: entity,...this.configuration['devices_card'][domain]};
-	              } else if (domain === 'sensor' && this._hass && this._hass.states[entity]?.attributes?.unit_of_measurement
-	              && !this.configuration['homepage_header']['disable_sensor_graph']) {
-	                cardConfig = {
-	                  graph: "line",
-	                  type: "sensor",
-	                  hours_to_show: 24,
-	                  detail: 1,
-	                  entity: entity,
-	                  ...(friendlyName ? { name: friendlyName } : {})
-	                };
-	              } else {
-                switch(domain) {
-	                  default:
-                    // cardConfig = {
-                    //   type: "custom:dwains-button-card",
-                    //   friendly_name: friendlyName
-                    // };
-	                    cardConfig = friendlyName ? {
-	                      type: "tile",
-	                      name: friendlyName,
-	                    } : {
-	                      type: "tile",
-	                    }
-	                    break;
-	                  case "camera":
-	                    cardConfig = {
-	                      type: "picture-entity",
-	                      camera_view: "auto"
-	                    };
-                    rowSpan = "2";
-                    colSpan = "2";
-                    rowSpanLg = "2";
-                    colSpanLg = "2";
-                    rowSpanXl = "2";
-                    colSpanXl = "2";
-                    break;
-                  case "climate":
-                    // cardConfig = {
-                    //   type: "custom:dwains-thermostat-card",
-                    //   friendly_name: friendlyName
-                    // };
-	                    cardConfig = friendlyName ? {
-	                      type: "thermostat",
-	                      name: friendlyName,
-	                      features: [
-                        {
-                          type: "climate-fan-modes",
-                          fan_modes: ["quiet","low","medium","high"],
-                        },
-                        {
-                          type: "climate-hvac-modes",
-                          hvac_modes: ["heat_cool","heat","dry","fan_only","cool","off"]
-	                        }
-	                      ]
-	                    } : {
-	                      type: "thermostat",
-	                      features: [
-	                        {
-	                          type: "climate-fan-modes",
-	                          fan_modes: ["quiet","low","medium","high"],
-	                        },
-	                        {
-	                          type: "climate-hvac-modes",
-	                          hvac_modes: ["heat_cool","heat","dry","fan_only","cool","off"]
-	                        }
-	                      ]
-	                    }
-	                    break;
-                  case "cover":
-                    // cardConfig = {
-                    //   type: "custom:dwains-cover-card",
-                    //   friendly_name: friendlyName
-                    // };
-	                    cardConfig = friendlyName ? {
-	                      type: "tile",
-	                      name: friendlyName,
-	                      features: [
-                        {
-                          type: "cover-open-close"
-                        },
-                        {
-                          type: "cover-position"
-	                        }
-	                      ]
-	                    } : {
-	                      type: "tile",
-	                      features: [
-	                        {
-	                          type: "cover-open-close"
-	                        },
-	                        {
-	                          type: "cover-position"
-	                        }
-	                      ]
-	                    }
-	                    break;
-                  case "light":
-                    // cardConfig = {
-                    //   type: "custom:dwains-light-card",
-                    //   friendly_name: friendlyName
-                    // };
-	                    cardConfig = friendlyName ? {
-	                      type: "tile",
-	                      name: friendlyName,
-	                      features: [
-                        {
-                          type: "light-brightness",
-	                        }
-	                      ]
-	                    } : {
-	                      type: "tile",
-	                      features: [
-	                        {
-	                          type: "light-brightness",
-	                        }
-	                      ]
-	                    };
-	                    break;
-                }
-
-                cardConfig = {entity: entity,...cardConfig};
-              }
-
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['row_span']){
-                rowSpan = this.configuration['entities'][entity]['row_span'];
-              }
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['col_span']){
-                colSpan = this.configuration['entities'][entity]['col_span'];
-              }
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['row_span_lg']){
-                rowSpanLg = this.configuration['entities'][entity]['row_span_lg'];
-              }
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['col_span_lg']){
-                colSpanLg = this.configuration['entities'][entity]['col_span_lg'];
-              }
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['row_span_xl']){
-                rowSpanXl = this.configuration['entities'][entity]['row_span_xl'];
-              }
-              if(this.configuration['entities'][entity] && this.configuration['entities'][entity]['col_span_xl']){
-                colSpanXl = this.configuration['entities'][entity]['col_span_xl'];
-              }
+              const { config: cardConfig, spans } = entityCardConfig({
+                entityId: entity, domain, friendlyName, configuration: this.configuration, stateObj: this._hass?.states[entity],
+              });
 
 	              favoritesEntities.push(attachDeferredCard({
                 domain: domain,
                 entity: entity,
-                rowSpan: rowSpan,
-                colSpan: colSpan,
-                rowSpanLg: rowSpanLg,
-                colSpanLg: colSpanLg,
-                rowSpanXl: rowSpanXl,
-                colSpanXl: colSpanXl,
+                ...spans,
                 friendlyName: configuredFriendlyName,
                 hideEntity: hideEntity,
                 excludeEntity: excludeEntity,
@@ -727,171 +584,15 @@ function getDwainsHass() {
                     //Also add the entity to the normal area entities because a hidden entity is still used in area button (states)
                     areaEntities.add(entity.entity_id);
                   } else {
-                    let cardConfig = {};
-                    let rowSpan = "1";
-                    let colSpan = "1";
-                    let rowSpanLg = "1";
-                    let colSpanLg = "1";
-                    let rowSpanXl = "1";
-                    let colSpanXl = "1";
-                    if(customCard && this.configuration['entity_cards'] && this.configuration['entity_cards'][entity.entity_id]){
-                      //If entity has a custom card set by user
-                      cardConfig = {input_name: friendlyName,input_entity: entity.entity_id,...this.configuration['entity_cards'][entity.entity_id]};
-                    } else if(this.configuration['devices_card'][domain]){
-                      //If domain has a custom card set by user
-                      cardConfig = {input_name: friendlyName,input_entity: entity.entity_id,...this.configuration['devices_card'][domain]};
-	                    } else if (domain === 'sensor' && this._hass && this._hass.states[entity.entity_id]?.attributes?.unit_of_measurement
-	                    && !this.configuration['homepage_header']['disable_sensor_graph']) {
-	                      cardConfig = {
-	                        graph: "line",
-	                        type: "sensor",
-	                        hours_to_show: 24,
-	                        detail: 1,
-	                        entity: entity.entity_id,
-	                        ...(friendlyName ? { name: friendlyName } : {})
-	                      };
-	                    } else {
-                      switch(domain) {
-	                        default:
-                          // cardConfig = {
-                          //   type: "custom:dwains-button-card",
-                          //   friendly_name: friendlyName
-                          // };
-	                          cardConfig = friendlyName ? {
-	                            type: "tile",
-	                            name: friendlyName,
-	                          } : {
-	                            type: "tile",
-	                          }
-	                          break;
-	                        case "camera":
-	                          cardConfig = {
-	                            type: "picture-entity",
-	                            camera_view: "auto"
-	                          };
-                          rowSpan = "2";
-                          colSpan = "2";
-                          rowSpanLg = "2";
-                          colSpanLg = "2";
-                          rowSpanXl = "2";
-                          colSpanXl = "2";
-                          break;
-                        case "climate":
-                          // cardConfig = {
-                          //   type: "custom:dwains-thermostat-card",
-                          //   friendly_name: friendlyName
-                          // };
-	                          cardConfig = friendlyName ? {
-	                            type: "thermostat",
-	                            name: friendlyName,
-	                            features: [
-                              {
-                                type: "climate-fan-modes",
-                                fan_modes: ["quiet","low","medium","high"],
-                              },
-                              {
-                                type: "climate-hvac-modes",
-                                hvac_modes: ["heat_cool","heat","dry","fan_only","cool","off"]
-	                              }
-	                            ]
-	                          } : {
-	                            type: "thermostat",
-	                            features: [
-	                              {
-	                                type: "climate-fan-modes",
-	                                fan_modes: ["quiet","low","medium","high"],
-	                              },
-	                              {
-	                                type: "climate-hvac-modes",
-	                                hvac_modes: ["heat_cool","heat","dry","fan_only","cool","off"]
-	                              }
-	                            ]
-	                          }
-	                          break;
-                        case "cover":
-                          // cardConfig = {
-                          //   type: "custom:dwains-cover-card",
-                          //   friendly_name: friendlyName
-                          // };
-	                          cardConfig = friendlyName ? {
-	                            type: "tile",
-	                            name: friendlyName,
-	                            features: [
-                              {
-                                type: "cover-open-close"
-                              },
-                              {
-                                type: "cover-position"
-	                              }
-	                            ]
-	                          } : {
-	                            type: "tile",
-	                            features: [
-	                              {
-	                                type: "cover-open-close"
-	                              },
-	                              {
-	                                type: "cover-position"
-	                              }
-	                            ]
-	                          }
-	                          break;
-                        case "light":
-                          // cardConfig = {
-                          //   type: "custom:dwains-light-card",
-                          //   friendly_name: friendlyName
-                          // };
-	                          cardConfig = friendlyName ? {
-	                            type: "tile",
-	                            name: friendlyName,
-	                            features: [
-                              {
-                                type: "light-brightness",
-	                              }
-	                            ]
-	                          } : {
-	                            type: "tile",
-	                            features: [
-	                              {
-	                                type: "light-brightness",
-	                              }
-	                            ]
-	                          };
-	                          break;
-                      }
-
-                      cardConfig = {entity: entity.entity_id,...cardConfig};
-                    }
-
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['row_span']){
-                      rowSpan = this.configuration['entities'][entity.entity_id]['row_span'];
-                    }
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['col_span']){
-                      colSpan = this.configuration['entities'][entity.entity_id]['col_span'];
-                    }
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['row_span_lg']){
-                      rowSpanLg = this.configuration['entities'][entity.entity_id]['row_span_lg'];
-                    }
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['col_span_lg']){
-                      colSpanLg = this.configuration['entities'][entity.entity_id]['col_span_lg'];
-                    }
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['row_span_xl']){
-                      rowSpanXl = this.configuration['entities'][entity.entity_id]['row_span_xl'];
-                    }
-                    if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['col_span_xl']){
-                      colSpanXl = this.configuration['entities'][entity.entity_id]['col_span_xl'];
-                    }
+                    const { config: cardConfig, spans } = entityCardConfig({
+                      entityId: entity.entity_id, domain, friendlyName, configuration: this.configuration, stateObj,
+                    });
 
 
                     areaCardsByDomain.push(attachDeferredCard({
                       domain: domain,
                       entity: entity.entity_id,
-                      rowSpan: rowSpan,
-                      colSpan: colSpan,
-                      rowSpanLg: rowSpanLg,
-                      colSpanLg: colSpanLg,
-                      rowSpanXl: rowSpanXl,
-                      colSpanXl: colSpanXl,
+                      ...spans,
                       friendlyName: configuredFriendlyName,
                       hideEntity: hideEntity,
                       excludeEntity: excludeEntity,
@@ -1054,13 +755,15 @@ function getDwainsHass() {
       const data = this.data.find((data) => data.area.area_id == areaId);
       const key = ev.currentTarget.key;
       const value = ev.currentTarget.ddValue;
+      // Every card of the area view leaves its list.
+      const cards = [...(ev.currentTarget.closest('.dd-area-view')?.querySelectorAll('.area-view-entity-sortable > [data-dd-item]') || [])];
 
-      this._hass.callWS({
+      hideWhileSaving(cards, () => this._hass.callWS({
         type: 'dwains_dashboard/edit_entities_bool_value',
         entities: JSON.stringify([...data.entities]),
         key: key,
         value: value,
-      }).catch((err) => showSaveError(this._hass, err));
+      })).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleAreaClick(event){
@@ -1197,7 +900,7 @@ function getDwainsHass() {
       const configuredArea = (this.configuration['areas'] && this.configuration['areas'][areaId]) || {};
       this._popupOpens.schedule(() => {
 
-        popUp(translateEngine(this._hass, 'area.edit_area_button'), {
+        popUp(editTitle(this._hass, this._hass.areas?.[areaId]?.name || areaId), {
           type: "custom:dwains-edit-area-button-card",
           areaId: areaId,
           icon: icon,
@@ -1206,6 +909,7 @@ function getDwainsHass() {
           graphEntity: configuredArea['graph_entity'] || "",
           graphHours: configuredArea['graph_hours'],
           sensorEntities: configuredArea['sensor_entities'] || [],
+          sensorDeviceClasses: areaSensorDeviceClasses(this.configuration),
           binarySensorEntities: configuredArea['binary_sensor_entities'] || [],
         }, false, '');
       });
@@ -1233,51 +937,37 @@ function getDwainsHass() {
 
     _openEntitySettings(settings) {
       this._popupOpens.schedule(() => {
-        popUp(translateEngine(this._hass, 'entity.edit_entity'), {
+        popUp(entityEditTitle(this._hass, settings.entity), {
           type: "custom:dwains-edit-entity-card",
           ...settings,
         }, false, '');
       });
     }
 
-    _saveEntityBoolValue(entityId, key, value) {
-      return this._hass.callWS({
-        type: 'dwains_dashboard/edit_entity_bool_value',
-        entityId,
-        key,
-        value,
-      }).catch((err) => {
-        console.error('Failed to update entity setting:', err);
-      });
-    }
     _handleEntityEditBoolValueClick(ev) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      this._saveEntityBoolValue(
-        ev.currentTarget.entity,
-        ev.currentTarget.key,
-        ev.currentTarget.ddValue,
-      );
+      const { entity, key, ddValue } = ev.currentTarget;
+      // The card leaves its list at once; an excluded entity keeps its card
+      // and only leaves the counts.
+      saveEntityBoolValue(this._hass, entity, key, ddValue, key === 'excluded' ? undefined : ev.currentTarget);
     }
     _handleEntityAreaVisibilityClick(ev, entityId, value) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      this._saveEntityBoolValue(entityId, 'hidden_in_area', value);
+      // Hidden in area views, the card moves to the list of hidden ones.
+      saveEntityBoolValue(this._hass, entityId, 'hidden_in_area', value, ev.currentTarget);
     }
     _handleAreaEditBoolValueClick(ev) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      const areaId = ev.currentTarget.areaId;
-      const key = ev.currentTarget.key;
-      const value = ev.currentTarget.ddValue;
-
-      this._hass.callWS({
+      const { areaId, key, ddValue } = ev.currentTarget;
+      hideItemWhileSaving(ev.currentTarget, () => this._hass.callWS({
         type: 'dwains_dashboard/edit_area_bool_value',
-        areaId: areaId,
-        key: key,
-        value: value,
-      }).catch((err) => showSaveError(this._hass, err));
-
+        areaId,
+        key,
+        value: ddValue,
+      })).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleEntityEditCardClick(ev) {
@@ -1397,7 +1087,8 @@ function getDwainsHass() {
 
       if(value){
         this._attachSortables('.favorites-sortable', 'data-entity', 'dwains_dashboard/sort_entity',
-          'favorite_sort_order', () => this.favoriteEditMode);
+          'favorite_sort_order', () => this.favoriteEditMode,
+          (order) => this._showOrder([this.favorites], 'favorite_sort_order', order));
       } else {
         this._destroySortables();
       }
@@ -1410,38 +1101,49 @@ function getDwainsHass() {
       const value = ev.currentTarget.ddValue;
 
       if(value){
+        const sortType = this.areaDisplayGrouped ? 'grouped_sort_order' : 'sort_order';
         this._attachSortables('.area-sortable', 'data-area-id', 'dwains_dashboard/sort_area_button',
-          this.areaDisplayGrouped ? 'grouped_sort_order' : 'sort_order', () => this.areaEditMode);
+          sortType, () => this.areaEditMode,
+          (order) => this._showAreaOrder(sortType, order));
       } else {
         this._destroySortables();
       }
       this.areaEditMode = value;
     }
 
+    // A dragged order of entity cards, shown before the save comes back.
+    _showOrder(lists, sortKey, order){
+      for (const items of lists) applyLocalOrder(items, (item) => item.entity, order, sortKey);
+      this.requestUpdate();
+    }
+
+    // A dragged order of the area tiles. Without grouping the tiles are
+    // shown in the order of this.data.
+    _showAreaOrder(sortKey, order){
+      applyLocalOrder(this.data, (item) => item.area.area_id, order, sortKey);
+      if (sortKey === 'sort_order') {
+        this.data.sort((x, y) => (x.sort_order == y.sort_order ? 0 : x.sort_order > y.sort_order ? 1 : -1));
+      }
+      this.requestUpdate();
+    }
+
     // Makes the grids matching selector drag-sortable and saves the new order.
     // Sortable is loaded on first use, so isActive() tells whether the edit
     // mode is still on once it has arrived.
-    async _attachSortables(selector, dataIdAttr, type, sortType, isActive){
-      let Sortable;
-      try {
-        Sortable = await loadSortable();
-      } catch (err) {
-        console.error('Dwains Dashboard: failed to load drag and drop (reload the page after an update)', err);
-        return;
-      }
-      if(!isActive()) return;
-      this._destroySortables();
+    async _attachSortables(selector, dataIdAttr, type, sortType, isActive, applyOrder){
       const cardHass = this._hass;
-      this._sortable = [...this.shadowRoot.querySelectorAll(selector)].map((element) => new Sortable(element, {
-        forceFallback: true,
-        animation: 150,
-        dataIdAttr: dataIdAttr,
-        handle: '.sortable-move',
-        ...savingSortableOptions(
-          (order) => cardHass.callWS({ type: type, sortData: JSON.stringify(order), sortType: sortType }),
-          (err) => showSaveError(cardHass, err),
-        ),
-      }));
+      await attachSortableLists({
+        isActive,
+        lists: () => this.shadowRoot.querySelectorAll(selector),
+        dataIdAttr,
+        save: (order) => cardHass.callWS({ type: type, sortData: JSON.stringify(order), sortType: sortType }),
+        onError: (err) => showSaveError(cardHass, err),
+        applyOrder,
+        replace: (sortables) => {
+          this._destroySortables();
+          this._sortable = sortables;
+        },
+      });
     }
 
     _destroySortables(){
@@ -1455,8 +1157,10 @@ function getDwainsHass() {
       this._destroySortables();
       this.updateComplete.then(() => {
         if(this.areaViewEditMode){
+          const sortType = this.areaViewDisplayGrouped ? 'grouped_sort_order' : 'sort_order';
           this._attachSortables('.area-view-entity-sortable', 'data-entity', 'dwains_dashboard/sort_entity',
-            this.areaViewDisplayGrouped ? 'grouped_sort_order' : 'sort_order', () => this.areaViewEditMode);
+            sortType, () => this.areaViewEditMode,
+            (order) => this._showOrder(this.data.map((area) => area.cards), sortType, order));
         }
       });
     }
@@ -1528,7 +1232,7 @@ function getDwainsHass() {
 
 	    _renderFavoriteViewCard(data){
 	      return html`
-	      <div data-entity='${data.entity}' class="col-span-${data.colSpan} row-span-${data.rowSpan} lg-col-span-${data.colSpanLg} lg-row-span-${data.rowSpanLg}  relative">
+	      <div data-dd-item data-entity='${data.entity}' class="col-span-${data.colSpan} row-span-${data.rowSpan} lg-col-span-${data.colSpanLg} lg-row-span-${data.rowSpanLg}  relative">
 	        <div>
 	          <dd-lazy-card .card=${data.card} .cardFactory=${data.cardFactory} .hass=${this._hass}></dd-lazy-card>
 	        </div>
@@ -1654,9 +1358,7 @@ function getDwainsHass() {
             </div>
           </div>
           <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4 sortable favorites-sortable ${this.favoriteEditMode || !this._masonryEnabled() ? "" : "dd-fav-masonry"}">
-            ${this.favorites.map((i) =>
-              html`${this._renderFavoriteViewCard(i)}`
-            )}
+            ${repeat(this.favorites, (i) => i.entity, (i) => this._renderFavoriteViewCard(i))}
           </div>
         </div>
         `;
@@ -1849,9 +1551,7 @@ function getDwainsHass() {
                       <div class="mb-5">
                         <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass,'area.disabled')}</h3>
                         <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                        ${this.disabledAreas.map((area) =>
-                            html`${this._renderAreaButtonCard(area, 'disabled')}`
-                        )}
+                        ${repeat(this.disabledAreas, (area) => area.area_id, (area) => this._renderAreaButtonCard(area, 'disabled'))}
                         </div>
                       </div>` : ""
                     }
@@ -1859,7 +1559,15 @@ function getDwainsHass() {
                 </div>
               </div>
               <div class="w-full ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-w-1-2 xl-w-2-3"} ${!window.location.hash ? (this.configuration['homepage_header']['v2_mode'] ? "hidden" : "hidden lg-block") : ""} p-4">
-                ${this.data.map((i) => this._renderAreaView(i))}
+                ${repeat(
+                  // In a fixed order, not in the order of the tiles: one view
+                  // is shown at a time, and a new order (a drag in edit mode)
+                  // would move the views, which takes every card out and puts
+                  // it back.
+                  [...this.data].sort((x, y) => (x.area.area_id < y.area.area_id ? -1 : x.area.area_id > y.area.area_id ? 1 : 0)),
+                  (i) => i.area.area_id,
+                  (i) => this._renderAreaView(i),
+                )}
               </div>
             </div>
             </div>

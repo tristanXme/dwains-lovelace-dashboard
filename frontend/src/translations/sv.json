@@ -1,5 +1,8 @@
 {
   "global": {
+    "confirm_delete": "Vill du verkligen ta bort? Det går inte att ångra.",
+    "confirm_delete_named": "Ta bort ”{name}”? Det går inte att ångra.",
+    "edit_named": "Redigera {name}",
     "save_failed": "Det gick inte att spara",
     "reload_after_update": "Dwains Dashboard har uppdaterats. Ladda om sidan för att kunna använda allt igen.",
     "reload": "Ladda om",
@@ -22,6 +25,9 @@
   "editor": {
     "lovelace_card": "Lovelacekort",
     "create_lovelace_card": "Skapa ett nytt lovelacekort från början",
+    "select_card_for": "Välj ett kort för",
+    "loading_card_editor": "Läser in kortredigeraren…",
+    "no_visual_editor": "Det här kortet har ingen visuell redigerare. Redigera dess JSON-konfiguration:",
     "dwains_dashboard_blueprint": "Dwains Dashboard-blueprint",
     "use_dwains_dashboard_blueprint": "Använd en Dwains Dashboard-blueprint för att skapa ett kort",
     "row_span": "Radspann",
@@ -38,7 +44,6 @@
     "title": "Entitet",
     "title_plural": "entiteter",
     "add_card_to": "Lägg till kort till ",
-    "edit_entity": "Redigera entitet",
     "edit_entity_card": "Redigera entitetskort",
     "edit_entity_popup_card": "Redigera entitets-pop up-kort",
     "add_to_favorites": "Lägg till i favoriter",
@@ -54,6 +59,8 @@
     "hide_all": "Göm alla entiteter",
     "exclude": "Exkludera entitet i DD",
     "hide": "Dölj entitet i DD",
+    "hide_in_area": "Dölj i områdesvyer",
+    "unhide_in_area": "Visa i områdesvyer",
     "unhide": "Ta fram entitet",
     "use_popup_card": "Använd eget pop up-kort",
     "use_entity_card": "Använd eget entitetskort",
@@ -71,8 +78,11 @@
     "title": "Hem"
   },
   "area": {
-    "sensor_entities": "Sensorer under rummets namn",
-    "sensor_entities_helper": "Deras värden visas under rummets namn. En vald sensor ersätter medelvärdet av sin typ i det här rummet (till exempel en termometer i stället för medelvärdet av alla).",
+    "sensor_values": "Värden under rummets namn",
+    "sensor_values_helper": "Per sensortyp medelvärdet av alla sensorer i rummet (tomt fält) eller en vald sensor. Integrationens inställningar avgör vilka typer som visas.",
+    "sensor_average": "Medelvärde av alla ({count})",
+    "extra_sensor_entities": "Fler sensorer under rummets namn",
+    "extra_sensor_entities_helper": "Sensorer av andra typer vars värde också visas under rummets namn (till exempel regn eller vind).",
     "binary_sensor_entities": "Binära sensorer under rummets namn",
     "binary_sensor_entities_helper": "Deras tillstånd visas efter värdena, till exempel \"Fönster: Öppen\".",
     "graph_entity": "Diagram i rummets ruta",
@@ -88,7 +98,6 @@
     "toggle_all_on": "Tryck: slå på alla {domain} i det här rummet",
     "title": "Område",
     "title_plural": "Områden",
-    "edit_area_button": "Redigera områdesknapp",
     "group_by_floor": "Gruppera efter våningsplan",
     "ungroup_by_floor": "Avgruppera efter våningsplan",
     "icon": "Områdesikon",
@@ -210,6 +219,8 @@
     }
   },
   "device": {
+    "types": "enhetstyper",
+    "tts": "Text till tal",
     "opening": "Öppning",
     "garage_door": "Garageport",
     "valve": "Ventil",
@@ -224,7 +235,6 @@
     "shutter": "Rullgardin",
     "title": "Enhet",
     "title_plural": "enheter",
-    "edit_device_button": "Redigera enhetsknapp",
     "edit_device_card": "Ställ in anpassade entitetskort för domän ",
     "edit_device_popup": "Ställ in anpassade entitetspopups för domän ",
     "current_blueprint_card": "Du använder för närvarande följande blueprint för alla entitetskort i domänen ",
@@ -284,6 +294,8 @@
     "empty_no_entities_hint": "Enhetssidan visar entiteter som hör till ett område samt personer, väder och larm. Tilldela enheter eller entiteter till områden i Home Assistant."
   },
   "more": {
+    "empty": "Inga fler sidor ännu",
+    "empty_hint": "Fler sidor visar valfria kort, till exempel kameror, kalendrar eller diagram. De visas här och, om du vill, i navigeringsfältet.",
     "title": "Mer",
     "title_plural": "Mersidor",
     "pages": "sidor",
@@ -292,6 +304,7 @@
     "name_required": "Du måste ange ett namn för sidan",
     "icon_required": "Om du vill lägga till den till navigationslisten måste du välja en ikon!",
     "add_navbar": "Lägg till denna mersida till huvudnavigationslisten",
+    "remove_navbar": "Ta bort den här sidan från huvudnavigeringen",
     "name": "Namn på mersida",
     "icon": "Ikon för mersida"
   },

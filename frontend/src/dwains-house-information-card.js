@@ -21,6 +21,7 @@ import {
 const { defineDwainsElement } = require('./custom-element-registration');
 const { DisconnectGrace } = require('./disconnect-grace');
 import translateEngine from './translate-engine';
+import { deviceTypeName } from './device-type-name';
 import { myComputeStateDisplay, resolveEntityName } from "./helpers";
 import { subtleHouseInformationStyles } from './styles/dwains-subtle-style';
 const { loadDashboardRegistrySnapshot } = require('./dashboard-registry-snapshot');
@@ -185,9 +186,10 @@ class DwainsHouseInformationCard extends LitElement {
     `, subtleHouseInformationStyles(css)]
     }
 
+    // hass is no reactive property: the setter renders only for changes of
+    // the entities the bar shows (most state changes are others).
     static get properties() {
         return {
-            _hass: { type: Object },
             configuration: { type: Object },
             domains: { type: Object },
             persons: { type: Array }
@@ -384,13 +386,17 @@ class DwainsHouseInformationCard extends LitElement {
                 ));
             this._popupOpens.schedule(() => {
                 fireEvent("hass-more-info", { entityId: "" }, this);
-                popUp(translateEngine(this._hass, 'device.' + domain), {
+                // Named like the entry that was tapped ("Fenster", not
+                // "Binärsensoren"); a plain list, so the normal width.
+                popUp(deviceClass && domain !== 'climate'
+                    ? translateEngine(this._hass, 'device.' + deviceClass)
+                    : deviceTypeName(this._hass, domain), {
                     type: "custom:dwains-house-information-more-info-card",
                     domain: domain,
                     entities: entities,
                     deviceClass: domain === 'climate' ? '' : deviceClass,
                     configuration: this.configuration,
-                }, true, '');
+                }, false, '');
             });
         }
     }
@@ -503,7 +509,7 @@ class DwainsHouseInformationCard extends LitElement {
             if (!this._showsEntry(domain.domain)) return;
             const on = this._isOn(entitiesByDomain, domain);
             if (on) {
-                return this._renderDomainBadgeCard(domain.domain, translateEngine(this._hass, 'device.' + domain.domain), DOMAIN_STATE_ICONS[domain.domain][on ? "on" : "off"], on, '');
+                return this._renderDomainBadgeCard(domain.domain, deviceTypeName(this._hass, domain.domain), DOMAIN_STATE_ICONS[domain.domain][on ? "on" : "off"], on, '');
             }
         } else if (ALERT_DOMAINS.includes(domain.domain)) {
             //If domain is alert domain binary_sensor (check device_classes ("motion", "door", "window"))
@@ -532,14 +538,14 @@ class DwainsHouseInformationCard extends LitElement {
             //Its climate domain
             const on = this._isOnClimate(entitiesByDomain, domain.domain);
             if (on) {
-                return this._renderDomainBadgeCard(domain.domain, translateEngine(this._hass, 'device.' + domain.domain), DOMAIN_STATE_ICONS[domain.domain][on ? "on" : "off"], on, '');
+                return this._renderDomainBadgeCard(domain.domain, deviceTypeName(this._hass, domain.domain), DOMAIN_STATE_ICONS[domain.domain][on ? "on" : "off"], on, '');
             }
         } else if (OTHER_DOMAINS.includes(domain.domain)) {
             if (!this._showsEntry(domain.domain)) return;
             //Its other domain
             const on = this._isOn(entitiesByDomain, domain);
             if (on) {
-                return this._renderDomainBadgeCard(domain.domain, translateEngine(this._hass, 'device.' + domain.domain), DOMAIN_STATE_ICONS[domain.domain][on ? "on" : "off"], on, '');
+                return this._renderDomainBadgeCard(domain.domain, deviceTypeName(this._hass, domain.domain), DOMAIN_STATE_ICONS[domain.domain][on ? "on" : "off"], on, '');
             }
         }
     }

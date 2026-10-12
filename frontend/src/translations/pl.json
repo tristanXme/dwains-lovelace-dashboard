@@ -1,5 +1,8 @@
 {
   "global": {
+    "confirm_delete": "Na pewno usunąć? Tego nie można cofnąć.",
+    "confirm_delete_named": "Usunąć „{name}”? Tego nie można cofnąć.",
+    "edit_named": "Edytuj {name}",
     "save_failed": "Zapisywanie nie powiodło się",
     "reload_after_update": "Dwains Dashboard został zaktualizowany. Odśwież stronę, aby znów korzystać ze wszystkich funkcji.",
     "reload": "Odśwież",
@@ -22,6 +25,9 @@
   "editor": {
     "lovelace_card": "Karta Lovelace",
     "create_lovelace_card": "Utwórz nową kartę Lovelace",
+    "select_card_for": "Wybierz kartę dla",
+    "loading_card_editor": "Ładowanie edytora karty…",
+    "no_visual_editor": "Ta karta nie ma edytora wizualnego. Edytuj jej konfigurację JSON:",
     "dwains_dashboard_blueprint": "Schemat Dwains Dashboard",
     "use_dwains_dashboard_blueprint": "Użyj schematu Dwains Dashboard do stworzenia karty",
     "row_span": "Szerokość wierszy",
@@ -38,7 +44,6 @@
     "title": "Encja",
     "title_plural": "Encje",
     "add_card_to": "Dodaj kartę do: ",
-    "edit_entity": "Edytuj encję",
     "edit_entity_card": "Edytuj kartę encji",
     "edit_entity_popup_card": "Edytuj wyskakującą kartę",
     "add_to_favorites": "Dodaj do Ulubionych",
@@ -54,6 +59,8 @@
     "hide_all": "Ukryj wszystkie encje",
     "exclude": "Wyłącz encje w DD",
     "hide": "Ukryj encje w DD",
+    "hide_in_area": "Ukryj w widokach obszarów",
+    "unhide_in_area": "Pokaż w widokach obszarów",
     "unhide": "Odkryj encje",
     "use_popup_card": "Użyj własnej wyskakującej karty",
     "use_entity_card": "Użyj własnej karty encji",
@@ -71,8 +78,11 @@
     "title": "Strona główna"
   },
   "area": {
-    "sensor_entities": "Czujniki pod nazwą obszaru",
-    "sensor_entities_helper": "Ich wartości są pokazywane pod nazwą obszaru. Wybrany czujnik zastępuje w tym obszarze średnią swojego rodzaju (np. jeden termometr zamiast średniej ze wszystkich).",
+    "sensor_values": "Wartości pod nazwą obszaru",
+    "sensor_values_helper": "Dla każdego rodzaju czujnika średnia ze wszystkich czujników w obszarze (puste pole) lub jeden wybrany czujnik. Ustawienia integracji decydują, które rodzaje są pokazywane.",
+    "sensor_average": "Średnia ze wszystkich ({count})",
+    "extra_sensor_entities": "Dodatkowe czujniki pod nazwą obszaru",
+    "extra_sensor_entities_helper": "Czujniki innych rodzajów, których wartość jest pokazywana dodatkowo pod nazwą obszaru (np. deszcz lub wiatr).",
     "binary_sensor_entities": "Czujniki binarne pod nazwą obszaru",
     "binary_sensor_entities_helper": "Ich stan jest pokazywany po wartościach, np. \"Okno: Otwarte\".",
     "graph_entity": "Wykres na kafelku obszaru",
@@ -88,7 +98,6 @@
     "toggle_all_on": "Dotknij: włącz wszystkie {domain} w tym obszarze",
     "title": "Obszar",
     "title_plural": "Obszary",
-    "edit_area_button": "Edytuj przycisk obszaru",
     "group_by_floor": "Grupuj według pięter",
     "ungroup_by_floor": "Rozgrupuj według pięter",
     "icon": "Ikony obszarów",
@@ -210,6 +219,8 @@
     }
   },
   "device": {
+    "types": "typy urządzeń",
+    "tts": "Zamiana tekstu na mowę",
     "opening": "Otwarcie",
     "garage_door": "Brama garażowa",
     "valve": "Zawór",
@@ -224,7 +235,6 @@
     "shutter": "Roleta",
     "title": "Urządzenie",
     "title_plural": "Urządzenia",
-    "edit_device_button": "Edytuj przycisk urządzenia",
     "edit_device_card": "Edytuj własną encję karty dla domeny",
     "edit_device_popup": "Edytuj własną wyskakującą encję dla domeny",
     "current_blueprint_card": "Obecnie używany schemat dla wszystkich encji w domenie: ",
@@ -284,6 +294,8 @@
     "empty_no_entities_hint": "Strona urządzeń pokazuje encje należące do obszaru oraz osoby, pogodę i alarm. Przypisz urządzenia lub encje do obszarów w Home Assistant."
   },
   "more": {
+    "empty": "Brak dodatkowych stron",
+    "empty_hint": "Dodatkowe strony pokazują dowolne karty, np. kamery, kalendarze lub wykresy. Pojawiają się tutaj i, jeśli chcesz, na pasku nawigacji.",
     "title": "Więcej",
     "title_plural": "Więcej stron",
     "pages": "Strony",
@@ -292,6 +304,7 @@
     "name_required": "Podaj nazwę strony:",
     "icon_required": "Jeśli chcesz dodać stronę do paska nawigacyjnego, wybierz jej ikonę!",
     "add_navbar": "Dodaj tę stronę do paska nawigacyjnego",
+    "remove_navbar": "Usuń tę stronę z głównego paska nawigacji",
     "name": "Więcej nazw stron",
     "icon": "Więcej ikon strony"
   },

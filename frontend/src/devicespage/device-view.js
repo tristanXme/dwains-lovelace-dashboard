@@ -1,7 +1,9 @@
 import { html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { mdiDotsVertical, mdiCog } from "@mdi/js";
 import { clientPreferences } from '../client-preferences';
 import translateEngine from '../translate-engine';
+import { deviceTypeName } from '../device-type-name';
 const { closeParentDropdown } = require('../dropdown-controller');
 const { entityRecoveryActions } = require('../entity-settings-config');
 
@@ -29,6 +31,7 @@ export const DeviceViewMixin = (Base) => class extends Base {
     _renderDeviceViewCard(data){
       return html`
       <div
+        data-dd-item
         data-entity='${data.entity}'
         class="col-span-${data.colSpan} row-span-${data.rowSpan} lg-col-span-${data.colSpanLg} lg-row-span-${data.rowSpanLg} xl-col-span-${data.colSpanXl} xl-row-span-${data.rowSpanXl} relative"
       >
@@ -128,11 +131,7 @@ export const DeviceViewMixin = (Base) => class extends Base {
     _renderDeviceViewCustomCards(data, position){
       return html`
       <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 my-4">
-        ${position == "bottom" ?  data.customCardsBottom.map((i) =>
-          html`${this._renderDeviceViewCustomCard(i)}`
-        ) : data.customCardsTop.map((i) =>
-          html`${this._renderDeviceViewCustomCard(i)}`
-        )}
+        ${repeat(position == "bottom" ? data.customCardsBottom : data.customCardsTop, (i) => i.filename, (i) => this._renderDeviceViewCustomCard(i))}
       </div>
       `;
     }
@@ -180,7 +179,7 @@ export const DeviceViewMixin = (Base) => class extends Base {
         type,
       );
       return html`
-        <div>
+        <div data-dd-item>
           <ha-card class="p-2">
             ${translateEngine(this._hass, 'entity.title')}:<br>
             <span class="break-words">
@@ -225,7 +224,7 @@ export const DeviceViewMixin = (Base) => class extends Base {
             <div class="dd-detail-view-header flex justify-between">
               <div class="dd-detail-view-title">
                 <h2 class="font-semibold text-lg capitalize">
-                  ${translateEngine(this._hass, 'device.'+data.domain)}
+                  ${deviceTypeName(this._hass, data.domain)}
                 </h2>
                 <span class="text-gray">
                   ${data.cards.length} ${translateEngine(this._hass, 'entity.title_plural')}
@@ -308,9 +307,7 @@ export const DeviceViewMixin = (Base) => class extends Base {
                 <div class="mb-5">
                   <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.unavailable')}</h3>
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                  ${data.entitiesNoState.map((entity) =>
-                      html`${this._renderAreaViewEntityCard(entity, 'noState')}`
-                  )}
+                  ${repeat(data.entitiesNoState, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'noState'))}
                   </div>
                 </div>` : ""
               }
@@ -318,9 +315,7 @@ export const DeviceViewMixin = (Base) => class extends Base {
                 <div class="mb-5">
                   <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.hidden')}</h3>
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                  ${data.entitiesHidden.map((entity) =>
-                      html`${this._renderAreaViewEntityCard(entity, 'hidden')}`
-                  )}
+                  ${repeat(data.entitiesHidden, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'hidden'))}
                   </div>
                 </div>` : ""
               }
@@ -328,9 +323,7 @@ export const DeviceViewMixin = (Base) => class extends Base {
                 <div class="mb-5">
                   <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.disabled')}</h3>
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                  ${data.entitiesDisabled.map((entity) =>
-                      html`${this._renderAreaViewEntityCard(entity, 'disabled')}`
-                  )}
+                  ${repeat(data.entitiesDisabled, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'disabled'))}
                   </div>
                 </div>` : ""
               }

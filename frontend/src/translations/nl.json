@@ -1,5 +1,8 @@
 {
   "global": {
+    "confirm_delete": "Echt verwijderen? Dit kan niet ongedaan worden gemaakt.",
+    "confirm_delete_named": "“{name}” verwijderen? Dit kan niet ongedaan worden gemaakt.",
+    "edit_named": "{name} bewerken",
     "save_failed": "Opslaan mislukt",
     "reload_after_update": "Dwains Dashboard is bijgewerkt. Laad de pagina opnieuw om alles weer te kunnen gebruiken.",
     "reload": "Opnieuw laden",
@@ -22,6 +25,9 @@
   "editor": {
     "lovelace_card": "Lovelace Kaart",
     "create_lovelace_card": "Maak een nieuwe lovelace-kaart vanaf het begin",
+    "select_card_for": "Kies een kaart voor",
+    "loading_card_editor": "Kaarteditor laden…",
+    "no_visual_editor": "Deze kaart heeft geen visuele editor. Bewerk de JSON-configuratie:",
     "dwains_dashboard_blueprint": "Dwains Dashboard Blueprint",
     "use_dwains_dashboard_blueprint": "Een Dwain Dashboard Blueprint gebruiken om een kaart te maken",
     "row_span": "Rij span",
@@ -38,7 +44,6 @@
     "title": "Entiteit",
     "title_plural": "entiteiten",
     "add_card_to": "Kaart toevoegen aan ",
-    "edit_entity": "Bewerk entiteit",
     "edit_entity_card": "Bewerk entiteit kaart",
     "edit_entity_popup_card": "Bewerk entiteit popup kaart",
     "add_to_favorites": "Toevoegen aan favorieten",
@@ -54,6 +59,8 @@
     "hide_all": "Alle entiteiten verbergen",
     "exclude": "Entiteit uitsluiten in DD",
     "hide": "Verberg entiteit in DD",
+    "hide_in_area": "Verbergen in ruimteweergaven",
+    "unhide_in_area": "Tonen in ruimteweergaven",
     "unhide": "Entiteit zichtbaar maken",
     "use_popup_card": "Eigen pop-upkaart gebruiken",
     "use_entity_card": "Eigen entiteitskaart gebruiken",
@@ -71,8 +78,11 @@
     "title": "Home"
   },
   "area": {
-    "sensor_entities": "Sensoren onder de ruimtenaam",
-    "sensor_entities_helper": "Hun waarden staan onder de ruimtenaam. Een gekozen sensor vervangt in deze ruimte het gemiddelde van zijn soort (bijvoorbeeld één thermometer in plaats van het gemiddelde van alle).",
+    "sensor_values": "Waarden onder de ruimtenaam",
+    "sensor_values_helper": "Per sensorsoort het gemiddelde van alle sensoren in de ruimte (veld leeg) of één gekozen sensor. De instellingen van de integratie bepalen welke soorten verschijnen.",
+    "sensor_average": "Gemiddelde van alle ({count})",
+    "extra_sensor_entities": "Meer sensoren onder de ruimtenaam",
+    "extra_sensor_entities_helper": "Sensoren van een andere soort waarvan de waarde ook onder de ruimtenaam staat (bijvoorbeeld regen of wind).",
     "binary_sensor_entities": "Binaire sensoren onder de ruimtenaam",
     "binary_sensor_entities_helper": "Hun status staat achter de waarden, bijvoorbeeld \"Raam: Open\".",
     "graph_entity": "Grafiek in de ruimtetegel",
@@ -88,7 +98,6 @@
     "toggle_all_on": "Tik: alle {domain} in deze ruimte inschakelen",
     "title": "Gebied",
     "title_plural": "Gebieden",
-    "edit_area_button": "Bewerk gebied knop",
     "group_by_floor": "Groeperen op verdieping",
     "ungroup_by_floor": "Groepering opheffen op verdieping",
     "icon": "Gebied icoon",
@@ -210,6 +219,8 @@
     }
   },
   "device": {
+    "types": "apparaattypen",
+    "tts": "Tekst-naar-spraak",
     "opening": "Opening",
     "garage_door": "Garagedeur",
     "valve": "Klep",
@@ -224,7 +235,6 @@
     "shutter": "Rolluik",
     "title": "Apparaat",
     "title_plural": "apparaten",
-    "edit_device_button": "Apparaatknop bewerken",
     "edit_device_card": "Stel een custom entititeit kaart in voor domein ",
     "edit_device_popup": "Stel een custom popup entiteiten in voor domein ",
     "current_blueprint_card": "U gebruikt momenteel de volgende blueprint voor alle entiteitskaarten in het domein: ",
@@ -284,6 +294,8 @@
     "empty_no_entities_hint": "De apparatenpagina toont entiteiten die bij een ruimte horen, plus personen, weer en alarm. Wijs in Home Assistant apparaten of entiteiten toe aan ruimtes."
   },
   "more": {
+    "empty": "Nog geen extra pagina's",
+    "empty_hint": "Extra pagina's tonen willekeurige kaarten, bijvoorbeeld camera's, agenda's of grafieken. Ze verschijnen hier en desgewenst in de navigatiebalk.",
     "title": "Meer",
     "title_plural": "Meer pagina's",
     "pages": "pagina's",
@@ -292,6 +304,7 @@
     "name_required": "U moet een naam voor de pagina opgeven",
     "icon_required": "Als u het aan de navigatiebalk wilt toevoegen, moet u een icoon selecteren!",
     "add_navbar": "Voeg deze meer pagina toe in de hoofdnavigatiebalk",
+    "remove_navbar": "Verwijder deze pagina uit de hoofdnavigatiebalk",
     "name": "Meer pagina naam",
     "icon": "Meer pagina icoon"
   },

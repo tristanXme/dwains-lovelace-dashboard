@@ -62,7 +62,6 @@ class DwainsNotificationCard extends LitElement {
 
   static get properties() {
     return {
-      _hass: {},
       _config: {},
       notifications: { type: Array },
     };
@@ -74,8 +73,8 @@ class DwainsNotificationCard extends LitElement {
 
   set hass(hass) {
     const connectionChanged = hasHassConnectionChanged(this._hass, hass);
+    // Not rendered: the list shows the notifications only.
     this._hass = hass;
-    this.requestUpdate();
     if (connectionChanged && this.isConnected) {
       this._subscriptions.disconnect();
       this._subscriptions.connect();

@@ -1,5 +1,8 @@
 {
   "global": {
+    "confirm_delete": "¿Eliminar de verdad? No se puede deshacer.",
+    "confirm_delete_named": "¿Eliminar «{name}»? No se puede deshacer.",
+    "edit_named": "Editar {name}",
     "save_failed": "Error al guardar",
     "reload_after_update": "Dwains Dashboard se ha actualizado. Recarga la página para volver a usarlo por completo.",
     "reload": "Recargar",
@@ -22,6 +25,9 @@
   "editor": {
     "lovelace_card": "Lovelace Card",
     "create_lovelace_card": "Crea una nueva lovelace card desde cero",
+    "select_card_for": "Selecciona una tarjeta para",
+    "loading_card_editor": "Cargando el editor de tarjetas…",
+    "no_visual_editor": "Esta tarjeta no tiene editor visual. Edita su configuración JSON:",
     "dwains_dashboard_blueprint": "Dwains Dashboard Blueprint",
     "use_dwains_dashboard_blueprint": "Usar un Blueprint de Dwain Dashboard para crear una tarjeta",
     "row_span": "Intervalo de filas",
@@ -38,7 +44,6 @@
     "title": "Entidad",
     "title_plural": "Entidades",
     "add_card_to": "Agregar tarjeta a ",
-    "edit_entity": "Editar entidad",
     "edit_entity_card": "Editar tarjeta de entidad",
     "edit_entity_popup_card": "Editar tarjeta emergente de entidad",
     "add_to_favorites": "Agregar a favoritos",
@@ -54,6 +59,8 @@
     "hide_all": "Hide all entities",
     "exclude": "Exclude entity in DD",
     "hide": "Ocultar entidad en DD",
+    "hide_in_area": "Ocultar en las vistas de áreas",
+    "unhide_in_area": "Mostrar en las vistas de áreas",
     "unhide": "Mostrar entidad",
     "use_popup_card": "Utilizar su propia tarjeta emergente",
     "use_entity_card": "Utilice su propia tarjeta de entidad",
@@ -71,8 +78,11 @@
     "title": "Home"
   },
   "area": {
-    "sensor_entities": "Sensores bajo el nombre del área",
-    "sensor_entities_helper": "Sus valores aparecen bajo el nombre del área. Un sensor elegido sustituye en esta área la media de su tipo (por ejemplo un termómetro en lugar de la media de todos).",
+    "sensor_values": "Valores bajo el nombre del área",
+    "sensor_values_helper": "Por tipo de sensor, la media de todos los sensores del área (campo vacío) o un sensor elegido. Los ajustes de la integración deciden qué tipos aparecen.",
+    "sensor_average": "Media de todos ({count})",
+    "extra_sensor_entities": "Más sensores bajo el nombre del área",
+    "extra_sensor_entities_helper": "Sensores de otros tipos cuyo valor también aparece bajo el nombre del área (por ejemplo lluvia o viento).",
     "binary_sensor_entities": "Sensores binarios bajo el nombre del área",
     "binary_sensor_entities_helper": "Su estado aparece después de los valores, por ejemplo \"Ventana: Abierta\".",
     "graph_entity": "Gráfico en la tarjeta del área",
@@ -88,7 +98,6 @@
     "toggle_all_on": "Toca: encender todos los {domain} de esta área",
     "title": "Habitación",
     "title_plural": "Habitaciónes",
-    "edit_area_button": "Editar Habitación",
     "group_by_floor": "Agrupar por piso",
     "ungroup_by_floor": "Desagrupar por piso",
     "icon": "Icono de Habitación",
@@ -210,6 +219,8 @@
     }
   },
   "device": {
+    "types": "tipos de dispositivo",
+    "tts": "Texto a voz",
     "opening": "Apertura",
     "garage_door": "Puerta del garaje",
     "valve": "Válvula",
@@ -224,7 +235,6 @@
     "shutter": "Persiana",
     "title": "Dispositivo",
     "title_plural": "Dispositivos",
-    "edit_device_button": "Editar dispositivo",
     "edit_device_card": "Establecer tarjeta de entidades personalizadas para el dominio ",
     "edit_device_popup": "Establecer una ventana emergente de entidades personalizadas para el dominio",
     "current_blueprint_card": "Actualmente está utilizando el siguiente modelo para todas las tarjetas de entidades en el dominio",
@@ -284,6 +294,8 @@
     "empty_no_entities_hint": "La página de dispositivos muestra las entidades que pertenecen a un área, además de personas, tiempo y alarma. Asigna dispositivos o entidades a áreas en Home Assistant."
   },
   "more": {
+    "empty": "Aún no hay páginas adicionales",
+    "empty_hint": "Las páginas adicionales muestran cualquier tarjeta, por ejemplo cámaras, calendarios o gráficos. Aparecen aquí y, si quieres, en la barra de navegación.",
     "title": "Más",
     "title_plural": "Páginas extra ",
     "pages": "páginas",
@@ -292,6 +304,7 @@
     "name_required": "Debe especificar un nombre para la página.",
     "icon_required": "Si desea agregarla a la barra de navegación, debe seleccionar un icono.",
     "add_navbar": "Agregar esta página extra en la barra de navegación principal",
+    "remove_navbar": "Quitar esta página extra de la barra de navegación principal",
     "name": "Nombre de la página extra",
     "icon": "Icono de la página extra"
   },

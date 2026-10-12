@@ -4,6 +4,7 @@ import {
 } from './frontend-helpers';
 import { mdiDotsVertical, mdiCog } from "@mdi/js";
 import { html, LitElement } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import translateEngine from './translate-engine';
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { devicesPageCardStyles } from './styles/devicespage-card-styles';
@@ -17,6 +18,7 @@ const { PopupOpenScheduler } = require('./popup-open-scheduler');
 const { ReloadableLoadOwner } = require('./reloadable-load-owner');
 const { hassConnectionIdentity, hasHassConnectionChanged } = require('./hass-connection');
 const { websocketReadStore } = require('./websocket-read-store');
+const { showSettledItems } = require('./optimistic-item');
 const { loadDashboardRegistrySnapshot } = require('./dashboard-registry-snapshot');
 const { registryOrderedEntityUnion } = require('./registry-indexes');
 const { resolveHass } = require('./hass-provider');
@@ -28,6 +30,7 @@ const { devicesEmptyReason, initialSelection } = require('./empty-state');
 import { emptyStateStyles, renderEmptyState } from './empty-state-view';
 const { entityIdsIn, hassChangeIsRelevant, relevanceFilter } = require('./state-relevance');
 const { CardReuse, attachDeferredCard, cardReuseKey } = require('./deferred-card');
+const { entityCardConfig } = require('./entity-card-config');
 
 function getDwainsHass() {
   return resolveHass();
@@ -97,8 +100,10 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           const connectionChanged = hasHassConnectionChanged(this._hass, hass);
           const previous = this._hass;
           this._hass = hass;
+          // Also while the page loads: it is built from the registries the
+          // load started with (see _loadConfiguration).
+          if(this.isConnected) this._registryChanges.update(hass);
           if(this.startedUp){
-            this._registryChanges.update(hass);
             this._update_hass(hass, hassChangeIsRelevant(previous, hass, this._isShownEntity));
           }
           if (connectionChanged && this.isConnected) {
@@ -176,13 +181,17 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 
         _syncSelectedDeviceFromLocation() {
           const newstate = window.location.hash.substring(1);
+          const hashChanged = newstate !== this._syncedHash;
+          this._syncedHash = newstate;
 
           if (newstate){
             this.selectedDevice = newstate;
           } else {
-            //The tab/page itself is clicked so fallback on first device button
+            // Without a hash the first device type is shown. It stays shown
+            // while it is listed: dragging another one to the front must not
+            // switch the page (and build all of its cards again).
             this.selectedDevice = initialSelection(
-              "",
+              hashChanged ? "" : this.selectedDevice,
               Object.values(this.data || {}).map((item) => item.domain),
             );
           }
@@ -242,9 +251,9 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 	            "dwains_dashboard_devicespage_card_reload",
 	            () => {
 	              websocketReadStore.invalidate(this._hass);
-	              this._reloadCard().catch((error) => {
-	                console.error('Error reloading devices page card:', error);
-	              });
+	              // One change fires several dashboard events at once; reload
+	              // after all of them, with one read of the configuration.
+	              this._timers.schedule('event-reload', () => this._reloadCard(), 0);
 	            },
 	          );
 	        }
@@ -252,6 +261,8 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
         async _reloadCard(){
           await this._loads.reload();
           this.requestUpdate();
+          await this.updateComplete;
+          showSettledItems(this.shadowRoot);
         }
 
 	        _loadData(){
@@ -262,6 +273,10 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 	          this.selectedArea = this.selectedArea || "";
 	          this.startedUp = false;
 
+          // The page is built from the registries in this hass; a later
+          // change, also one while this load runs, builds it again.
+          this._registryChanges.reset();
+          this._registryChanges.update(this._hass);
           const snapshot = await loadDashboardRegistrySnapshot(this._hass);
           if (!isCurrent()) return;
           Object.assign(this, snapshot);
@@ -406,173 +421,16 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                         continue;
                       }
 
-                      let cardConfig = {};
-                      let rowSpan = "1";
-                      let colSpan = "1";
-                      let rowSpanLg = "1";
-                      let colSpanLg = "1";
-                      let rowSpanXl = "1";
-                      let colSpanXl = "1";
-                      if(customCard && this.configuration['entity_cards'] && this.configuration['entity_cards'][entity.entity_id]){
-                        //If entity has a custom card set by user
-                        cardConfig = {input_name: friendlyName, input_entity: entity.entity_id,...this.configuration['entity_cards'][entity.entity_id]};
-                      } else if(this.configuration['devices_card'][domain]){
-                        //If domain has a custom card set by user
-                        cardConfig = {input_name: friendlyName, input_entity: entity.entity_id,...this.configuration['devices_card'][domain]};
-	                      } else if (domain === 'sensor' && this._hass && this._hass.states[entity.entity_id]?.attributes?.unit_of_measurement) {
-	                        cardConfig = {
-	                          graph: "line",
-	                          type: "sensor",
-	                          hours_to_show: 24,
-	                          detail: 1,
-	                          entity: entity.entity_id,
-	                          ...(friendlyName ? { name: friendlyName } : {})
-	                        };
-	                      } else {
-                        //No custom card set so fallback to original DD cards
-                        switch(domain) {
-	                          default:
-                            // cardConfig = {
-                            //   type: "custom:dwains-button-card",
-                            //   friendly_name: friendlyName
-                            // };
-	                            cardConfig = friendlyName ? {
-	                              type: "tile",
-	                              name: friendlyName,
-	                            } : {
-	                              type: "tile",
-	                            }
-	                            break;
-	                          case "camera":
-	                            cardConfig = {
-	                              type: "picture-entity",
-	                              camera_view: "auto"
-	                            };
-                            rowSpan = "2";
-                            colSpan = "2";
-                            rowSpanLg = "2";
-                            colSpanLg = "2";
-                            rowSpanXl = "2";
-                            colSpanXl = "2";
-                            break;
-                          case "climate":
-                            // cardConfig = {
-                            //   type: "custom:dwains-thermostat-card",
-                            //   friendly_name: friendlyName
-                            // };
-	                            cardConfig = friendlyName ? {
-	                              type: "thermostat",
-	                              name: friendlyName,
-	                              features: [
-                                {
-                                  type: "climate-fan-modes",
-                                  fan_modes: ["quiet","low","medium","high"],
-                                },
-                                {
-                                  type: "climate-hvac-modes",
-                                  hvac_modes: ["heat_cool","heat","dry","fan_only","cool","off"]
-	                                }
-	                              ]
-	                            } : {
-	                              type: "thermostat",
-	                              features: [
-	                                {
-	                                  type: "climate-fan-modes",
-	                                  fan_modes: ["quiet","low","medium","high"],
-	                                },
-	                                {
-	                                  type: "climate-hvac-modes",
-	                                  hvac_modes: ["heat_cool","heat","dry","fan_only","cool","off"]
-	                                }
-	                              ]
-	                            }
-	                            break;
-                          case "cover":
-                            // cardConfig = {
-                            //   type: "custom:dwains-cover-card",
-                            //   friendly_name: friendlyName
-                            // };
-	                            cardConfig = friendlyName ? {
-	                              type: "tile",
-	                              name: friendlyName,
-	                              features: [
-                                {
-                                  type: "cover-open-close"
-                                },
-                                {
-                                  type: "cover-position"
-	                                }
-	                              ]
-	                            } : {
-	                              type: "tile",
-	                              features: [
-	                                {
-	                                  type: "cover-open-close"
-	                                },
-	                                {
-	                                  type: "cover-position"
-	                                }
-	                              ]
-	                            }
-	                            break;
-                          case "light":
-                            // cardConfig = {
-                            //   type: "custom:dwains-light-card",
-                            //   friendly_name: friendlyName
-                            // };
-	                            cardConfig = friendlyName ? {
-	                              type: "tile",
-	                              name: friendlyName,
-	                              features: [
-                                {
-                                  type: "light-brightness",
-	                                }
-	                              ]
-	                            } : {
-	                              type: "tile",
-	                              features: [
-	                                {
-	                                  type: "light-brightness",
-	                                }
-	                              ]
-	                            };
-	                            break;
-                        }
-
-                        cardConfig = {entity: entity.entity_id,...cardConfig};
-                      }
-
-
-                      if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['row_span']){
-                        rowSpan = this.configuration['entities'][entity.entity_id]['row_span'];
-                      }
-                      if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['col_span']){
-                        colSpan = this.configuration['entities'][entity.entity_id]['col_span'];
-                      }
-                      if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['row_span_lg']){
-                        rowSpanLg = this.configuration['entities'][entity.entity_id]['row_span_lg'];
-                      }
-                      if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['col_span_lg']){
-                        colSpanLg = this.configuration['entities'][entity.entity_id]['col_span_lg'];
-                      }
-                      if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['row_span_xl']){
-                        rowSpanXl = this.configuration['entities'][entity.entity_id]['row_span_xl'];
-                      }
-                      if(this.configuration['entities'][entity.entity_id] && this.configuration['entities'][entity.entity_id]['col_span_xl']){
-                        colSpanXl = this.configuration['entities'][entity.entity_id]['col_span_xl'];
-                      }
+                      const { config: cardConfig, spans } = entityCardConfig({
+                        entityId: entity.entity_id, domain, friendlyName, configuration: this.configuration, stateObj,
+                      });
 
                       areaEntities.add(entity.entity_id);
 
                       data[domain].cards.push(attachDeferredCard({
                         area: area,
                         entity: entity.entity_id,
-                        rowSpan: rowSpan,
-                        colSpan: colSpan,
-                        rowSpanLg: rowSpanLg,
-                        colSpanLg: colSpanLg,
-                        rowSpanXl: rowSpanXl,
-                        colSpanXl: colSpanXl,
+                        ...spans,
                         friendlyName: configuredFriendlyName,
                         hideEntity: hideEntity,
                         excludeEntity: excludeEntity,
@@ -677,7 +535,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                             ${translateEngine(this._hass, 'device.title_plural')}
                           </h2>
                           <span class="text-gray">
-                            ${Object.keys(this.data).length} ${translateEngine(this._hass, 'device.title_plural')}
+                            ${Object.keys(this.data).length} ${translateEngine(this._hass, 'device.types')}
                           </span>
                         </div>
                         <div>
@@ -714,7 +572,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                       </div>
 
                       <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4" id="sortable">
-                        ${Object.values(this.data).map((i) => this._renderDeviceButton(i))}
+                        ${repeat(Object.values(this.data), (i) => i.domain, (i) => this._renderDeviceButton(i))}
                       </div>
                       ${renderEmptyState(this._hass, 'devices', devicesEmptyReason(this))}
 
@@ -723,9 +581,7 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                           <div class="mb-5">
                             <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass,'device.hidden')}</h3>
                             <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                            ${this.disabledDevices.map((device) =>
-                                html`${this._renderDeviceButtonCard(device, 'disabled')}`
-                            )}
+                            ${repeat(this.disabledDevices, (device) => device, (device) => this._renderDeviceButtonCard(device, 'disabled'))}
                             </div>
                           </div>` : ""
                         }
@@ -733,7 +589,14 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
                     </div>
                   </div>
                   <div class="w-full ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-w-1-2 xl-w-2-3"} ${!window.location.hash ? (this.configuration['homepage_header']['v2_mode'] ? "hidden" : "hidden lg-block") : ""} p-4">
-                    ${Object.values(this.data).map((i) => this._renderDeviceView(i))}
+                    ${repeat(
+                      // Only the shown device type: in a list of all of them
+                      // a new order (a drag in edit mode) would move its view,
+                      // and moving takes every card out and puts it back.
+                      Object.values(this.data).filter((i) => i.domain == this.selectedDevice),
+                      (i) => i.domain,
+                      (i) => this._renderDeviceView(i),
+                    )}
                   </div>
                 </div>
                 <div class="sticky z-30 bottom-0 ${!window.location.hash ? "hidden" : ""} ${this.configuration['homepage_header']['v2_mode'] ? "" : "lg-hidden"} text-right">

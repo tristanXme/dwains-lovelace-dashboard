@@ -13,6 +13,7 @@ const { PopupOpenScheduler } = require('./popup-open-scheduler');
 const { ReloadableLoadOwner } = require('./reloadable-load-owner');
 const { hassConnectionIdentity, hasHassConnectionChanged } = require('./hass-connection');
 const { websocketReadStore } = require('./websocket-read-store');
+const { releaseSlidersWhenGone } = require('./slider-release');
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { defineDwainsElement } = require('./custom-element-registration');
 const { MORE_PAGE_SAVED_EVENT } = require('./more-page-events');
@@ -183,6 +184,7 @@ class MorePageCard extends LitElement {
         this._subscriptions.disconnect();
         this._listeners.disconnect();
         this._timers.disconnect();
+        releaseSlidersWhenGone(this);
     }
 
     _subscribeReload() {

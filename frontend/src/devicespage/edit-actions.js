@@ -1,9 +1,13 @@
 import { popUp } from "../dwains-popup";
 import { fireEvent } from "../card-tools-compat";
-const { loadSortable } = require('../lazy-modules');
 import translateEngine from '../translate-engine';
+import { deviceTypeName } from '../device-type-name';
+import { editTitle, entityEditTitle } from '../edit-title';
 import { showSaveError } from '../save-error-toast';
-const { savingSortableOptions } = require('../sortable-save');
+import { saveEntityBoolValue } from '../entity-bool-save';
+const { attachSortableLists } = require('../sortable-lists');
+const { applyLocalOrder } = require('../local-order');
+const { hideItemWhileSaving } = require('../optimistic-item');
 const { closeParentDropdown } = require('../dropdown-controller');
 const { entitySettingsFromConfiguration } = require('../entity-settings-config');
 
@@ -49,7 +53,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
     _openEntitySettings(settings) {
       this._popupOpens.schedule(() => {
         fireEvent("hass-more-info", {entityId: ""}, this);
-        popUp(translateEngine(this._hass, 'entity.edit_entity'), {
+        popUp(entityEditTitle(this._hass, settings.entity), {
           type: "custom:dwains-edit-entity-card",
           ...settings,
         }, false, '');
@@ -116,7 +120,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
       const showInNavbar = ev.currentTarget.showInNavbar;
       this._popupOpens.schedule(() => {
         fireEvent("hass-more-info", {entityId: ""}, this);
-        popUp(translateEngine(this._hass, 'device.edit_device_button'), {
+        popUp(editTitle(this._hass, deviceTypeName(this._hass, device)), {
           type: "custom:dwains-edit-device-button-card",
           device: device,
           icon: icon,
@@ -177,44 +181,31 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
       });
     }
 
-    _saveEntityBoolValue(entityId, key, value) {
-      return this._hass.callWS({
-        type: 'dwains_dashboard/edit_entity_bool_value',
-        entityId,
-        key,
-        value,
-      }).catch((err) => {
-        console.error('Failed to update entity setting:', err);
-      });
-    }
     _handleEntityEditBoolValueClick(ev) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      this._saveEntityBoolValue(
-        ev.currentTarget.entity,
-        ev.currentTarget.key,
-        ev.currentTarget.ddValue,
-      );
+      const { entity, key, ddValue } = ev.currentTarget;
+      // The card leaves its list at once; an excluded entity keeps its card
+      // and only leaves the counts.
+      saveEntityBoolValue(this._hass, entity, key, ddValue, key === 'excluded' ? undefined : ev.currentTarget);
     }
     _handleEntityAreaVisibilityClick(ev, entityId, value) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      this._saveEntityBoolValue(entityId, 'hidden_in_area', value);
+      saveEntityBoolValue(this._hass, entityId, 'hidden_in_area', value);
     }
 
     _handleDeviceEditBoolValueClick(ev) {
       closeParentDropdown(ev);
       ev.stopPropagation();
-      const device = ev.currentTarget.device;
-      const key = ev.currentTarget.key;
-      const value = ev.currentTarget.ddValue;
-
-      this._hass.callWS({
+      const { device, key, ddValue } = ev.currentTarget;
+      // The device type leaves its list (hidden or shown again).
+      hideItemWhileSaving(ev.currentTarget, () => this._hass.callWS({
         type: 'dwains_dashboard/edit_device_bool_value',
-        device: device,
-        key: key,
-        value: value,
-      }).catch((err) => showSaveError(this._hass, err));
+        device,
+        key,
+        value: ddValue,
+      })).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleDeviceEditCardClick(ev) {
@@ -230,7 +221,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
 
       this._popupOpens.schedule(() => {
         fireEvent("hass-more-info", {entityId: ""}, this);
-        popUp(translateEngine(this._hass, 'device.edit_device_card')+translateEngine(this._hass, 'device.'+domain), {
+        popUp(translateEngine(this._hass, 'device.edit_device_card')+deviceTypeName(this._hass, domain), {
           type: "custom:dwains-edit-device-card-card",
           domain: domain,
           cardConfig: cardConfig,
@@ -253,7 +244,7 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
 
       this._popupOpens.schedule(() => {
         fireEvent("hass-more-info", {entityId: ""}, this);
-        popUp(translateEngine(this._hass, 'device.edit_device_popup')+translateEngine(this._hass, 'device.'+domain), {
+        popUp(translateEngine(this._hass, 'device.edit_device_popup')+deviceTypeName(this._hass, domain), {
           type: "custom:dwains-edit-device-popup-card",
           domain: domain,
           cardConfig: cardConfig,
@@ -276,7 +267,13 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
       if(value){
         const cardHass = this._hass;
         this._attachSortables('#sortable', 'data-device', () => this.deviceEditMode,
-          (order) => cardHass.callWS({ type: 'dwains_dashboard/sort_device_button', sortData: JSON.stringify(order) }));
+          (order) => cardHass.callWS({ type: 'dwains_dashboard/sort_device_button', sortData: JSON.stringify(order) }),
+          (order) => {
+            // The device type buttons are shown in the order of this.data.
+            applyLocalOrder(this.data, (device) => device.domain, order, 'sort_order');
+            this.data.sort((x, y) => x.sort_order - y.sort_order);
+            this.requestUpdate();
+          });
       } else {
         this._destroySortables();
       }
@@ -291,35 +288,38 @@ export const DeviceEditActionsMixin = (Base) => class extends Base {
       if(value){
         const cardHass = this._hass;
         const sortType = (this.deviceViewDisplayGrouped ? 'devices_grouped_sort_order' : 'devices_sort_order');
+        // The cards keep the stored order as sort_order / grouped_sort_order.
+        const sortKey = this.deviceViewDisplayGrouped ? 'grouped_sort_order' : 'sort_order';
         this._attachSortables('.sortable', 'data-entity', () => this.deviceViewEditMode,
-          (order) => cardHass.callWS({ type: 'dwains_dashboard/sort_entity', sortData: JSON.stringify(order), sortType: sortType }));
+          (order) => cardHass.callWS({ type: 'dwains_dashboard/sort_entity', sortData: JSON.stringify(order), sortType: sortType }),
+          (order) => {
+            for (const device of Object.values(this.data || {})) {
+              applyLocalOrder(device.cards, (card) => card.entity, order, sortKey);
+            }
+            this.requestUpdate();
+          });
       } else {
         this._destroySortables();
       }
       this.deviceViewEditMode = value;
     }
 
-    // Sortable is loaded on first use, so isActive() tells whether the
-    // edit mode is still on once it has arrived. save(order) stores the
-    // order after a drag; a failure is shown and the drag undone.
-    async _attachSortables(selector, dataIdAttr, isActive, save){
-      let Sortable;
-      try {
-        Sortable = await loadSortable();
-      } catch (err) {
-        console.error('Dwains Dashboard: failed to load drag and drop (reload the page after an update)', err);
-        return;
-      }
-      if(!isActive()) return;
-      this._destroySortables();
+    // save(order) stores the order after a drag, applyOrder(order) shows it
+    // (see sortable-lists.js).
+    async _attachSortables(selector, dataIdAttr, isActive, save, applyOrder){
       const cardHass = this._hass;
-      this._sortable = [...this.shadowRoot.querySelectorAll(selector)].map((element) => new Sortable(element, {
-        forceFallback: true,
-        animation: 150,
-        dataIdAttr: dataIdAttr,
-        handle: '.sortable-move',
-        ...savingSortableOptions(save, (err) => showSaveError(cardHass, err)),
-      }));
+      await attachSortableLists({
+        isActive,
+        lists: () => this.shadowRoot.querySelectorAll(selector),
+        dataIdAttr,
+        save,
+        onError: (err) => showSaveError(cardHass, err),
+        applyOrder,
+        replace: (sortables) => {
+          this._destroySortables();
+          this._sortable = sortables;
+        },
+      });
     }
 
     _destroySortables(){

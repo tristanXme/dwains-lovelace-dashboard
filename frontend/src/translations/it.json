@@ -1,5 +1,8 @@
 {
   "global": {
+    "confirm_delete": "Eliminare davvero? L'operazione non si può annullare.",
+    "confirm_delete_named": "Eliminare «{name}»? L'operazione non si può annullare.",
+    "edit_named": "Modifica {name}",
     "save_failed": "Salvataggio non riuscito",
     "reload_after_update": "Dwains Dashboard è stato aggiornato. Ricarica la pagina per poterlo usare di nuovo completamente.",
     "reload": "Ricarica",
@@ -22,6 +25,9 @@
   "editor": {
     "lovelace_card": "Lovelace Card",
     "create_lovelace_card": "Crea una nuova card lovelace da zero",
+    "select_card_for": "Seleziona una scheda per",
+    "loading_card_editor": "Caricamento dell’editor della scheda…",
+    "no_visual_editor": "Questa scheda non ha un editor visuale. Modifica la sua configurazione JSON:",
     "dwains_dashboard_blueprint": "Dwains Dashboard Blueprint",
     "use_dwains_dashboard_blueprint": "Usa Dwain Dashboard Blueprint per creare una carta",
     "row_span": "Intervallo di riga",
@@ -38,7 +44,6 @@
     "title": "Entità",
     "title_plural": "entità",
     "add_card_to": "Aggiungi carta a",
-    "edit_entity": "Modifica entità",
     "edit_entity_card": "Modifica scheda entità",
     "edit_entity_popup_card": "Modifica scheda popup entità",
     "add_to_favorites": "Aggiungi ai preferiti",
@@ -54,6 +59,8 @@
     "hide_all": "Hide all entities",
     "exclude": "Exclude entity in DD",
     "hide": "Nascondi entità in DD",
+    "hide_in_area": "Nascondi nelle viste delle aree",
+    "unhide_in_area": "Mostra nelle viste delle aree",
     "unhide": "Mostra entità",
     "use_popup_card": "Usa la tua scheda popup",
     "use_entity_card": "Usa la entity card",
@@ -71,8 +78,11 @@
     "title": "Home"
   },
   "area": {
-    "sensor_entities": "Sensori sotto il nome della stanza",
-    "sensor_entities_helper": "I loro valori compaiono sotto il nome della stanza. Un sensore scelto sostituisce in questa stanza la media del suo tipo (per esempio un termometro invece della media di tutti).",
+    "sensor_values": "Valori sotto il nome della stanza",
+    "sensor_values_helper": "Per tipo di sensore la media di tutti i sensori della stanza (campo vuoto) o un sensore scelto. Le impostazioni dell'integrazione decidono quali tipi compaiono.",
+    "sensor_average": "Media di tutti ({count})",
+    "extra_sensor_entities": "Altri sensori sotto il nome della stanza",
+    "extra_sensor_entities_helper": "Sensori di altri tipi il cui valore compare in più sotto il nome della stanza (per esempio pioggia o vento).",
     "binary_sensor_entities": "Sensori binari sotto il nome della stanza",
     "binary_sensor_entities_helper": "Il loro stato compare dopo i valori, per esempio \"Finestra: Aperta\".",
     "graph_entity": "Grafico nel riquadro della stanza",
@@ -88,7 +98,6 @@
     "toggle_all_on": "Tocca: accendi tutti i {domain} in questa stanza",
     "title": "Zona",
     "title_plural": "Zone",
-    "edit_area_button": "Modifica pulsante area",
     "group_by_floor": "Raggruppa per piano",
     "ungroup_by_floor": "Separa per piano",
     "icon": "Icona della zona",
@@ -210,6 +219,8 @@
     }
   },
   "device": {
+    "types": "tipi di dispositivo",
+    "tts": "Sintesi vocale",
     "opening": "Apertura",
     "garage_door": "Porta del garage",
     "valve": "Valvola",
@@ -224,7 +235,6 @@
     "shutter": "Tapparella",
     "title": "Dispositivo",
     "title_plural": "Dispositivi",
-    "edit_device_button": "Pulsante Modifica dispositivo",
     "edit_device_card": "Imposta la scheda entità personalizzate per il dominio ",
     "edit_device_popup": "Imposta il popup di entità personalizzate per il dominio ",
     "current_blueprint_card": "Attualmente stai utilizzando il seguente progetto per tutte le schede entità nel dominio ",
@@ -284,6 +294,8 @@
     "empty_no_entities_hint": "La pagina dei dispositivi mostra le entità che appartengono a un'area, oltre a persone, meteo e allarme. Assegna dispositivi o entità alle aree in Home Assistant."
   },
   "more": {
+    "empty": "Ancora nessuna pagina aggiuntiva",
+    "empty_hint": "Le pagine aggiuntive mostrano qualsiasi scheda, per esempio telecamere, calendari o grafici. Compaiono qui e, se vuoi, nella barra di navigazione.",
     "title": "Di più",
     "title_plural": "Più pagine",
     "pages": "pagine",
@@ -292,6 +304,7 @@
     "name_required": "È necessario specificare un nome per la pagina",
     "icon_required": "Se vuoi aggiungerlo alla barra di navigazione devi selezionare una icona!",
     "add_navbar": "Aggiungi questa pagina in più nella barra di navigazione principale",
+    "remove_navbar": "Rimuovi questa pagina dalla barra di navigazione principale",
     "name": "Altro nome di pagina",
     "icon": "Icona della pagina più"
   },

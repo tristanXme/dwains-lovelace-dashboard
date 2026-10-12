@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import time
 from functools import wraps
-from typing import Any, Awaitable, Callable
+from typing import Any
+from collections.abc import Awaitable, Callable
 
 from homeassistant.components import websocket_api
 

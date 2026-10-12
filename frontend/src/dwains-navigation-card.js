@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { navigate } from './frontend-helpers';
 import { fireEvent } from './card-tools-compat';
 import translateEngine from './translate-engine';
+import { deviceTypeName } from './device-type-name';
 import { subtleNavigationStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
 const { EventListenerOwner } = require('./event-listener-owner');
@@ -165,6 +166,16 @@ class DwainsNavigationCard extends LitElement {
           configuration: { type: Object },
           isLoading: { type: Boolean },
         };
+      }
+
+      // Every state change in the house brings a new hass; the navigation
+      // shows texts, the sidebar button and the user's pages only.
+      shouldUpdate(changed) {
+        if (changed.size !== 1 || !changed.has('_hass')) return true;
+        const previous = changed.get('_hass');
+        const hass = this._hass;
+        return !previous || ['language', 'selectedLanguage', 'localize', 'dockedSidebar', 'user', 'config', 'locale']
+          .some((key) => previous[key] !== hass?.[key]);
       }
 
       set hass(hass) {
@@ -377,6 +388,14 @@ class DwainsNavigationCard extends LitElement {
         this.requestUpdate();
     }
 
+      // Device pages shown in the navigation bar, in the order of the devices
+      // page. A hidden device type has no page to go to.
+      _navbarDevices(devices) {
+        return Object.entries(devices || {})
+          .filter(([, device]) => device?.show_in_navbar && !device.hidden)
+          .sort(([, x], [, y]) => (x.sort_order || 99) - (y.sort_order || 99));
+      }
+
       _toggleSidebarClick() {
         fireEvent('hass-toggle-menu', { open: true }, this);
       }
@@ -430,7 +449,7 @@ class DwainsNavigationCard extends LitElement {
                         <ha-icon icon="${"mdi:format-list-bulleted-type"}"></ha-icon>
                         <span>${translateEngine(this._hass, 'device.title_plural')}</span>
                     </button>
-                    ${Object.entries(configuration.devices || {}).map(([k,v]) =>
+                    ${this._navbarDevices(configuration.devices).map(([k,v]) =>
                         //, v["icon"]);
                         // k = path
                         html`
@@ -442,7 +461,7 @@ class DwainsNavigationCard extends LitElement {
                                     .path=${"/dwains-dashboard/devices#"+k}
                                 >
                                     <ha-icon icon="${v["icon"]}"></ha-icon>
-                                    <span>${translateEngine(this._hass,'device.'+k)}</span>
+                                    <span>${deviceTypeName(this._hass, k)}</span>
                                 </button>`: ""}
                         `
                     )}

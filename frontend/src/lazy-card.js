@@ -1,9 +1,12 @@
 "use strict";
 
+const { releaseSlidersWhenGone } = require("./slider-release");
+
 function createLazyCardClass({
   HTMLElementBase,
   IntersectionObserverClass,
   reportError = (message, error) => console.error(message, error),
+  releaseWhenGone = releaseSlidersWhenGone,
 }) {
   return class DDLazyCard extends HTMLElementBase {
     set eager(value) {
@@ -70,8 +73,16 @@ function createLazyCardClass({
     }
 
     _replaceCard(card) {
+      // Already in place, e.g. the wrapper came back to the page with it:
+      // taking the card out and in again makes Home Assistant's cards drop
+      // and open their subscriptions once more.
+      if (card && this.firstChild === card && this.childNodes.length === 1) return;
       try {
-        while (this.firstChild) this.removeChild(this.firstChild);
+        while (this.firstChild) {
+          const previous = this.firstChild;
+          this.removeChild(previous);
+          if (previous !== card) releaseWhenGone(previous);
+        }
       } catch (error) {
         reportError("Failed to remove the previous mounted lazy card", error);
       }
@@ -113,6 +124,7 @@ function createLazyCardClass({
 
     disconnectedCallback() {
       this.__io?.disconnect();
+      if (this.__c) releaseWhenGone(this.__c);
     }
 
     _mount() {

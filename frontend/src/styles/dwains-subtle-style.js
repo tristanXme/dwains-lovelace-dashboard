@@ -340,14 +340,8 @@ export const subtlePopupStyles = (css) => css`
   }
 
   :host ha-dialog {
-    --mdc-shape-medium: 18px;
     --ha-card-border-radius: var(--dd-subtle-radius);
     --ha-card-box-shadow: var(--dd-subtle-shadow);
-  }
-
-  :host app-toolbar {
-    border-bottom: 1px solid var(--dd-subtle-divider);
-    background: var(--dd-subtle-surface);
   }
 
   :host .main-title {

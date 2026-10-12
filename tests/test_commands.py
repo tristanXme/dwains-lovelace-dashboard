@@ -8,7 +8,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Context, HomeAssistant
+from homeassistant.exceptions import Unauthorized
 
 
 async def _call(client, msg_type: str, **payload) -> dict:
@@ -115,6 +116,18 @@ async def test_more_page_config_without_name_does_not_break_reload(
     response = await _call(client, "lovelace/config", url_path="dwains-dashboard", force=True)
     assert response["success"], response
     assert "manual" in [view.get("title") for view in response["result"]["views"]]
+
+
+async def test_reload_service_is_admin_only(
+    hass: HomeAssistant, setup_dashboard, hass_read_only_user
+) -> None:
+    with pytest.raises(Unauthorized):
+        await hass.services.async_call(
+            "dwains_dashboard",
+            "reload",
+            blocking=True,
+            context=Context(user_id=hass_read_only_user.id),
+        )
 
 
 async def test_card_files_round_trip(
@@ -506,3 +519,87 @@ def test_a_failed_move_aside_restores_the_previous_files(tmp_path, monkeypatch) 
     with pytest.raises(OSError, match="busy"):
         blueprint_files.replace_blueprint_files({path: None for path in paths.values()})
     assert all(Path(path).read_text() == "old: true\n" for path in paths.values())
+
+
+async def test_changes_reload_every_page_that_shows_them(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client
+) -> None:
+    from pytest_homeassistant_custom_component.common import async_capture_events
+
+    client = await hass_ws_client(hass)
+    events = {
+        name: async_capture_events(hass, f"dwains_dashboard_{name}_reload")
+        for name in ("homepage_card", "devicespage_card", "navigation_card")
+    }
+
+    async def fired(msg_type: str, **payload) -> set[str]:
+        for captured in events.values():
+            captured.clear()
+        response = await _call(client, msg_type, **payload)
+        assert response["success"], (msg_type, response)
+        await hass.async_block_till_done()
+        return {name for name, captured in events.items() if captured}
+
+    # Sorting: other open dashboards (and the page's own cache) follow.
+    assert await fired(
+        "dwains_dashboard/sort_area_button", sortData='["kitchen"]', sortType="sort_order"
+    ) == {"homepage_card", "devicespage_card"}
+    assert await fired(
+        "dwains_dashboard/sort_device_button", sortData='["light"]'
+    ) == {"devicespage_card", "navigation_card"}
+    assert await fired(
+        "dwains_dashboard/sort_entity", sortData='["light.x"]', sortType="sort_order"
+    ) == {"homepage_card", "devicespage_card"}
+    # A disabled area leaves the devices page as well.
+    assert "devicespage_card" in await fired(
+        "dwains_dashboard/edit_area_button", areaId="kitchen", disableArea=True
+    )
+    # The entity card of a device type is used in the area views as well.
+    assert await fired(
+        "dwains_dashboard/edit_device_card", domain="light", cardData='{"type":"tile"}'
+    ) == {"homepage_card", "devicespage_card"}
+    assert await fired(
+        "dwains_dashboard/remove_device_card", domain="light"
+    ) == {"homepage_card", "devicespage_card"}
+
+
+async def test_edit_entity_saves_hidden_in_area_only_when_sent(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client, config_path
+) -> None:
+    client = await hass_ws_client(hass)
+    entities_file = config_path("dwains-dashboard/configs/entities.yaml")
+    response = await _call(
+        client, "dwains_dashboard/edit_entity", entity="light.x", hideEntityInArea=True
+    )
+    assert response["success"], response
+    assert yaml.safe_load(entities_file.read_text())["light.x"]["hidden_in_area"] is True
+    # A page that does not send it (it saves it separately) changes nothing.
+    response = await _call(client, "dwains_dashboard/edit_entity", entity="light.x")
+    assert response["success"], response
+    assert yaml.safe_load(entities_file.read_text())["light.x"]["hidden_in_area"] is True
+
+
+async def test_changes_to_empty_configuration_files(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client, config_path
+) -> None:
+    client = await hass_ws_client(hass)
+    for name in ("areas.yaml", "devices.yaml", "entities.yaml"):
+        path = config_path(f"dwains-dashboard/configs/{name}")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("# emptied by hand\n")
+
+    for msg_type, payload in (
+        ("dwains_dashboard/edit_area_button", {"areaId": "kitchen", "icon": "mdi:stove"}),
+        ("dwains_dashboard/edit_area_bool_value", {"areaId": "kitchen", "key": "disabled", "value": True}),
+        ("dwains_dashboard/edit_device_button", {"device": "light", "icon": "mdi:lamp"}),
+        ("dwains_dashboard/edit_entity_bool_value", {"entityId": "light.x", "key": "hidden", "value": True}),
+    ):
+        response = await _call(client, msg_type, **payload)
+        assert response["success"], (msg_type, response)
+
+    response = await _call(client, "dwains_dashboard/configuration/get")
+    assert response["success"], response
+    configuration = response["result"]
+    assert configuration["areas"]["kitchen"]["disabled"] is True
+    assert configuration["devices"]["light"]["icon"] == "mdi:lamp"
+    assert configuration["entities"]["light.x"]["hidden"] is True

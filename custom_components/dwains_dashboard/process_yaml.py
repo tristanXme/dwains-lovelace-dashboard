@@ -15,6 +15,7 @@ from annotatedyaml.objects import NodeDictClass, NodeListClass, NodeStrClass
 
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.service import async_register_admin_service
 
 from .const import DOMAIN
 from .more_page_files import load_more_page_navigation
@@ -194,7 +195,8 @@ def register_reload_service(hass: HomeAssistant) -> None:
         _LOGGER.info("Reloading Dwains Dashboard configuration")
         await reload_configuration(hass)
 
-    hass.services.async_register(DOMAIN, "reload", handle_reload)
+    # Like Home Assistant's own reload services: admins only.
+    async_register_admin_service(hass, DOMAIN, "reload", handle_reload)
     domain_data[_RELOAD_SERVICE_REGISTERED_KEY] = True
 
 

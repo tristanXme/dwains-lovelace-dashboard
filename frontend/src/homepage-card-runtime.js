@@ -3,6 +3,7 @@
 const HOMEPAGE_CARD_KEYS = [
   "card",
   "badgesCard",
+  "notificationCard",
   "roomsCard",
   "favoritesCard",
   "personsCard",
@@ -44,15 +45,11 @@ function propagateHomepageHass(
     if (Array.isArray(value)) value.forEach(propagate);
     else propagate(value);
   }
-  for (const value of Object.values(homepage)) {
-    const entries = Array.isArray(value) ? value : [value];
-    for (const item of entries) {
-      if (!item || typeof item !== "object") continue;
-      if ("hass" in item) propagate(item);
-      propagate(item.card);
-      propagate(item.badgesCard);
-    }
-  }
+  // The favorites' cards; those of the area views get it from the homepage
+  // (only the open area, see _update_hass). Not every property: the
+  // registry lists hold thousands of entries and this runs on every state
+  // change.
+  for (const item of homepage.favorites || []) propagate(item?.card);
 }
 
 function fallbackCardConfig(config) {

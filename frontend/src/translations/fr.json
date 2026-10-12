@@ -1,5 +1,8 @@
 {
   "global": {
+    "confirm_delete": "Vraiment supprimer ? Cette action est irréversible.",
+    "confirm_delete_named": "Supprimer « {name} » ? Cette action est irréversible.",
+    "edit_named": "Modifier {name}",
     "save_failed": "L'enregistrement a échoué",
     "reload_after_update": "Dwains Dashboard a été mis à jour. Rechargez la page pour pouvoir tout utiliser à nouveau.",
     "reload": "Recharger",
@@ -22,6 +25,9 @@
   "editor": {
     "lovelace_card": "Carte Lovelace",
     "create_lovelace_card": "Créer une nouvelle carte Lovelace",
+    "select_card_for": "Choisir une carte pour",
+    "loading_card_editor": "Chargement de l’éditeur de carte…",
+    "no_visual_editor": "Cette carte n’a pas d’éditeur visuel. Modifiez sa configuration JSON :",
     "dwains_dashboard_blueprint": "Dwains Dashboard Blueprint",
     "use_dwains_dashboard_blueprint": "Utiliser un Blueprint pour créer une carte",
     "row_span": "Nombre de rangée",
@@ -38,7 +44,6 @@
     "title": "Entité",
     "title_plural": "Entités",
     "add_card_to": "Ajouter la carte à ",
-    "edit_entity": "Éditer l'entité",
     "edit_entity_card": "Éditer une carte d'entité",
     "edit_entity_popup_card": "Éditer une carte Pop-up",
     "add_to_favorites": "Ajouter aux favoris",
@@ -54,6 +59,8 @@
     "hide_all": "Masquer toutes les entités",
     "exclude": "Exclure l'entité dans DD",
     "hide": "Masquer l'entité dans DD",
+    "hide_in_area": "Masquer dans les vues des pièces",
+    "unhide_in_area": "Afficher dans les vues des pièces",
     "unhide": "Afficher l'entité",
     "use_popup_card": "Utiliser une carte Pop-up",
     "use_entity_card": "Utiliser une carte d'entité",
@@ -71,8 +78,11 @@
     "title": "Accueil"
   },
   "area": {
-    "sensor_entities": "Capteurs sous le nom de la pièce",
-    "sensor_entities_helper": "Leurs valeurs s'affichent sous le nom de la pièce. Un capteur choisi remplace la moyenne de son type dans cette pièce (par exemple un thermomètre au lieu de la moyenne de tous).",
+    "sensor_values": "Valeurs sous le nom de la pièce",
+    "sensor_values_helper": "Par type de capteur, la moyenne de tous les capteurs de la pièce (champ vide) ou un capteur choisi. Les paramètres de l'intégration définissent les types affichés.",
+    "sensor_average": "Moyenne de tous ({count})",
+    "extra_sensor_entities": "Autres capteurs sous le nom de la pièce",
+    "extra_sensor_entities_helper": "Capteurs d'autres types dont la valeur s'affiche en plus sous le nom de la pièce (par exemple pluie ou vent).",
     "binary_sensor_entities": "Capteurs binaires sous le nom de la pièce",
     "binary_sensor_entities_helper": "Leur état s'affiche après les valeurs, par exemple « Fenêtre : Ouverte ».",
     "graph_entity": "Graphique dans la tuile de la pièce",
@@ -88,7 +98,6 @@
     "toggle_all_on": "Appuyer : allumer tous les {domain} de cette pièce",
     "title": "Pièce",
     "title_plural": "Pièces",
-    "edit_area_button": "Édition d'une Pièce",
     "group_by_floor": "Regrouper par étage",
     "ungroup_by_floor": "Dégrouper par étage",
     "icon": "Icône",
@@ -210,6 +219,8 @@
     }
   },
   "device": {
+    "types": "types d'appareils",
+    "tts": "Synthèse vocale",
     "opening": "Ouverture",
     "garage_door": "Porte de garage",
     "valve": "Vanne",
@@ -224,7 +235,6 @@
     "shutter": "Volet",
     "title": "Appareil",
     "title_plural": "Appareils",
-    "edit_device_button": "Édition d'un appareil",
     "edit_device_card": "Définir une carte d'entités personnalisées pour le domaine ",
     "edit_device_popup": "Définir une carte Pop-up d'entités personnalisées pour le domaine ",
     "current_blueprint_card": "Vous utilisez actuellement le Blueprint suivant pour toutes les cartes d'entités du domaine ",
@@ -234,6 +244,7 @@
     "show_in_navbar": "Ajouter la page d'appareils à la barre de navigation",
     "hide": "Masquer l'aperçu de l'appareil",
     "unhide": "Afficher l'aperçu de l'appareil",
+    "hidden": "Les aperçus d’appareils suivants sont masqués",
     "see_all": "Voir tout",
     "turn_all_off": "Tout désactiver",
     "on": "Allumé",
@@ -283,6 +294,8 @@
     "empty_no_entities_hint": "La page des appareils affiche les entités rattachées à une pièce, ainsi que les personnes, la météo et l'alarme. Attribuez des appareils ou des entités à des pièces dans Home Assistant."
   },
   "more": {
+    "empty": "Pas encore de pages supplémentaires",
+    "empty_hint": "Les pages supplémentaires affichent n'importe quelle carte, par exemple des caméras, des calendriers ou des graphiques. Elles apparaissent ici et, si vous le souhaitez, dans la barre de navigation.",
     "title": "Ajouter",
     "title_plural": "Ajouter une page",
     "pages": "Pages",
@@ -291,6 +304,7 @@
     "name_required": "Vous devez indiquer le nom de la page",
     "icon_required": "Si vous voulez l'ajouter à la barre de navigation, vous devez choisir une icône!",
     "add_navbar": "Ajouter à la barre de navigation",
+    "remove_navbar": "Retirer de la barre de navigation",
     "name": "Nom de la page",
     "icon": "icône de la page"
   },

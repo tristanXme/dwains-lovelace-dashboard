@@ -95,6 +95,7 @@ async def _write_entity_override(hass, msg, directory, flag):
         vol.Optional("colSpanXl", default="1"): str,
         vol.Optional("customCard", default=False): bool,
         vol.Optional("customPopup", default=False): bool,
+        vol.Optional("hideEntityInArea"): bool,
     }
 )
 @websocket_api.require_admin
@@ -113,6 +114,8 @@ async def ws_handle_edit_entity(
             for msg_key, yaml_key in EDIT_ENTITY_FIELDS
         }
     )
+    if "hideEntityInArea" in msg:
+        entities[msg["entity"]]["hidden_in_area"] = msg["hideEntityInArea"]
     await _save_entities(hass, entities)
     hass.bus.async_fire("dwains_dashboard_homepage_card_reload")
     hass.bus.async_fire("dwains_dashboard_devicespage_card_reload")
@@ -327,6 +330,10 @@ async def ws_handle_sort_entity(
             entities[entity_id] = OrderedDict()
         entities[entity_id][sort_type] = position
     await _save_entities(hass, entities)
+    # The dragging page shows the order already; other open dashboards and
+    # cached configurations get it through the reload.
+    hass.bus.async_fire("dwains_dashboard_homepage_card_reload")
+    hass.bus.async_fire("dwains_dashboard_devicespage_card_reload")
     connection.send_result(
         msg["id"], {"succesfull": "Entity cards sorted succesfully"}
     )

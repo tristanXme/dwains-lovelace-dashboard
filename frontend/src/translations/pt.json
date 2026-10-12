@@ -1,5 +1,8 @@
 {
   "global": {
+    "confirm_delete": "Eliminar mesmo? Não é possível anular.",
+    "confirm_delete_named": "Eliminar «{name}»? Não é possível anular.",
+    "edit_named": "Editar {name}",
     "save_failed": "Falha ao guardar",
     "reload_after_update": "O Dwains Dashboard foi atualizado. Recarregue a página para voltar a usar tudo.",
     "reload": "Recarregar",
@@ -22,6 +25,9 @@
   "editor": {
     "lovelace_card": "Cartão Lovelace",
     "create_lovelace_card": "Crie um novo cartão lovelace do zero",
+    "select_card_for": "Selecione um cartão para",
+    "loading_card_editor": "A carregar o editor de cartões…",
+    "no_visual_editor": "Este cartão não tem editor visual. Edite a sua configuração JSON:",
     "dwains_dashboard_blueprint": "Planta do painel Dwains ",
     "use_dwains_dashboard_blueprint": "Use uma planta do painel Dwains para criar um cartão",
     "row_span": "Expansão de linha",
@@ -38,7 +44,6 @@
     "title": "Entidade",
     "title_plural": "Entidades",
     "add_card_to": "Adicionar cartão a ",
-    "edit_entity": "Editar entidade",
     "edit_entity_card": "Editar cartão de entidade",
     "edit_entity_popup_card": "Editar cartão pop-up de entidade",
     "add_to_favorites": "Adicionar aos favoritos",
@@ -54,6 +59,8 @@
     "hide_all": "Hide all entities",
     "exclude": "Exclude entity in DD",
     "hide": "Ocultar entidade no DD",
+    "hide_in_area": "Ocultar nas vistas de áreas",
+    "unhide_in_area": "Mostrar nas vistas de áreas",
     "unhide": "Reexibir entidade",
     "use_popup_card": "Use o próprio cartão pop-up",
     "use_entity_card": "Use o próprio cartão de entidade",
@@ -71,8 +78,11 @@
     "title": "Inicio"
   },
   "area": {
-    "sensor_entities": "Sensores sob o nome da divisão",
-    "sensor_entities_helper": "Os seus valores aparecem sob o nome da divisão. Um sensor escolhido substitui nesta divisão a média do seu tipo (por exemplo um termómetro em vez da média de todos).",
+    "sensor_values": "Valores sob o nome da divisão",
+    "sensor_values_helper": "Por tipo de sensor, a média de todos os sensores da divisão (campo vazio) ou um sensor escolhido. As definições da integração decidem que tipos aparecem.",
+    "sensor_average": "Média de todos ({count})",
+    "extra_sensor_entities": "Mais sensores sob o nome da divisão",
+    "extra_sensor_entities_helper": "Sensores de outros tipos cujo valor também aparece sob o nome da divisão (por exemplo chuva ou vento).",
     "binary_sensor_entities": "Sensores binários sob o nome da divisão",
     "binary_sensor_entities_helper": "O seu estado aparece depois dos valores, por exemplo \"Janela: Aberta\".",
     "graph_entity": "Gráfico no bloco da divisão",
@@ -88,7 +98,6 @@
     "toggle_all_on": "Toque: ligar todos os {domain} desta divisão",
     "title": "Divisão",
     "title_plural": "Divisões",
-    "edit_area_button": "Botão Editar divisão",
     "group_by_floor": "Agrupar por andar",
     "ungroup_by_floor": "Desagrupar por andar",
     "icon": "Ícone da divisão",
@@ -210,6 +219,8 @@
     }
   },
   "device": {
+    "types": "tipos de dispositivo",
+    "tts": "Texto para voz",
     "opening": "Abertura",
     "garage_door": "Portão da garagem",
     "valve": "Válvula",
@@ -224,7 +235,6 @@
     "shutter": "Estore",
     "title": "Dispositivo",
     "title_plural": "Dispositivos",
-    "edit_device_button": "Botão Editar dispositivo",
     "edit_device_card": "Definir cartão de entidades personalizadas para domínio ",
     "edit_device_popup": "Definir pop-up de entidades personalizadas para o domínio",
     "current_blueprint_card": "Você está usando o seguinte esquema para todos os cartões de entidades no domínio",
@@ -273,12 +283,16 @@
     "smoke": "Fumo",
     "tamper": "Adulterar",
     "update": "Update",
+    "group": "Agrupar por áreas",
+    "ungroup": "Desagrupar por áreas",
     "empty_all_hidden": "Todos os tipos de dispositivo estão ocultos",
     "empty_all_hidden_hint": "Ative o modo de edição no menu (⋮) para voltar a mostrar tipos de dispositivo.",
     "empty_no_entities": "Nenhum dispositivo para mostrar",
     "empty_no_entities_hint": "A página de dispositivos mostra entidades que pertencem a uma área, além de pessoas, meteorologia e alarme. Atribua dispositivos ou entidades a áreas no Home Assistant."
   },
   "more": {
+    "empty": "Ainda sem páginas adicionais",
+    "empty_hint": "As páginas adicionais mostram quaisquer cartões, por exemplo câmaras, calendários ou gráficos. Aparecem aqui e, se quiser, na barra de navegação.",
     "title": "Mais",
     "title_plural": "Páginas adicionais",
     "pages": "Páginas",
@@ -287,6 +301,7 @@
     "name_required": "Você deve especificar um nome para a página",
     "icon_required": "Se você quiser adicioná-lo à barra de navegação, você deve selecionar um ícone!",
     "add_navbar": "Adicione mais esta página na barra de navegação principal",
+    "remove_navbar": "Remover esta página da barra de navegação principal",
     "name": "Nome da página adicional",
     "icon": "Ícone da página adicional"
   },

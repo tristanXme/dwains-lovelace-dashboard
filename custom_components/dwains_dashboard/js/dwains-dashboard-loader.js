@@ -45,7 +45,7 @@
 
   // Written by scripts/postbuild.mjs: language code -> strings file next to
   // this loader (the file name carries a content hash). English is bundled.
-  const languageFiles = {"de":"lang/de.18de1b4d.json","es":"lang/es.55e533af.json","fr":"lang/fr.db47df64.json","it":"lang/it.6ed7888d.json","nl":"lang/nl.3be8e223.json","pl":"lang/pl.882fc297.json","pt":"lang/pt.3015a1b1.json","sv":"lang/sv.787234ba.json","zh":"lang/zh.4e1c92c2.json"};
+  const languageFiles = {"de":"lang/de.15d40caa.json","es":"lang/es.07da249d.json","fr":"lang/fr.4e022095.json","it":"lang/it.323eaf1c.json","nl":"lang/nl.d60ecb49.json","pl":"lang/pl.a4876036.json","pt":"lang/pt.76922628.json","sv":"lang/sv.4762bb10.json","zh":"lang/zh.8d374158.json"};
   runtimeState.languageFiles = Object.fromEntries(
     Object.entries(languageFiles).map(([code, file]) => [code, new URL(file, loaderUrl).href]),
   );
@@ -105,20 +105,31 @@
 
   const LANGUAGE_WAIT_MS = 3000;
 
+  // When its app starts, Home Assistant replaces window.customElements with
+  // a scoped registry polyfill, and elements defined before that stay
+  // unknown to it. This file loads in parallel with the app, so the bundle,
+  // which defines its elements when it runs, waits for the final registry:
+  // the app defines <home-assistant> on it right after the replacement.
+  const registryWait = () => {
+    const registry = window.customElements;
+    if (!registry || registry.get("home-assistant")) return undefined;
+    return registry.whenDefined("home-assistant");
+  };
+
   const load = () => {
     if (!isDwainsRoute() || runtimeState.routeBundleRequested) return;
     runtimeState.routeBundleRequested = true;
     const url = bundleUrl();
     const code = languageCode();
-    let ready = Promise.resolve();
+    const waits = [registryWait()].filter(Boolean);
     if (code && !runtimeState.translations?.[code]) {
-      preloadModule(url);
-      ready = Promise.race([
+      waits.push(Promise.race([
         requestLanguage(code),
         new Promise((resolve) => setTimeout(resolve, LANGUAGE_WAIT_MS)),
-      ]);
+      ]));
     }
-    ready.then(() => import(url)).catch((err) => {
+    if (waits.length) preloadModule(url);
+    Promise.all(waits).then(() => import(url)).catch((err) => {
       runtimeState.routeBundleRequested = false;
       console.error("Dwains Dashboard: failed to load route bundle", err);
     });

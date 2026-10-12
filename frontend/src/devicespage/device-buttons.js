@@ -1,16 +1,18 @@
 import { html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import { mdiDotsVertical } from "@mdi/js";
 import { DOMAIN_ICONS } from '../variables';
 import translateEngine from '../translate-engine';
+import { deviceTypeName } from '../device-type-name';
 
 // The overview of device type buttons on the devices page.
 export const DeviceButtonsMixin = (Base) => class extends Base {
     _renderDeviceButtonCard(domain, type) {
       return html`
-        <div>
+        <div data-dd-item>
           <ha-card class="p-2">
             <span class="break-words">
-            ${translateEngine(this._hass, 'device.'+domain)}
+            ${deviceTypeName(this._hass, domain)}
             </span>
           </ha-card>
           <ha-card>
@@ -36,7 +38,7 @@ _renderDeviceButton(data){
     ? this.configuration['devices'][deviceDomain]['icon']
     : (DOMAIN_ICONS[deviceDomain] ? DOMAIN_ICONS[deviceDomain] : DOMAIN_ICONS["unknown"]);
   return html`
-    <div class="relative" data-device='${deviceDomain}'>
+    <div class="relative" data-dd-item data-device='${deviceDomain}'>
       <div
         class="flex justify-between h-44 p-3 device-button ${this.selectedDevice == deviceDomain && !this.configuration['homepage_header']['v2_mode'] ? 'current' : ''}"
         data-device=${deviceDomain}
@@ -52,7 +54,7 @@ _renderDeviceButton(data){
               ></ha-icon>` : ""}
           </div>
           <div class="w-full">
-            <h3 class="font-semibold text-lg capitalize">${translateEngine(this._hass, 'device.'+deviceDomain)}</h3>
+            <h3 class="font-semibold text-lg capitalize">${deviceTypeName(this._hass, deviceDomain)}</h3>
           </div>
         </div>
             <div class="row-span-2 text-right space-y-0.5 info">
@@ -144,9 +146,7 @@ _renderDeviceButton(data){
 
 	            return html`
 	            <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable">
-	              ${cards.map((i) =>
-	                html`${this._renderDeviceViewCard(i)}`
-	              )}
+	              ${repeat(cards, (i) => i.entity, (i) => this._renderDeviceViewCard(i))}
 	            </div>
 	            `;
 	          } else {
@@ -185,12 +185,12 @@ _renderDeviceButton(data){
 
         return html`
         <div>
-        ${sortedGroup.map((key) =>
+        ${repeat(sortedGroup, (key) => key, (key) =>
           html`
             <div class="mb-5">
               <h3 class="font-semibold capitalize text-gray">${group[key][0].area.name}</h3>
               <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable">
-              ${Object.entries(group[key]).map(([k,v]) => html`${this._renderDeviceViewCard(v)}`)}
+              ${repeat(group[key], (v) => v.entity, (v) => this._renderDeviceViewCard(v))}
               </div>
             </div>
           `
