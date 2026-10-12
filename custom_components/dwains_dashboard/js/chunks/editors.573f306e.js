@@ -1024,6 +1024,11 @@
         .edit-element {
           padding: 20px;
         }
+        .dd-check-help {
+          display: block;
+          font-size: 0.85em;
+          color: var(--secondary-text-color);
+        }
         .entity-id {
           margin-bottom: 12px;
           color: var(--secondary-text-color);
@@ -1119,34 +1124,15 @@
               </select>
             </div>
 
-            <label class="dd-check" @click=${se.H}>
-              <ha-checkbox
-                @change=${this._disableValueChanged}
-                .checked=${this.disableEntity}
-              ></ha-checkbox>
-              <span>${(0,b.A)(this.hass,"entity.disable")}</span>
-            </label>
-            <label class="dd-check" @click=${se.H}>
-              <ha-checkbox
-                @change=${this._hideValueChanged}
-                .checked=${this.hideEntity}
-              ></ha-checkbox>
-              <span>${(0,b.A)(this.hass,"entity.hide")}</span>
-            </label>
-            <label class="dd-check" @click=${se.H}>
-              <ha-checkbox
-                @change=${this._hideInAreaValueChanged}
-                .checked=${this.hideEntityInArea}
-              ></ha-checkbox>
-              <span>${(0,b.A)(this.hass,"entity.hide_in_area")}</span>
-            </label>
-            <label class="dd-check" @click=${se.H}>
-              <ha-checkbox
-                @change=${this._excludeValueChanged}
-                .checked=${this.excludeEntity}
-              ></ha-checkbox>
-              <span>${(0,b.A)(this.hass,"entity.exclude")}</span>
-            </label>
+            ${[["entity.hide","entity.hide_help",this.hideEntity,this._hideValueChanged],["entity.hide_in_area","entity.hide_in_area_help",this.hideEntityInArea,this._hideInAreaValueChanged],["entity.exclude","entity.exclude_help",this.excludeEntity,this._excludeValueChanged],["entity.disable","entity.disable_help",this.disableEntity,this._disableValueChanged]].map(([e,t,i,a])=>g.qy`
+              <label class="dd-check" @click=${se.H}>
+                <ha-checkbox @change=${a} .checked=${i}></ha-checkbox>
+                <span>
+                  ${(0,b.A)(this.hass,e)}
+                  <span class="dd-check-help">${(0,b.A)(this.hass,t)}</span>
+                </span>
+              </label>
+            `)}
             <label class="dd-check" @click=${se.H}>
               <ha-checkbox
                 @change=${this._customCardValueChanged}

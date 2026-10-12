@@ -290,11 +290,11 @@ class DwainsHouseInformationCard extends LitElement {
                     const entityConfig = this.configuration['entities']
                         ? (this.configuration['entities'][entity.entity_id] || {})
                         : {};
+                    // A hidden card ("Karte ausblenden") stays in the bar.
                     if (
                         !entity.hidden_by
                         && !entityConfig['disabled']
                         && !entityConfig['excluded']
-                        && !entityConfig['hidden']
                     ) {
                         persons.push(entity.entity_id);
                     }
@@ -314,12 +314,13 @@ class DwainsHouseInformationCard extends LitElement {
                         if (!entity.hidden_by) {
                             const disableEntity = this.configuration['entities'][entity.entity_id] ? (this.configuration['entities'][entity.entity_id]['disabled'] ? true : false) : false;
                             const excludeEntity = this.configuration['entities'][entity.entity_id] ? (this.configuration['entities'][entity.entity_id]['excluded'] ? true : false) : false;
-                            const hideEntity = this.configuration['entities'][entity.entity_id] ? (this.configuration['entities'][entity.entity_id]['hidden'] ? true : false) : false;
                             const hideEntityInArea = isEntityHiddenInArea(
                                 this.configuration['entities']?.[entity.entity_id],
                             );
 
-                            if (!disableEntity && !excludeEntity && !hideEntity && !hideEntityInArea) {
+                            // A hidden card ("Karte ausblenden") still counts,
+                            // here as on the area tiles.
+                            if (!disableEntity && !excludeEntity && !hideEntityInArea) {
                                 const friendlyName = this._entityDisplayName(entity.entity_id, entity);
                                 const domain = computeDomain(entity.entity_id);
 
@@ -415,7 +416,7 @@ class DwainsHouseInformationCard extends LitElement {
             (entity) => {
                 const config = this.configuration?.entities?.[entity.entity_id];
                 return !entity.hidden_by &&
-                    !(config?.disabled || config?.excluded || config?.hidden || config?.hidden_in_area) &&
+                    !(config?.disabled || config?.excluded || config?.hidden_in_area) &&
                     !UNAVAILABLE_STATES.includes(entity.state) &&
                     !STATES_OFF.includes(entity.state);
             }
