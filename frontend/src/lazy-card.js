@@ -73,6 +73,10 @@ function createLazyCardClass({
     }
 
     _replaceCard(card) {
+      // Already in place, e.g. the wrapper came back to the page with it:
+      // taking the card out and in again makes Home Assistant's cards drop
+      // and open their subscriptions once more.
+      if (card && this.firstChild === card && this.childNodes.length === 1) return;
       try {
         while (this.firstChild) {
           const previous = this.firstChild;

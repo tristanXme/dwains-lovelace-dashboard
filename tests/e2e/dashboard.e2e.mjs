@@ -661,11 +661,20 @@ for (const colorScheme of ["light", "dark"]) {
       });
       const released = () => page.evaluate(() => !window.__e2eSlider.isConnected && window.__e2eSlider._managers.length === 0);
       const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const sliderState = () => deep(page, (all) => {
+        const slider = all.find((el) => el.localName === "ha-control-circular-slider" && el.isConnected);
+        const climate = document.querySelector("home-assistant")?.hass?.states["climate.thermostat_wohnzimmer"];
+        return JSON.stringify({ slider: Boolean(slider), disabled: slider?.disabled, paths: slider?._interactions?.length, managers: slider?._managers?.length, state: climate?.state });
+      });
       // The devices page lists the entities of areas.
       await ws({ type: "config/entity_registry/update", entity_id: "climate.thermostat_wohnzimmer", area_id: token.areaId });
       try {
         await page.goto(BASE + "/dwains-dashboard/devices#climate");
-        await poll(shownSlider, "thermostat with its listeners");
+        await poll(() => page.evaluate((areaId) => document.querySelector("home-assistant")?.hass?.entities?.["climate.thermostat_wohnzimmer"]?.area_id === areaId, token.areaId), "thermostat in the area");
+        await poll(() => deep(page, (all) => all.some((el) => el.localName === "ha-control-circular-slider" && el.isConnected)), "thermostat on the devices page");
+        await poll(shownSlider, "thermostat with its listeners", 10000).catch(async (error) => {
+          throw new Error(`${error.message}: ${await sliderState()}`);
+        });
         // Another device type: the thermostat's view leaves the page.
         await go("/dwains-dashboard/devices#sensor");
         await poll(released, "slider released after a device type switch", 10000);
@@ -679,6 +688,27 @@ for (const colorScheme of ["light", "dark"]) {
         await page.evaluate(() => { delete window.__e2eSlider; });
         await ws({ type: "config/entity_registry/update", entity_id: "climate.thermostat_wohnzimmer", area_id: null });
       }
+    });
+
+    await step("a page shown again opens each history once", async () => {
+      // Home Assistant keeps a view it switches away from and puts it back
+      // later, cards included; they must not be taken out and in once more.
+      const go = (path) => page.evaluate((path) => {
+        history.pushState(null, "", path);
+        window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+      }, path);
+      historyStreams.length = 0;
+      await page.goto(BASE + "/dwains-dashboard/devices#sensor");
+      await poll(() => historyStreams.length > 0, "sensor histories");
+      await page.waitForTimeout(1500);
+      await go("/dwains-dashboard/home");
+      await page.waitForTimeout(1500);
+      historyStreams.length = 0;
+      await go("/dwains-dashboard/devices#sensor");
+      await poll(() => historyStreams.length > 0, "sensor histories again", 10000);
+      await page.waitForTimeout(1500);
+      const entities = historyStreams.map((payload) => JSON.parse(payload).entity_ids.join(","));
+      assert.deepEqual(entities.filter((entity, index) => entities.indexOf(entity) !== index), [], "a history opened twice");
     });
 
     await step("registries are read from Home Assistant, changes show up live", async () => {

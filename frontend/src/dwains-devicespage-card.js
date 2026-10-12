@@ -100,8 +100,10 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
           const connectionChanged = hasHassConnectionChanged(this._hass, hass);
           const previous = this._hass;
           this._hass = hass;
+          // Also while the page loads: it is built from the registries the
+          // load started with (see _loadConfiguration).
+          if(this.isConnected) this._registryChanges.update(hass);
           if(this.startedUp){
-            this._registryChanges.update(hass);
             this._update_hass(hass, hassChangeIsRelevant(previous, hass, this._isShownEntity));
           }
           if (connectionChanged && this.isConnected) {
@@ -271,6 +273,10 @@ const GLOBAL_DEVICE_PAGE_DOMAINS = new Set([
 	          this.selectedArea = this.selectedArea || "";
 	          this.startedUp = false;
 
+          // The page is built from the registries in this hass; a later
+          // change, also one while this load runs, builds it again.
+          this._registryChanges.reset();
+          this._registryChanges.update(this._hass);
           const snapshot = await loadDashboardRegistrySnapshot(this._hass);
           if (!isCurrent()) return;
           Object.assign(this, snapshot);
