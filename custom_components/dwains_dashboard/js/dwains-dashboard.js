@@ -4453,6 +4453,8 @@
     gap: 0.25rem;
     margin: auto 0.5rem;
     font-size: 0.8rem;
+    /* Two short lines in a narrow card. */
+    line-height: 1.2;
     color: var(--secondary-text-color);
     --mdc-icon-size: 1rem;
   }
