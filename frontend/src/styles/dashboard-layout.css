@@ -3,7 +3,10 @@
 
 /* The Lovelace header is hidden, and with it the space it keeps for the
    notch / status bar (viewport-fit=cover). Keep that space here; the values
-   are 0 on devices without a notch. */
+   are 0 on devices without a notch. It shows the theme's app color like
+   Home Assistant's header: the companion apps pick the status bar's text
+   color for that color (light text on a dark one), so on the page
+   background it could be white on white. */
 :host {
   display: block;
   --dd-mobile-navigation-height: 2.75rem;
@@ -18,7 +21,10 @@
   left: 0;
   right: 0;
   height: env(safe-area-inset-top, 0px);
-  background: var(--primary-background-color);
+  background: var(
+    --app-theme-color,
+    var(--app-header-background-color, var(--primary-background-color))
+  );
   z-index: 31;
   pointer-events: none;
 }

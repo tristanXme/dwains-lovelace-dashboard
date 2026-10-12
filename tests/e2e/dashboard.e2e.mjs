@@ -147,6 +147,31 @@ for (const colorScheme of ["light", "dark"]) {
     await poll(() => deep(page, (all) => Boolean(all.find((el) => el.id === "favorites")?.querySelector('[data-entity="input_boolean.e2e_lamp"]'))), "favorite");
   });
 
+  await step(`${colorScheme}: the strip behind the status bar has the theme's app color`, async () => {
+    // The companion apps pick the status bar's text color for the app
+    // color; the dashboard leaves Home Assistant's theme-color alone.
+    const meta = () => page.evaluate(() => document.querySelector('meta[name="theme-color"]').content);
+    await page.goto(BASE + "/lovelace/0");
+    await poll(() => page.evaluate(() => document.querySelector("home-assistant")?.hass), "Home Assistant");
+    const haThemeColor = await meta();
+    await page.evaluate(() => {
+      history.pushState(null, "", "/dwains-dashboard/home");
+      window.dispatchEvent(new CustomEvent("location-changed", { detail: { replace: false } }));
+    });
+    const colors = await poll(() => deep(page, (all) => {
+      const layout = all.find((el) => el.localName === "dwains-dashboard-layout" && el.isConnected);
+      if (!layout || !all.some((el) => el.classList?.contains("area-button"))) return undefined;
+      const probe = document.createElement("div");
+      document.body.appendChild(probe);
+      probe.style.backgroundColor = "var(--app-theme-color)";
+      const appColor = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return { strip: getComputedStyle(layout, "::before").backgroundColor, appColor };
+    }), "dashboard");
+    assert.equal(colors.strip, colors.appColor);
+    assert.equal(await meta(), haThemeColor);
+  });
+
   if (colorScheme === "light") {
     await step("the status bar scrolls only sideways and shows its entries whole", async () => {
       const bar = await poll(() => deep(page, (all) => {

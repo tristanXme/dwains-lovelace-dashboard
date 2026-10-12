@@ -275,7 +275,7 @@ class DwainsDashboard {
             themes: {
                 "dwains-theme": { "ha-card-border-radius": "0.75rem"}
             }
-        }, "dwains-theme", true);
+        }, "dwains-theme");
     }
 
     async reload() {
