@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { activeEntities, countActiveEntities, groupEntityStatesByDomain, isLockSensorOfLock, lockDeviceIds } = require("../src/entity-aggregation");
+const { activeEntities, activeLocks, countActiveEntities, groupEntityStatesByDomain, isLockSensorOfLock, lockDeviceIds } = require("../src/entity-aggregation");
 
 const registry = {
   "lock.front_door": { entity_id: "lock.front_door", device_id: "nuki" },
@@ -80,4 +80,17 @@ test("active entities are the ones the badge counts", () => {
   assert.equal(countActiveEntities(data, "binary_sensor", "window", options), 1);
   assert.equal(activeEntities(data, "lock", undefined, options), undefined);
   assert.equal(countActiveEntities(data, "lock", undefined, options), undefined);
+});
+
+test("unlocked locks and lock sensors are counted together", () => {
+  const options = { unavailableStates, statesOff: ["off", "locked"] };
+  // The lock sensor of the counted front door lock is left out by the grouping.
+  assert.deepEqual(ids(activeLocks(group(Object.keys(states)), options)), ["lock.front_door", "binary_sensor.window_lock"]);
+  const data = {
+    lock: [state("lock.garage", undefined, "locked"), state("lock.shed", undefined, "unavailable")],
+    binary_sensor: [state("binary_sensor.gate_lock", "lock", "off"), state("binary_sensor.door", "door", "on")],
+  };
+  assert.deepEqual(activeLocks(data, options), []);
+  assert.deepEqual(ids(activeLocks({ binary_sensor: [state("binary_sensor.gate_lock", "lock", "on")] }, options)), ["binary_sensor.gate_lock"]);
+  assert.deepEqual(activeLocks({}, options), []);
 });

@@ -26,6 +26,8 @@ const get = (object, key) => key.split(".").reduce((value, part) => value?.[part
 
 test("every badge on an area tile has an icon", () => {
   for (const deviceClass of variables.DEVICE_CLASSES.binary_sensor) {
+    // Lock sensors share the badge of the locks (checked below).
+    if (deviceClass === "lock") continue;
     assert.ok(variables.DOMAIN_STATE_ICONS.binary_sensor[deviceClass], deviceClass);
   }
   for (const domain of variables.OTHER_DOMAINS) {

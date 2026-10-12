@@ -79,8 +79,6 @@ export const DOMAIN_STATE_ICONS = {
       window: "mdi:window-open-variant",
       opening: "mdi:square-outline",
       garage_door: "mdi:garage-open",
-      // A sensor that reports a lock open, unlike a lock you can operate.
-      lock: "mdi:shield-lock-open",
       vibration: "mdi:vibrate",
       moisture: "mdi:water-alert",
       smoke: "mdi:smoke-detector-variant-alert",
