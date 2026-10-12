@@ -529,8 +529,8 @@ for (const colorScheme of ["light", "dark"]) {
       await clickMenuItem(page, "homepage-card", "Wohnzimmer", "Bearbeitungsmodus");
       const stored = (store) => deep(page, (all, [store, entityId]) => all.find((el) => el.localName === "homepage-card")?.configuration?.[store]?.[entityId], [store, entityId]);
       for (const [item, tag, store, flag, content] of [
-        ["Entität-Karte", "dwains-edit-entity-card-card", "entity_cards", "custom_card", "E2E eigene Karte"],
-        ["Pop-up Karte", "dwains-edit-entity-popup-card", "entities_popup", "custom_popup", "E2E eigenes Popup"],
+        ["Eigene Karte …", "dwains-edit-entity-card-card", "entity_cards", "custom_card", "E2E eigene Karte"],
+        ["Eigenes Pop-up …", "dwains-edit-entity-popup-card", "entities_popup", "custom_popup", "E2E eigenes Popup"],
       ]) {
         // A Lovelace card: the card picker hands its configuration to the
         // editor, which shows it and saves it.
@@ -564,6 +564,108 @@ for (const colorScheme of ["light", "dark"]) {
         await inEditor(tag, "editor.shadowRoot.querySelector('ha-button.warning').click()");
         await poll(async () => !(await configurationGet())[store]?.[entityId], `${store} removed`);
         await poll(async () => !(await stored(store)), "page reloaded");
+      }
+    });
+
+    await step("an entity's menu switches its card and what counts it, and each switch back", async () => {
+      // As a user does it: the card's menu in edit mode, and for a card that
+      // left the view the button in the list below it. Seen each time: the
+      // card, the window badge on the area's tile, the window chosen for the
+      // values below the area name, and the bar's window entry.
+      const entityId = "binary_sensor.fenster_wohnzimmer";
+      const areaId = token.areaId;
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const seen = () => deep(page, (all, [areaId, entityId]) => {
+        const view = all.find((el) => el.classList?.contains("dd-area-view") && el.id === areaId);
+        const cell = view?.querySelector(`.area-view-entity-sortable > [data-entity="${entityId}"]`);
+        const tile = all.find((el) => el.classList?.contains("area-button") && el.dataset.areaId === areaId);
+        return {
+          card: cell ? cell.querySelector(".dd-entity-hint")?.textContent.trim() || "shown" : "gone",
+          tile: [...(tile?.querySelectorAll(".info-badge") || [])].map((badge) => badge.title).filter((title) => /Fenster/.test(title)),
+          belowName: /Fenster Wohnzimmer/.test(tile?.querySelector(".sensors")?.textContent || ""),
+          bar: all.filter((el) => el.classList?.contains("domain-badge-card") && el.deviceClass === "window")
+            .map((el) => el.textContent.replace(/\s+/g, " ").trim()),
+        };
+      }, [areaId, entityId]);
+      const expect = (expected, what) => poll(async () => JSON.stringify(await seen()) === JSON.stringify(expected), what, 15000)
+        .catch(async (error) => { throw new Error(`${error.message}; shown: ${JSON.stringify(await seen())}`); });
+      const menuOf = (cell) => deep(page, async (all, cell) => {
+        const trigger = all.find((el) => el.matches?.(cell))?.querySelector('ha-dropdown [slot="trigger"]');
+        trigger?.click();
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        return [...(trigger?.closest("ha-dropdown").querySelectorAll("ha-dropdown-item, wa-divider") || [])]
+          .map((item) => item.localName === "wa-divider" ? "—" : item.textContent.trim());
+      }, cell);
+      const areaCell = `.dd-area-view[id="${areaId}"] .area-view-entity-sortable > [data-entity="${entityId}"]`;
+      const fromMenu = async (item) => {
+        assert.ok((await menuOf(areaCell)).includes(item), `menu item ${item}`);
+        await deep(page, (all, [cell, item]) => [...all.find((el) => el.matches?.(cell)).querySelectorAll("ha-dropdown-item")]
+          .find((entry) => entry.textContent.trim() === item).click(), [areaCell, item]);
+      };
+      const fromList = (button) => poll(() => deep(page, (all, [entityId, button]) => {
+        const entry = all.find((el) => el.localName === "ha-button" && el.entity === entityId && el.key && el.textContent.trim() === button);
+        entry?.click();
+        return Boolean(entry);
+      }, [entityId, button]), `button ${button}`, 15000);
+
+      // The window is also chosen for the values below the area name.
+      const chooseBelowName = (binarySensorEntities) => ws({
+        type: "dwains_dashboard/edit_area_button", areaId, icon: "mdi:sofa",
+        graphEntity: "sensor.temperatur_wohnzimmer", graphHours: 24, binarySensorEntities,
+      });
+      const areaView = () => poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell)), areaCell), "area view");
+      await page.goto(`${BASE}/dwains-dashboard/home#${areaId}`);
+      await areaView();
+      await chooseBelowName([entityId]);
+      try {
+        // Loaded again: the step before left this view in edit mode.
+        await page.reload();
+        await areaView();
+        await clickMenuItem(page, "homepage-card", "Wohnzimmer", "Aktiviere Bearbeitungsmodus");
+        await poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell) && el.querySelector("ha-dropdown")), areaCell), "edit mode");
+        const counted = { card: "shown", tile: ["1 Fenster offen (Fenster Wohnzimmer)"], belowName: true, bar: ["Fenster 1 offen"] };
+        const notCounted = { tile: [], belowName: false, bar: [] };
+        await expect(counted, "the window counted");
+        const menu = await menuOf(areaCell);
+        await page.keyboard.press("Escape");
+        assert.deepEqual(menu, [
+          "Einstellungen …", "Eigene Karte …", "Eigenes Pop-up …", "Zu Favoriten hinzufügen", "—",
+          "Karte ausblenden", "Aus dem Bereich nehmen", "Nicht mitzählen", "—",
+          "Im Dashboard deaktivieren",
+        ]);
+        await fromMenu("Nicht mitzählen");
+        await expect({ card: "Nicht mitgezählt", ...notCounted }, "card stays, not counted");
+        await fromMenu("Wieder mitzählen");
+        await expect(counted, "counted again");
+
+        await fromMenu("Karte ausblenden");
+        await expect({ ...counted, card: "gone" }, "card gone, still counted");
+        await fromList("Karte wieder anzeigen");
+        await expect(counted, "card back");
+
+        await fromMenu("Aus dem Bereich nehmen");
+        await expect({ card: "gone", ...notCounted }, "out of the area, not counted");
+        await fromList("Wieder in den Bereich aufnehmen");
+        await expect(counted, "back in the area");
+
+        await fromMenu("Im Dashboard deaktivieren");
+        await expect({ card: "gone", ...notCounted }, "disabled");
+        await fromList("Wieder aktivieren");
+        await expect(counted, "enabled again");
+
+        // The devices page has the same menu.
+        await page.goto(BASE + "/dwains-dashboard/devices#binary_sensor");
+        const deviceCell = `[data-dd-item][data-entity="${entityId}"]`;
+        await poll(() => deep(page, (all) => all.find((el) => el.localName === "devices-card")?.selectedDevice === "binary_sensor"), "binary sensors");
+        await clickMenuItem(page, "devices-card", "Binärsensoren", "Aktiviere Bearbeitungsmodus");
+        await poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell) && el.querySelector("ha-dropdown")), deviceCell), "card menu");
+        assert.deepEqual(await menuOf(deviceCell), menu);
+        await page.keyboard.press("Escape");
+      } finally {
+        for (const key of ["excluded", "hidden", "hidden_in_area", "disabled"]) {
+          await ws({ type: "dwains_dashboard/edit_entity_bool_value", entityId, key, value: false });
+        }
+        await chooseBelowName([]);
       }
     });
 
@@ -672,8 +774,8 @@ for (const colorScheme of ["light", "dark"]) {
         const stored = (store) => deep(page, (all, store) => all.find((el) => el.localName === "devices-card")?.configuration?.[store]?.input_boolean, store);
         // The popup first: it opens before the blueprints have arrived.
         for (const [item, tag, store] of [
-          ["Pop-up Karte", "dwains-edit-device-popup-card", "devices_popup"],
-          ["Entität-Karte", "dwains-edit-device-card-card", "devices_card"],
+          ["Eigenes Pop-up …", "dwains-edit-device-popup-card", "devices_popup"],
+          ["Eigene Karte …", "dwains-edit-device-card-card", "devices_card"],
         ]) {
           // The editor lists the installed blueprints; using one saves it.
           await clickItem({ domain: "input_boolean" }, item);

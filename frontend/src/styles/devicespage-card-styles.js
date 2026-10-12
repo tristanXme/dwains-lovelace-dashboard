@@ -1,5 +1,6 @@
 import { css } from 'lit';
 import { emptyStateStyles } from '../empty-state-view';
+import { entityMenuStyles } from '../entity-menu';
 import {
   subtleBackButtonStyles,
   subtleDetailViewStyles,
@@ -422,4 +423,5 @@ export const devicesPageCardStyles = [
   subtleDevicesPageStyles(css),
   subtleDetailViewStyles(css),
   emptyStateStyles,
+  entityMenuStyles,
 ];

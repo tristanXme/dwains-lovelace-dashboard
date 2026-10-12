@@ -4,6 +4,7 @@ import { repeat } from 'lit/directives/repeat.js';
 import translateEngine from '../translate-engine';
 import { deviceTypeName } from '../device-type-name';
 const { entityRecoveryActions } = require('../entity-settings-config');
+import { renderEntityMenuItems, renderEntityStateHint } from '../entity-menu';
 
 // Area detail view: entity cards, custom cards and grouping by domain.
 export const AreaViewMixin = (Base) => class extends Base {
@@ -118,25 +119,6 @@ export const AreaViewMixin = (Base) => class extends Base {
         `;
       }
     }
-    _renderEntityAreaVisibilityAction(entity) {
-      const hiddenInArea = this.configuration?.entities?.[entity]?.hidden_in_area === true;
-      return html`
-        <ha-dropdown-item
-          @click=${(ev) => this._handleEntityAreaVisibilityClick(
-            ev,
-            entity,
-            !hiddenInArea,
-          )}
-        >
-          <ha-icon slot="icon" .icon=${hiddenInArea ? "mdi:eye" : "mdi:eye-off"}></ha-icon>
-          ${translateEngine(
-            this._hass,
-            hiddenInArea ? 'entity.unhide_in_area' : 'entity.hide_in_area',
-          )}
-        </ha-dropdown-item>
-      `;
-    }
-
     _renderAreaViewCard(data, hass){
       return html`
 	      <div
@@ -156,6 +138,7 @@ export const AreaViewMixin = (Base) => class extends Base {
               >
               </ha-icon>
             </div>
+            ${renderEntityStateHint(this, data.entity)}
             <ha-dropdown
               class="ha-icon-overflow-menu-overflow"
               placement="bottom-end"
@@ -165,80 +148,7 @@ export const AreaViewMixin = (Base) => class extends Base {
                 .path=${mdiDotsVertical}
                 slot="trigger"
               ></ha-icon-button>
-                <ha-dropdown-item
-                  .entity="${data.entity}"
-                  .friendlyName="${data.friendlyName}"
-                  .disableEntity=${data.disableEntity}
-                  .hideEntity=${data.hideEntity}
-                  .excludeEntity=${data.excludeEntity}
-                  .rowSpan=${data.rowSpan}
-                  .colSpan=${data.colSpan}
-                  .rowSpanLg=${data.rowSpanLg}
-                  .colSpanLg=${data.colSpanLg}
-                  .rowSpanXl=${data.rowSpanXl}
-                  .colSpanXl=${data.colSpanXl}
-                  .customCard=${data.customCard}
-                  .customPopup=${data.customPopup}
-                  @click=${this._handleEntityEditClick}
-                >
-                  <ha-icon slot="icon" .icon=${"mdi:cog"}></ha-icon>
-                  ${translateEngine(this._hass, 'entity.settings')}
-                </ha-dropdown-item>
-                ${data.entity != 't' ? html `
-                  <ha-dropdown-item
-                    .entity="${data.entity}"
-                    @click="${this._handleEntityEditCardClick}"
-                  >
-                    <ha-icon slot="icon" .icon=${"mdi:pencil"}></ha-icon>
-                    ${translateEngine(this._hass, 'entity.entity_card')}
-                  </ha-dropdown-item>` : ""
-                }
-                ${data.entity != 't' ? html `
-                  <ha-dropdown-item
-                    .entity="${data.entity}"
-                    @click="${this._handleEntityEditPopupClick}"
-                  >
-                    <ha-icon slot="icon" .icon=${"mdi:pencil-box-multiple"}></ha-icon>
-                    ${translateEngine(this._hass, 'entity.popup_card')}
-                  </ha-dropdown-item>` : ""
-                }
-                ${!data.isFavorite ? html `
-                  <ha-dropdown-item
-                    .entity="${data.entity}"
-                    @click="${this._handleEntityAddToFavoritesClick}"
-                  >
-                    <ha-icon slot="icon" .icon=${"mdi:tag-heart"}></ha-icon>
-                    ${translateEngine(this._hass, 'entity.add_to_favorites')}
-                  </ha-dropdown-item>` : ""
-                }
-                <ha-dropdown-item
-                  .entity="${data.entity}"
-                  .key=${"excluded"}
-                  .ddValue=${true}
-                  @click=${this._handleEntityEditBoolValueClick}
-                >
-                  <ha-icon slot="icon" .icon=${"mdi:table-eye-off"}></ha-icon>
-                  ${translateEngine(this._hass, 'entity.exclude')}
-                </ha-dropdown-item>
-                <ha-dropdown-item
-                  .entity="${data.entity}"
-                  .key=${"hidden"}
-                  .ddValue=${true}
-                  @click=${this._handleEntityEditBoolValueClick}
-                >
-                  <ha-icon slot="icon" .icon=${"mdi:eye-off"}></ha-icon>
-                  ${translateEngine(this._hass, 'entity.hide')}
-                </ha-dropdown-item>
-                ${this._renderEntityAreaVisibilityAction(data.entity)}
-                <ha-dropdown-item
-                  .entity="${data.entity}"
-                  .key=${"disabled"}
-                  .ddValue=${true}
-                  @click=${this._handleEntityEditBoolValueClick}
-                >
-                  <ha-icon slot="icon" .icon=${"mdi:tray-remove"}></ha-icon>
-                  ${translateEngine(this._hass, 'entity.disable')}
-                </ha-dropdown-item>
+              ${renderEntityMenuItems(this, data)}
             </ha-dropdown>
           </div>
         </ha-card>` : ""}

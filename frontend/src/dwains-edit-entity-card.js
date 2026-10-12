@@ -18,6 +18,11 @@ class DwainsEditEntityCard extends LitElement {
         .edit-element {
           padding: 20px;
         }
+        .dd-check-help {
+          display: block;
+          font-size: 0.85em;
+          color: var(--secondary-text-color);
+        }
         .entity-id {
           margin-bottom: 12px;
           color: var(--secondary-text-color);
@@ -197,34 +202,20 @@ class DwainsEditEntityCard extends LitElement {
               </select>
             </div>
 
-            <label class="dd-check" @click=${toggleCheckRow}>
-              <ha-checkbox
-                @change=${this._disableValueChanged}
-                .checked=${this.disableEntity}
-              ></ha-checkbox>
-              <span>${translateEngine(this.hass, 'entity.disable')}</span>
-            </label>
-            <label class="dd-check" @click=${toggleCheckRow}>
-              <ha-checkbox
-                @change=${this._hideValueChanged}
-                .checked=${this.hideEntity}
-              ></ha-checkbox>
-              <span>${translateEngine(this.hass, 'entity.hide')}</span>
-            </label>
-            <label class="dd-check" @click=${toggleCheckRow}>
-              <ha-checkbox
-                @change=${this._hideInAreaValueChanged}
-                .checked=${this.hideEntityInArea}
-              ></ha-checkbox>
-              <span>${translateEngine(this.hass, 'entity.hide_in_area')}</span>
-            </label>
-            <label class="dd-check" @click=${toggleCheckRow}>
-              <ha-checkbox
-                @change=${this._excludeValueChanged}
-                .checked=${this.excludeEntity}
-              ></ha-checkbox>
-              <span>${translateEngine(this.hass, 'entity.exclude')}</span>
-            </label>
+            ${[
+              ['entity.hide', 'entity.hide_help', this.hideEntity, this._hideValueChanged],
+              ['entity.hide_in_area', 'entity.hide_in_area_help', this.hideEntityInArea, this._hideInAreaValueChanged],
+              ['entity.exclude', 'entity.exclude_help', this.excludeEntity, this._excludeValueChanged],
+              ['entity.disable', 'entity.disable_help', this.disableEntity, this._disableValueChanged],
+            ].map(([label, help, checked, changed]) => html`
+              <label class="dd-check" @click=${toggleCheckRow}>
+                <ha-checkbox @change=${changed} .checked=${checked}></ha-checkbox>
+                <span>
+                  ${translateEngine(this.hass, label)}
+                  <span class="dd-check-help">${translateEngine(this.hass, help)}</span>
+                </span>
+              </label>
+            `)}
             <label class="dd-check" @click=${toggleCheckRow}>
               <ha-checkbox
                 @change=${this._customCardValueChanged}

@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { activeEntities, activeLocks, countActiveEntities, groupEntityStatesByDomain, isLockSensorOfLock, lockDeviceIds } = require("../src/entity-aggregation");
+const { activeEntities, activeLocks, countActiveEntities, groupEntityStatesByDomain, isEntityCounted, isLockSensorOfLock, lockDeviceIds } = require("../src/entity-aggregation");
 
 const registry = {
   "lock.front_door": { entity_id: "lock.front_door", device_id: "nuki" },
@@ -93,4 +93,15 @@ test("unlocked locks and lock sensors are counted together", () => {
   assert.deepEqual(activeLocks(data, options), []);
   assert.deepEqual(ids(activeLocks({ binary_sensor: [state("binary_sensor.gate_lock", "lock", "on")] }, options)), ["binary_sensor.gate_lock"]);
   assert.deepEqual(activeLocks({}, options), []);
+});
+
+test("an entity counts in its area unless it is not counted, out of the area or disabled", () => {
+  assert.equal(isEntityCounted(undefined), true);
+  assert.equal(isEntityCounted({}), true);
+  // "Karte ausblenden" only hides the card.
+  assert.equal(isEntityCounted({ hidden: true }), true);
+  assert.equal(isEntityCounted({ excluded: true }), false);
+  assert.equal(isEntityCounted({ hidden_in_area: true }), false);
+  assert.equal(isEntityCounted({ disabled: true }), false);
+  assert.equal(isEntityCounted({ excluded: false, hidden_in_area: false, disabled: false }), true);
 });

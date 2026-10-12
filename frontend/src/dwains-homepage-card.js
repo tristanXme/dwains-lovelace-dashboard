@@ -10,6 +10,7 @@ import translateEngine from './translate-engine';
 import { editTitle, entityEditTitle } from './edit-title';
 import { showSaveError } from './save-error-toast';
 import { saveEntityBoolValue } from './entity-bool-save';
+import { entityMenuStyles, renderEntityAreaVisibilityAction } from './entity-menu';
 const { attachSortableLists } = require('./sortable-lists');
 const { applyLocalOrder } = require('./local-order');
 const { hideItemWhileSaving, hideWhileSaving, showSettledItems } = require('./optimistic-item');
@@ -1020,18 +1021,6 @@ function getDwainsHass() {
       });
     }
 
-    _handleEntityAddToFavoritesClick(ev){
-      closeParentDropdown(ev);
-      ev.stopPropagation();
-      const entityId = ev.currentTarget.entity;
-
-      this._hass.callWS({
-        type: 'dwains_dashboard/edit_entity_favorite',
-        entityId: entityId,
-        favorite: true,
-      }).catch((err) => showSaveError(this._hass, err));
-    }
-
     _handleEntityRemoveFromFavoritesClick(ev){
       closeParentDropdown(ev);
       ev.stopPropagation();
@@ -1298,7 +1287,7 @@ function getDwainsHass() {
                   <ha-icon slot="icon" .icon=${"mdi:tag-heart"}></ha-icon>
                   ${translateEngine(this._hass, 'entity.remove_from_favorites')}
                 </ha-dropdown-item>
-                ${this._renderEntityAreaVisibilityAction(data.entity)}
+                ${renderEntityAreaVisibilityAction(this, data.entity)}
             </ha-dropdown>
           </div>
         </ha-card>` : ""}
@@ -1585,7 +1574,7 @@ function getDwainsHass() {
     }
 
     static get styles() {
-      return [homepageCardStyles(css), subtleHomepageStyles(css), subtleDetailViewStyles(css), emptyStateStyles]
+      return [homepageCardStyles(css), subtleHomepageStyles(css), subtleDetailViewStyles(css), emptyStateStyles, entityMenuStyles]
     }
 
 
