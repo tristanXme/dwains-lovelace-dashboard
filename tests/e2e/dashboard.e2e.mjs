@@ -676,17 +676,24 @@ for (const colorScheme of ["light", "dark"]) {
         await fromList("Wieder in den Bereich aufnehmen");
         await expect(counted, "back in the area");
 
-        // Disabling also takes a favorite out of the favorites, and
-        // enabling it again brings it back there.
+        // Disabling also takes a favorite out of the favorites; their edit
+        // mode lists it, also for an entity no area lists, and enabling it
+        // there brings it back.
         const inFavorites = () => deep(page, (all, entityId) => all.some((el) => el.dataset?.entity === entityId && el.closest?.("#favorites")), entityId);
         await fromMenu("Zu Favoriten hinzufügen");
         await poll(inFavorites, "a favorite", 15000);
         await fromMenu("Im Dashboard deaktivieren");
         await expect({ card: "gone", ...notCounted }, "disabled");
         await poll(async () => !(await inFavorites()), "a disabled favorite out of the favorites", 15000);
-        await fromList("Wieder aktivieren");
+        await clickMenuItem(page, "homepage-card", "Favoriten", "Aktiviere Bearbeitungsmodus");
+        await poll(() => deep(page, (all, entityId) => {
+          const entry = all.find((el) => el.localName === "ha-button" && el.entity === entityId && el.key === "disabled" && el.closest("#favorites"));
+          entry?.click();
+          return Boolean(entry) && entry.textContent.trim() === "Wieder aktivieren";
+        }, entityId), "Wieder aktivieren in the favorites", 15000);
         await expect(counted, "enabled again");
         await poll(inFavorites, "back in the favorites", 15000);
+        await clickMenuItem(page, "homepage-card", "Favoriten", "Deaktiviere Bearbeitungsmodus");
         await fromMenu("Aus Favoriten entfernen");
         await poll(async () => !(await inFavorites()), "no longer a favorite", 15000);
 
