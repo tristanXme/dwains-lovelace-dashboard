@@ -633,13 +633,41 @@ for (const colorScheme of ["light", "dark"]) {
           "Karte ausblenden", "Aus dem Bereich nehmen", "Nicht mitzählen", "—",
           "Im Dashboard deaktivieren",
         ]);
+        // The settings dialog keeps its size when its title is clicked.
+        const dialogWidth = () => deep(page, (all) => all.find((el) => el.localName === "card-tools-popup")?.shadowRoot?.querySelector("ha-dialog")?.width);
+        await fromMenu("Einstellungen …");
+        await poll(async () => (await dialogWidth()) === "medium", "settings dialog", 15000);
+        await deep(page, (all) => all.find((el) => el.localName === "card-tools-popup").shadowRoot.querySelector(".main-title").click());
+        await page.waitForTimeout(300);
+        assert.equal(await dialogWidth(), "medium", "the dialog kept its size");
+        await page.keyboard.press("Escape");
+        await poll(async () => !(await dialogWidth()), "settings dialog closed", 15000);
+
+        // On hover each switch says what it does; one that is on names itself.
+        const titles = () => deep(page, (all, cell) => {
+          const shown = all.find((el) => el.matches?.(cell));
+          return Object.fromEntries([...shown.querySelectorAll("ha-dropdown-item[title], .dd-entity-hint[title]")]
+            .map((item) => [item.textContent.trim(), item.title]));
+        }, areaCell);
+        const notCountedHelp = "Die Karte bleibt. Kachel, Werte unter dem Raumnamen und Statusleiste lassen sie aus.";
+        assert.deepEqual(await titles(), {
+          "Karte ausblenden": "Nicht in Bereichsansichten und auf der Geräteseite. Zählt weiter mit.",
+          "Aus dem Bereich nehmen": "Nicht in der Bereichsansicht und nicht in den Zahlen des Bereichs. Bleibt auf der Geräteseite.",
+          "Nicht mitzählen": notCountedHelp,
+          "Im Dashboard deaktivieren": "Nicht in Bereichsansichten, auf der Geräteseite und in den Favoriten. Zählt nirgends mit.",
+        });
         await fromMenu("Nicht mitzählen");
         await expect({ card: "Nicht mitgezählt", ...notCounted }, "card stays, not counted");
+        const switchedOn = await titles();
+        assert.equal(switchedOn["Wieder mitzählen"], `Nicht mitzählen: ${notCountedHelp}`);
+        assert.equal(switchedOn["Nicht mitgezählt"], `Nicht mitzählen: ${notCountedHelp}`);
         await fromMenu("Wieder mitzählen");
         await expect(counted, "counted again");
 
         await fromMenu("Karte ausblenden");
         await expect({ ...counted, card: "gone" }, "card gone, still counted");
+        assert.equal(await deep(page, (all, entityId) => all.find((el) => el.localName === "ha-button" && el.entity === entityId && el.key === "hidden")?.title, entityId),
+          "Karte ausblenden: Nicht in Bereichsansichten und auf der Geräteseite. Zählt weiter mit.");
         await fromList("Karte wieder anzeigen");
         await expect(counted, "card back");
 
@@ -648,10 +676,19 @@ for (const colorScheme of ["light", "dark"]) {
         await fromList("Wieder in den Bereich aufnehmen");
         await expect(counted, "back in the area");
 
+        // Disabling also takes a favorite out of the favorites, and
+        // enabling it again brings it back there.
+        const inFavorites = () => deep(page, (all, entityId) => all.some((el) => el.dataset?.entity === entityId && el.closest?.("#favorites")), entityId);
+        await fromMenu("Zu Favoriten hinzufügen");
+        await poll(inFavorites, "a favorite", 15000);
         await fromMenu("Im Dashboard deaktivieren");
         await expect({ card: "gone", ...notCounted }, "disabled");
+        await poll(async () => !(await inFavorites()), "a disabled favorite out of the favorites", 15000);
         await fromList("Wieder aktivieren");
         await expect(counted, "enabled again");
+        await poll(inFavorites, "back in the favorites", 15000);
+        await fromMenu("Aus Favoriten entfernen");
+        await poll(async () => !(await inFavorites()), "no longer a favorite", 15000);
 
         // The devices page has the same menu.
         await page.goto(BASE + "/dwains-dashboard/devices#binary_sensor");
@@ -665,6 +702,7 @@ for (const colorScheme of ["light", "dark"]) {
         for (const key of ["excluded", "hidden", "hidden_in_area", "disabled"]) {
           await ws({ type: "dwains_dashboard/edit_entity_bool_value", entityId, key, value: false });
         }
+        await ws({ type: "dwains_dashboard/edit_entity_favorite", entityId, favorite: false });
         await chooseBelowName([]);
       }
     });

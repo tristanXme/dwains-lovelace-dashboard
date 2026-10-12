@@ -57,7 +57,7 @@
     "ungroup": "Ungroup by devices",
     "enable": "Enable again",
     "disable": "Disable in dashboard",
-    "disable_help": "Not in the area views or on the devices page. Not counted anywhere.",
+    "disable_help": "Not in the area views, on the devices page or in the favorites. Not counted anywhere.",
     "disable_all": "Disable all entities",
     "hide_all": "Hide all entities",
     "exclude": "Don't count",

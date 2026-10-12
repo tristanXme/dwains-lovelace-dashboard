@@ -504,7 +504,9 @@ function getDwainsHass() {
         if(this.configuration['entities']){
           const favoritesEntities = [];
           await Promise.all(Object.entries(this.configuration['entities']).map(async ([entity,v]) => {
-            if(v['favorite']){
+            // A disabled entity leaves the favorites too; it stays marked,
+            // so enabling it again brings it back.
+            if(v['favorite'] && !v['disabled']){
               const domain = computeDomain(entity);
               const hideEntity = this.configuration['entities'][entity] ? (this.configuration['entities'][entity]['hidden'] ? true : false) : false;
               const excludeEntity = this.configuration['entities'][entity] ? (this.configuration['entities'][entity]['excluded'] ? true : false) : false;

@@ -44,6 +44,7 @@ export function renderEntityMenuItems(host, data) {
       .entity=${entity}
       .key=${"hidden"}
       .ddValue=${!configured.hidden}
+      title=${switchDescription(hass, "hidden", configured.hidden)}
       @click=${host._handleEntityEditBoolValueClick}
     >
       <ha-icon slot="icon" .icon=${configured.hidden ? "mdi:eye" : "mdi:eye-off"}></ha-icon>
@@ -54,6 +55,7 @@ export function renderEntityMenuItems(host, data) {
       .entity=${entity}
       .key=${"excluded"}
       .ddValue=${!configured.excluded}
+      title=${switchDescription(hass, "excluded", configured.excluded)}
       @click=${host._handleEntityEditBoolValueClick}
     >
       <ha-icon slot="icon" .icon=${configured.excluded ? "mdi:counter" : "mdi:numeric-off"}></ha-icon>
@@ -64,6 +66,7 @@ export function renderEntityMenuItems(host, data) {
       .entity=${entity}
       .key=${"disabled"}
       .ddValue=${true}
+      title=${switchDescription(hass, "disabled", false)}
       @click=${host._handleEntityEditBoolValueClick}
     >
       <ha-icon slot="icon" .icon=${"mdi:tray-remove"}></ha-icon>
@@ -77,7 +80,10 @@ export function renderEntityMenuItems(host, data) {
 export function renderEntityAreaVisibilityAction(host, entity) {
   const hiddenInArea = host.configuration?.entities?.[entity]?.hidden_in_area === true;
   return html`
-    <ha-dropdown-item @click=${(ev) => host._handleEntityAreaVisibilityClick(ev, entity, !hiddenInArea)}>
+    <ha-dropdown-item
+      title=${switchDescription(host._hass, "hidden_in_area", hiddenInArea)}
+      @click=${(ev) => host._handleEntityAreaVisibilityClick(ev, entity, !hiddenInArea)}
+    >
       <ha-icon slot="icon" .icon=${hiddenInArea ? "mdi:home-import-outline" : "mdi:home-export-outline"}></ha-icon>
       ${translateEngine(host._hass, hiddenInArea ? 'entity.unhide_in_area' : 'entity.hide_in_area')}
     </ha-dropdown-item>
@@ -88,11 +94,26 @@ export function renderEntityAreaVisibilityAction(host, entity) {
 export function renderEntityStateHint(host, entity) {
   if (!host.configuration?.entities?.[entity]?.excluded) return "";
   return html`
-    <span class="dd-entity-hint">
+    <span class="dd-entity-hint" title=${switchDescription(host._hass, "excluded", true)}>
       <ha-icon .icon=${"mdi:numeric-off"}></ha-icon>
       ${translateEngine(host._hass, 'entity.not_counted')}
     </span>
   `;
+}
+
+// What a switch does, shown on hover. A switch that is on is named with
+// it ("Nicht mitzählen: …"), as its item then offers the way back.
+const SWITCH_TEXTS = {
+  hidden: ['entity.hide', 'entity.hide_help'],
+  hidden_in_area: ['entity.hide_in_area', 'entity.hide_in_area_help'],
+  excluded: ['entity.exclude', 'entity.exclude_help'],
+  disabled: ['entity.disable', 'entity.disable_help'],
+};
+
+export function switchDescription(hass, key, on) {
+  const [label, help] = SWITCH_TEXTS[key];
+  const text = translateEngine(hass, help);
+  return on ? `${translateEngine(hass, label)}: ${text}` : text;
 }
 
 export const entityMenuStyles = css`
