@@ -20,12 +20,14 @@
     "greeting_afternoon": "下午好",
     "greeting_evening": "晚上好",
     "v2_mode": "启用 Dwains 仪表板 v2 模式（布局）",
-    "disable_sensor_graph": "禁用将传感器显示为图表"
+    "disable_sensor_graph": "禁用将传感器显示为图表",
+    "invert_cover": "反转窗帘状态"
   },
   "editor": {
     "lovelace_card": "Lovelace 卡片",
     "create_lovelace_card": "从头开始创建新的 Lovelace 卡片",
     "select_card_for": "选择卡片：",
+    "select_popup_card_for": "选择弹窗卡片：",
     "loading_card_editor": "正在加载卡片编辑器…",
     "no_visual_editor": "此卡片没有可视化编辑器。请编辑其 JSON 配置：",
     "dwains_dashboard_blueprint": "Dwains 仪表板蓝图",
@@ -56,8 +58,18 @@
     "enable": "重新启用",
     "disable": "在仪表盘中禁用",
     "disable_help": "不在区域视图、设备页面和收藏夹中显示，也不计入任何统计。",
-    "disable_all": "禁用所有实体",
-    "hide_all": "隐藏所有实体",
+    "disable_all": "在仪表盘中全部禁用",
+    "confirm_hide_all": {
+      "one": "隐藏“{area}”中的 1 张卡片？",
+      "other": "隐藏“{area}”中的 {count} 张卡片？"
+    },
+    "confirm_disable_all": {
+      "one": "在仪表盘中禁用“{area}”中的 1 张卡片？",
+      "other": "在仪表盘中禁用“{area}”中的 {count} 张卡片？"
+    },
+    "unhide_all": "全部重新显示",
+    "enable_all": "全部重新启用",
+    "hide_all": "隐藏所有卡片",
     "exclude": "不计入",
     "include": "重新计入",
     "not_counted": "未计入",
@@ -277,7 +289,7 @@
     "motion": "运动",
     "device_tracker": "设备追踪器",
     "lock": "锁",
-    "siren": "Siren",
+    "siren": "警报器",
     "input_boolean": "输入布尔值",
     "weather": "天气",
     "moisture": "湿度",

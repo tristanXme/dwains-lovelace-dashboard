@@ -9,7 +9,11 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
 
 from .configuration_runtime import serialize_configuration_mutation
-from .input_validation import parse_json_string_list
+from .input_validation import (
+    AREA_SORT_ORDERS,
+    AREA_SWITCHES,
+    parse_json_string_list,
+)
 from .yaml_files import dump_yaml_file, load_yaml_file_or_default
 
 
@@ -118,7 +122,7 @@ async def ws_handle_edit_area_button(
     {
         vol.Required("type"): "dwains_dashboard/edit_area_bool_value",
         vol.Required("areaId"): str,
-        vol.Required("key"): str,
+        vol.Required("key"): vol.In(AREA_SWITCHES),
         vol.Required("value"): bool,
     }
 )
@@ -224,7 +228,7 @@ async def ws_handle_edit_homepage_header(
     {
         vol.Required("type"): "dwains_dashboard/sort_area_button",
         vol.Required("sortData"): str,
-        vol.Required("sortType"): vol.All(str, vol.Length(min=1)),
+        vol.Required("sortType"): vol.In(AREA_SORT_ORDERS),
     }
 )
 @websocket_api.require_admin

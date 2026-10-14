@@ -14,6 +14,7 @@ import { entityMenuStyles, renderEntityAreaVisibilityAction } from './entity-men
 const { attachSortableLists } = require('./sortable-lists');
 const { applyLocalOrder } = require('./local-order');
 const { hideItemWhileSaving, hideWhileSaving, showSettledItems } = require('./optimistic-item');
+const { confirmBulkSwitch, entitiesToSwitch, switchesToRestore } = require('./bulk-switch');
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
@@ -765,15 +766,38 @@ function getDwainsHass() {
       const data = this.data.find((data) => data.area.area_id == areaId);
       const key = ev.currentTarget.key;
       const value = ev.currentTarget.ddValue;
+      const entities = entitiesToSwitch([...data.entities], this.configuration, key);
+      if (!entities.length) return;
+      if (!confirmBulkSwitch({
+        key,
+        count: entities.length,
+        area: data.area.name,
+        translate: (label) => translateEngine(this._hass, label),
+      })) return;
       // Every card of the area view leaves its list.
       const cards = [...(ev.currentTarget.closest('.dd-area-view')?.querySelectorAll('.area-view-entity-sortable > [data-dd-item]') || [])];
 
       hideWhileSaving(cards, () => this._hass.callWS({
         type: 'dwains_dashboard/edit_entities_bool_value',
-        entities: JSON.stringify([...data.entities]),
+        entities: JSON.stringify(entities),
         key: key,
         value: value,
       })).catch((err) => showSaveError(this._hass, err));
+    }
+
+    // "Alle wieder anzeigen" / "Alle wieder aktivieren" of a list below an
+    // area view or in the favorites: every card of the list leaves it.
+    _handleRestoreAllClicked(ev){
+      const { entities, keys } = ev.currentTarget;
+      const switches = switchesToRestore(entities, this.configuration, keys);
+      if (!switches.length) return;
+      const cards = [...(ev.currentTarget.closest('.dd-recovery-list')?.querySelectorAll('[data-dd-item]') || [])];
+      hideWhileSaving(cards, () => Promise.all(switches.map(({ key, entities }) => this._hass.callWS({
+        type: 'dwains_dashboard/edit_entities_bool_value',
+        entities: JSON.stringify(entities),
+        key,
+        value: false,
+      })))).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleAreaClick(event){
@@ -1360,8 +1384,8 @@ function getDwainsHass() {
             ${repeat(this.favorites, (i) => i.entity, (i) => this._renderFavoriteViewCard(i))}
           </div>
           ${this.favoriteEditMode && disabled.length ? html`
-            <div class="mt-4">
-              <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.disabled')}</h3>
+            <div class="mt-4 dd-recovery-list">
+              ${this._renderRecoveryListHeader('entity.disabled', 'entity.enable_all', disabled, ['disabled'])}
               <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
                 ${repeat(disabled, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'disabled'))}
               </div>

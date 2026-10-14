@@ -10,7 +10,7 @@
     "disable_edit_mode": "Inaktivera redigeringsläge",
     "version": "Version",
     "disable_clock": "Inaktivera klocka",
-    "am_pm_clock": "AM/PM clock",
+    "am_pm_clock": "AM/PM-klocka",
     "disable_welcome_message": "Inaktivera välkomstmeddelande",
     "settings": "Globala inställningar",
     "dashboard_information": "Dashboardinformation",
@@ -20,12 +20,14 @@
     "greeting_afternoon": "God middag",
     "greeting_evening": "God kväll",
     "v2_mode": "Aktivera Dwains Dashboard v2-läge (layout)",
-    "disable_sensor_graph": "Inaktivera visning av sensor som graf"
+    "disable_sensor_graph": "Inaktivera visning av sensor som graf",
+    "invert_cover": "Invertera rullgardiner"
   },
   "editor": {
     "lovelace_card": "Lovelacekort",
     "create_lovelace_card": "Skapa ett nytt lovelacekort från början",
     "select_card_for": "Välj ett kort för",
+    "select_popup_card_for": "Välj ett popup-kort för",
     "loading_card_editor": "Läser in kortredigeraren…",
     "no_visual_editor": "Det här kortet har ingen visuell redigerare. Redigera dess JSON-konfiguration:",
     "dwains_dashboard_blueprint": "Dwains Dashboard-blueprint",
@@ -56,8 +58,18 @@
     "enable": "Aktivera igen",
     "disable": "Inaktivera i instrumentpanelen",
     "disable_help": "Visas inte i områdesvyer, på enhetssidan eller bland favoriter. Räknas ingenstans.",
-    "disable_all": "Inaktivera alla entiteter",
-    "hide_all": "Göm alla entiteter",
+    "disable_all": "Inaktivera alla i instrumentpanelen",
+    "confirm_hide_all": {
+      "one": "Dölja 1 kort i ”{area}”?",
+      "other": "Dölja {count} kort i ”{area}”?"
+    },
+    "confirm_disable_all": {
+      "one": "Inaktivera 1 kort i ”{area}” i instrumentpanelen?",
+      "other": "Inaktivera {count} kort i ”{area}” i instrumentpanelen?"
+    },
+    "unhide_all": "Visa alla igen",
+    "enable_all": "Aktivera alla igen",
+    "hide_all": "Dölj alla kort",
     "exclude": "Räkna inte med",
     "include": "Räkna med igen",
     "not_counted": "Räknas inte",
@@ -294,6 +306,10 @@
     "automation": "Automation",
     "group": "Gruppera efter områden",
     "ungroup": "Avgruppera efter områden",
+    "script": "Skript",
+    "time": "Tid",
+    "event": "Händelser",
+    "text": "Text",
     "empty_all_hidden": "Alla enhetstyper är dolda",
     "empty_all_hidden_hint": "Aktivera redigeringsläget i menyn (⋮) för att visa enhetstyper igen.",
     "empty_no_entities": "Inga enheter att visa",

@@ -354,6 +354,13 @@ export const homepageCardStyles = (css) => css`
         .justify-between {
             justify-content: space-between
         }
+        /* A list of cards that left the view, with its "all back" button. */
+        .dd-recovery-header {
+            gap: 0.5rem;
+        }
+        .dd-recovery-header ha-button {
+            flex-shrink: 0;
+        }
         .dd-homepage-status {
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);

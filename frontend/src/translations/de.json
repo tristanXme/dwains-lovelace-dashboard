@@ -58,8 +58,18 @@
     "enable": "Wieder aktivieren",
     "disable": "Im Dashboard deaktivieren",
     "disable_help": "Nicht in Bereichsansichten, auf der Geräteseite und in den Favoriten. Zählt nirgends mit.",
-    "disable_all": "Deaktiviere alle Entitäten",
-    "hide_all": "Blende alle Entitäten aus",
+    "disable_all": "Alle im Dashboard deaktivieren",
+    "confirm_hide_all": {
+      "one": "1 Karte in „{area}“ ausblenden?",
+      "other": "{count} Karten in „{area}“ ausblenden?"
+    },
+    "confirm_disable_all": {
+      "one": "1 Karte in „{area}“ im Dashboard deaktivieren?",
+      "other": "{count} Karten in „{area}“ im Dashboard deaktivieren?"
+    },
+    "unhide_all": "Alle wieder anzeigen",
+    "enable_all": "Alle wieder aktivieren",
+    "hide_all": "Alle Karten ausblenden",
     "exclude": "Nicht mitzählen",
     "include": "Wieder mitzählen",
     "not_counted": "Nicht mitgezählt",

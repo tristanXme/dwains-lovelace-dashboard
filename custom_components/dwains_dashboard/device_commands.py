@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 
 from .configuration_runtime import serialize_configuration_mutation
 from .input_validation import (
+    DEVICE_SWITCHES,
     parse_json_object,
     parse_json_string_list,
     safe_path_segment,
@@ -57,6 +58,8 @@ async def ws_handle_edit_device_button(
             devices,
         )
 
+    # The status bar on the homepage shows the icon too.
+    hass.bus.async_fire("dwains_dashboard_homepage_card_reload")
     hass.bus.async_fire("dwains_dashboard_devicespage_card_reload")
     hass.bus.async_fire("dwains_dashboard_navigation_card_reload")
     connection.send_result(msg["id"], {"succesfull": "Device button saved"})
@@ -181,7 +184,7 @@ async def ws_handle_remove_device_popup(
     {
         vol.Required("type"): "dwains_dashboard/edit_device_bool_value",
         vol.Required("device"): str,
-        vol.Required("key"): str,
+        vol.Required("key"): vol.In(DEVICE_SWITCHES),
         vol.Required("value"): bool,
     }
 )
@@ -207,6 +210,8 @@ async def ws_handle_edit_device_bool_value(
         devices,
     )
     hass.bus.async_fire("dwains_dashboard_devicespage_card_reload")
+    # A hidden device type leaves the navigation bar too.
+    hass.bus.async_fire("dwains_dashboard_navigation_card_reload")
     connection.send_result(
         msg["id"], {"succesfull": "Device bool value set succesfully"}
     )
