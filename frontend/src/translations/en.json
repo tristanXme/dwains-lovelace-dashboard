@@ -59,6 +59,16 @@
     "disable": "Disable in dashboard",
     "disable_help": "Not in the area views, on the devices page or in the favorites. Not counted anywhere.",
     "disable_all": "Disable all in dashboard",
+    "confirm_hide_all": {
+      "one": "Hide 1 card in “{area}”?",
+      "other": "Hide {count} cards in “{area}”?"
+    },
+    "confirm_disable_all": {
+      "one": "Disable 1 card in “{area}” in the dashboard?",
+      "other": "Disable {count} cards in “{area}” in the dashboard?"
+    },
+    "unhide_all": "Show all again",
+    "enable_all": "Enable all again",
     "hide_all": "Hide all cards",
     "exclude": "Don't count",
     "include": "Count again",

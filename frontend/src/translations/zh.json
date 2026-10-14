@@ -59,6 +59,16 @@
     "disable": "在仪表盘中禁用",
     "disable_help": "不在区域视图、设备页面和收藏夹中显示，也不计入任何统计。",
     "disable_all": "在仪表盘中全部禁用",
+    "confirm_hide_all": {
+      "one": "隐藏“{area}”中的 1 张卡片？",
+      "other": "隐藏“{area}”中的 {count} 张卡片？"
+    },
+    "confirm_disable_all": {
+      "one": "在仪表盘中禁用“{area}”中的 1 张卡片？",
+      "other": "在仪表盘中禁用“{area}”中的 {count} 张卡片？"
+    },
+    "unhide_all": "全部重新显示",
+    "enable_all": "全部重新启用",
     "hide_all": "隐藏所有卡片",
     "exclude": "不计入",
     "include": "重新计入",

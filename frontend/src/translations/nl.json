@@ -59,6 +59,16 @@
     "disable": "Uitschakelen in dashboard",
     "disable_help": "Niet in ruimteweergaven, op de apparatenpagina of in de favorieten. Telt nergens mee.",
     "disable_all": "Alle uitschakelen in dashboard",
+    "confirm_hide_all": {
+      "one": "1 kaart in ‘{area}’ verbergen?",
+      "other": "{count} kaarten in ‘{area}’ verbergen?"
+    },
+    "confirm_disable_all": {
+      "one": "1 kaart in ‘{area}’ uitschakelen in dashboard?",
+      "other": "{count} kaarten in ‘{area}’ uitschakelen in dashboard?"
+    },
+    "unhide_all": "Alle weer tonen",
+    "enable_all": "Alle weer inschakelen",
     "hide_all": "Alle kaarten verbergen",
     "exclude": "Niet meetellen",
     "include": "Weer meetellen",

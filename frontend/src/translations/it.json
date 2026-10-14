@@ -59,6 +59,16 @@
     "disable": "Disabilita nella dashboard",
     "disable_help": "Non compare nelle viste delle aree, nella pagina dei dispositivi né nei preferiti. Non viene conteggiata da nessuna parte.",
     "disable_all": "Disabilita tutte nella dashboard",
+    "confirm_hide_all": {
+      "one": "Nascondere 1 scheda in «{area}»?",
+      "other": "Nascondere {count} schede in «{area}»?"
+    },
+    "confirm_disable_all": {
+      "one": "Disabilitare 1 scheda di «{area}» nella dashboard?",
+      "other": "Disabilitare {count} schede di «{area}» nella dashboard?"
+    },
+    "unhide_all": "Mostra di nuovo tutte",
+    "enable_all": "Riabilita tutte",
     "hide_all": "Nascondi tutte le schede",
     "exclude": "Non contare",
     "include": "Conta di nuovo",

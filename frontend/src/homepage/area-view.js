@@ -155,6 +155,24 @@ export const AreaViewMixin = (Base) => class extends Base {
       </div>
       `;
     }
+    // The heading of a list of cards that left the view, with its button that
+    // brings them all back (from two cards on).
+    _renderRecoveryListHeader(title, button, entities, keys) {
+      return html`
+        <div class="flex justify-between items-center dd-recovery-header">
+          <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, title)}</h3>
+          ${entities.length > 1 ? html`
+            <ha-button
+              appearance="plain"
+              .entities=${entities}
+              .keys=${keys}
+              @click=${this._handleRestoreAllClicked}
+            >
+              ${translateEngine(this._hass, button)}
+            </ha-button>` : ""}
+        </div>
+      `;
+    }
     _renderAreaViewEntityCard(entity, type) {
       const recoveryActions = entityRecoveryActions(
         this.configuration,
@@ -361,16 +379,16 @@ export const AreaViewMixin = (Base) => class extends Base {
                 </div>` : ""
               }
               ${data.entitiesHidden.length ? html`
-                <div class="mb-5">
-                  <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.hidden')}</h3>
+                <div class="mb-5 dd-recovery-list">
+                  ${this._renderRecoveryListHeader('entity.hidden', 'entity.unhide_all', data.entitiesHidden, ['hidden', 'hidden_in_area'])}
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
                   ${repeat(data.entitiesHidden, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'hidden'))}
                   </div>
                 </div>` : ""
               }
               ${data.entitiesDisabled.length ? html`
-                <div class="mb-5">
-                  <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass,'entity.disabled')}</h3>
+                <div class="mb-5 dd-recovery-list">
+                  ${this._renderRecoveryListHeader('entity.disabled', 'entity.enable_all', data.entitiesDisabled, ['disabled'])}
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
                   ${repeat(data.entitiesDisabled, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'disabled'))}
                   </div>

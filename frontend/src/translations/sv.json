@@ -59,6 +59,16 @@
     "disable": "Inaktivera i instrumentpanelen",
     "disable_help": "Visas inte i områdesvyer, på enhetssidan eller bland favoriter. Räknas ingenstans.",
     "disable_all": "Inaktivera alla i instrumentpanelen",
+    "confirm_hide_all": {
+      "one": "Dölja 1 kort i ”{area}”?",
+      "other": "Dölja {count} kort i ”{area}”?"
+    },
+    "confirm_disable_all": {
+      "one": "Inaktivera 1 kort i ”{area}” i instrumentpanelen?",
+      "other": "Inaktivera {count} kort i ”{area}” i instrumentpanelen?"
+    },
+    "unhide_all": "Visa alla igen",
+    "enable_all": "Aktivera alla igen",
     "hide_all": "Dölj alla kort",
     "exclude": "Räkna inte med",
     "include": "Räkna med igen",

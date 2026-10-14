@@ -59,6 +59,16 @@
     "disable": "Wyłącz w panelu",
     "disable_help": "Nie ma jej w widokach obszarów, na stronie urządzeń ani w Ulubionych. Nigdzie nie jest liczona.",
     "disable_all": "Wyłącz wszystkie w panelu",
+    "confirm_hide_all": {
+      "one": "Ukryć 1 kartę w „{area}”?",
+      "other": "Ukryć karty w „{area}” ({count})?"
+    },
+    "confirm_disable_all": {
+      "one": "Wyłączyć 1 kartę w „{area}” w panelu?",
+      "other": "Wyłączyć karty w „{area}” w panelu ({count})?"
+    },
+    "unhide_all": "Pokaż wszystkie ponownie",
+    "enable_all": "Włącz wszystkie ponownie",
     "hide_all": "Ukryj wszystkie karty",
     "exclude": "Nie licz",
     "include": "Licz ponownie",

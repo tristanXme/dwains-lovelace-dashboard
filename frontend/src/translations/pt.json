@@ -59,6 +59,16 @@
     "disable": "Desativar no painel",
     "disable_help": "Não aparece nas vistas de áreas, na página de dispositivos nem nos favoritos. Não conta em lado nenhum.",
     "disable_all": "Desativar todos no painel",
+    "confirm_hide_all": {
+      "one": "Ocultar 1 cartão em «{area}»?",
+      "other": "Ocultar {count} cartões em «{area}»?"
+    },
+    "confirm_disable_all": {
+      "one": "Desativar 1 cartão de «{area}» no painel?",
+      "other": "Desativar {count} cartões de «{area}» no painel?"
+    },
+    "unhide_all": "Mostrar todos novamente",
+    "enable_all": "Reativar todos",
     "hide_all": "Ocultar todos os cartões",
     "exclude": "Não contar",
     "include": "Contar novamente",

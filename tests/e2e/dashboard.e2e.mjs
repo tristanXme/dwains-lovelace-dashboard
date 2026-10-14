@@ -720,6 +720,66 @@ for (const colorScheme of ["light", "dark"]) {
       }
     });
 
+    await step("the bulk switches ask first, and the lists switch every card back", async () => {
+      const areaId = token.areaId;
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const shown = () => deep(page, (all, areaId) => {
+        const view = all.find((el) => el.classList?.contains("dd-area-view") && el.id === areaId);
+        return [...(view?.querySelectorAll(".area-view-entity-sortable > [data-entity]") || [])]
+          .filter((cell) => cell.style.display !== "none").map((cell) => cell.dataset.entity);
+      }, areaId);
+      const listed = (title) => deep(page, (all, [areaId, title]) => {
+        const view = all.find((el) => el.classList?.contains("dd-area-view") && el.id === areaId);
+        const list = [...(view?.querySelectorAll(".dd-recovery-list") || [])].find((el) => el.querySelector("h3")?.textContent.trim() === title);
+        return list ? list.querySelectorAll("[data-dd-item]").length : 0;
+      }, [areaId, title]);
+      const click = (text) => deep(page, (all, [areaId, text]) => {
+        const view = all.find((el) => el.classList?.contains("dd-area-view") && el.id === areaId);
+        const button = [...view.querySelectorAll("ha-button")].find((el) => el.textContent.trim() === text);
+        button?.click();
+        return Boolean(button);
+      }, [areaId, text]);
+      const answer = (value) => page.evaluate((value) => {
+        window.__ddAsked = [];
+        window.confirm = (message) => { window.__ddAsked.push(message); return value; };
+      }, value);
+      const asked = () => page.evaluate(() => window.__ddAsked);
+
+      await page.goto(`${BASE}/dwains-dashboard/home#${areaId}`);
+      await page.reload();
+      await poll(async () => (await shown()).length >= 3, "area view cards");
+      await clickMenuItem(page, "homepage-card", "Wohnzimmer", "Aktiviere Bearbeitungsmodus");
+      await poll(() => deep(page, (all) => all.some((el) => el.localName === "ha-button" && el.textContent.trim() === "Alle Karten ausblenden")), "bulk buttons");
+      const cards = await shown();
+      try {
+        // Answered "no": nothing changes.
+        await answer(false);
+        assert.ok(await click("Alle Karten ausblenden"));
+        assert.deepEqual(await asked(), [`${cards.length} Karten in „Wohnzimmer“ ausblenden?`]);
+        await page.waitForTimeout(1000);
+        assert.deepEqual(await shown(), cards);
+
+        await answer(true);
+        assert.ok(await click("Alle Karten ausblenden"));
+        await poll(async () => (await shown()).length === 0, "every card hidden");
+        await poll(async () => (await listed("Folgende Entitäten sind ausgeblendet:")) >= cards.length, "the hidden list");
+        assert.ok(await click("Alle wieder anzeigen"));
+        await poll(async () => (await shown()).length === cards.length, "every card shown again", 15000);
+        assert.equal(await listed("Folgende Entitäten sind ausgeblendet:"), 0);
+
+        assert.ok(await click("Alle im Dashboard deaktivieren"));
+        assert.deepEqual((await asked()).at(-1), `${cards.length} Karten in „Wohnzimmer“ im Dashboard deaktivieren?`);
+        await poll(async () => (await shown()).length === 0, "every card disabled");
+        await poll(async () => (await listed("Folgende Entitäten sind deaktiviert:")) >= cards.length, "the disabled list");
+        assert.ok(await click("Alle wieder aktivieren"));
+        await poll(async () => (await shown()).length === cards.length, "every card enabled again", 15000);
+      } finally {
+        for (const key of ["hidden", "disabled"]) {
+          await ws({ type: "dwains_dashboard/edit_entities_bool_value", entities: JSON.stringify(cards), key, value: false });
+        }
+      }
+    });
+
     await step("a device type's icon and hiding it show at once in the status bar and the navigation", async () => {
       const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
       const button = (icon, showInNavbar) => ws({ type: "dwains_dashboard/edit_device_button", device: "binary_sensor", icon, showInNavbar });

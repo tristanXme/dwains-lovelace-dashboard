@@ -59,6 +59,16 @@
     "disable": "Deshabilitar en el panel",
     "disable_help": "No aparece en las vistas de áreas, en la página de dispositivos ni en favoritos. No cuenta en ningún sitio.",
     "disable_all": "Deshabilitar todas en el panel",
+    "confirm_hide_all": {
+      "one": "¿Ocultar 1 tarjeta en «{area}»?",
+      "other": "¿Ocultar {count} tarjetas en «{area}»?"
+    },
+    "confirm_disable_all": {
+      "one": "¿Deshabilitar 1 tarjeta de «{area}» en el panel?",
+      "other": "¿Deshabilitar {count} tarjetas de «{area}» en el panel?"
+    },
+    "unhide_all": "Mostrar todas de nuevo",
+    "enable_all": "Habilitar todas de nuevo",
     "hide_all": "Ocultar todas las tarjetas",
     "exclude": "No contar",
     "include": "Contar de nuevo",

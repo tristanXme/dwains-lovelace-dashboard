@@ -59,6 +59,16 @@
     "disable": "Désactiver dans le tableau de bord",
     "disable_help": "Absente des vues des pièces, de la page des appareils et des favoris. N’est comptée nulle part.",
     "disable_all": "Tout désactiver dans le tableau de bord",
+    "confirm_hide_all": {
+      "one": "Masquer 1 carte dans « {area} » ?",
+      "other": "Masquer {count} cartes dans « {area} » ?"
+    },
+    "confirm_disable_all": {
+      "one": "Désactiver 1 carte de « {area} » dans le tableau de bord ?",
+      "other": "Désactiver {count} cartes de « {area} » dans le tableau de bord ?"
+    },
+    "unhide_all": "Tout réafficher",
+    "enable_all": "Tout réactiver",
     "hide_all": "Masquer toutes les cartes",
     "exclude": "Ne pas compter",
     "include": "Compter à nouveau",
