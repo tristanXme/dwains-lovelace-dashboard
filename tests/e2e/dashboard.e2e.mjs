@@ -705,12 +705,38 @@ for (const colorScheme of ["light", "dark"]) {
         await poll(() => deep(page, (all, cell) => all.some((el) => el.matches?.(cell) && el.querySelector("ha-dropdown")), deviceCell), "card menu");
         assert.deepEqual(await menuOf(deviceCell), menu);
         await page.keyboard.press("Escape");
+        // A favorite set there shows in that menu at once.
+        const favoriteItem = () => deep(page, (all, cell) => [...(all.find((el) => el.matches?.(cell))?.querySelectorAll("ha-dropdown-item") || [])]
+          .map((item) => item.textContent.trim()).find((text) => /Favoriten/.test(text)), deviceCell);
+        await deep(page, (all, cell) => [...all.find((el) => el.matches?.(cell)).querySelectorAll("ha-dropdown-item")]
+          .find((item) => item.textContent.trim() === "Zu Favoriten hinzufügen").click(), deviceCell);
+        await poll(async () => (await favoriteItem()) === "Aus Favoriten entfernen", "the devices page offers to remove the favorite", 15000);
       } finally {
         for (const key of ["excluded", "hidden", "hidden_in_area", "disabled"]) {
           await ws({ type: "dwains_dashboard/edit_entity_bool_value", entityId, key, value: false });
         }
         await ws({ type: "dwains_dashboard/edit_entity_favorite", entityId, favorite: false });
         await chooseBelowName([]);
+      }
+    });
+
+    await step("a device type's icon and hiding it show at once in the status bar and the navigation", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const button = (icon, showInNavbar) => ws({ type: "dwains_dashboard/edit_device_button", device: "binary_sensor", icon, showInNavbar });
+      const hide = (value) => ws({ type: "dwains_dashboard/edit_device_bool_value", device: "binary_sensor", key: "hidden", value });
+      const barIcon = () => deep(page, (all) => all.find((el) => el.classList?.contains("domain-badge-card") && el.deviceClass === "window")?.querySelector("ha-icon")?.icon);
+      const inNavbar = () => deep(page, (all) => /Binärsensoren/.test(all.find((el) => el.localName === "dwainsboard-navigation-card")?.shadowRoot?.textContent || ""));
+      await page.goto(BASE + "/dwains-dashboard/home");
+      await poll(barIcon, "the window entry in the status bar");
+      try {
+        await button("mdi:alien", true);
+        await poll(async () => (await barIcon()) === "mdi:alien", "the status bar shows the new icon", 15000);
+        await poll(inNavbar, "the device type in the navigation", 15000);
+        await hide(true);
+        await poll(async () => !(await inNavbar()), "a hidden device type leaves the navigation", 15000);
+      } finally {
+        await hide(false);
+        await button("", false);
       }
     });
 

@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 # Every mutating command with a minimal valid payload.
 WRITE_COMMANDS = {
     "edit_area_button": {"areaId": "kitchen"},
-    "edit_area_bool_value": {"areaId": "kitchen", "key": "hidden", "value": True},
+    "edit_area_bool_value": {"areaId": "kitchen", "key": "disabled", "value": True},
     "edit_homepage_header": {"disableClock": True},
     "sort_area_button": {"sortData": '["kitchen"]', "sortType": "sort_order"},
     "add_card": {"card_data": '{"type":"markdown"}', "page": "areas", "area_id": "kitchen"},

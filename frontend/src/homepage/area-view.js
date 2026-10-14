@@ -315,6 +315,7 @@ export const AreaViewMixin = (Base) => class extends Base {
                 .area=${data.area.area_id}
                 .key=${"disabled"}
                 .ddValue=${true}
+                title=${switchDescription(this._hass, "disabled", false)}
                 @click=${this._handleAreaDisableAllEntitiesClicked}
               >
                 ${translateEngine(this._hass, 'entity.disable_all')}
@@ -323,6 +324,7 @@ export const AreaViewMixin = (Base) => class extends Base {
                 .area=${data.area.area_id}
                 .key=${"hidden"}
                 .ddValue=${true}
+                title=${switchDescription(this._hass, "hidden", false)}
                 @click=${this._handleAreaDisableAllEntitiesClicked}
               >
                 ${translateEngine(this._hass, 'entity.hide_all')}

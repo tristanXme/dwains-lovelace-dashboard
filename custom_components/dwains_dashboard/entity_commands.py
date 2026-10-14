@@ -10,6 +10,8 @@ from homeassistant.core import HomeAssistant
 
 from .configuration_runtime import serialize_configuration_mutation
 from .input_validation import (
+    ENTITY_SORT_ORDERS,
+    ENTITY_SWITCHES,
     parse_json_object,
     parse_json_string_list,
     safe_path_segment,
@@ -254,6 +256,8 @@ async def ws_handle_edit_entity_favorite(
     """Set an entity's favorite state."""
     await _set_entity_value(hass, msg["entityId"], "favorite", msg["favorite"])
     hass.bus.async_fire("dwains_dashboard_homepage_card_reload")
+    # The devices page offers the same switch in its menu.
+    hass.bus.async_fire("dwains_dashboard_devicespage_card_reload")
     connection.send_result(msg["id"], {"succesfull": "Popup added succesfully"})
 
 
@@ -261,7 +265,7 @@ async def ws_handle_edit_entity_favorite(
     {
         vol.Required("type"): "dwains_dashboard/edit_entity_bool_value",
         vol.Required("entityId"): str,
-        vol.Required("key"): str,
+        vol.Required("key"): vol.In(ENTITY_SWITCHES),
         vol.Required("value"): bool,
     }
 )
@@ -284,7 +288,7 @@ async def ws_handle_edit_entity_bool_value(
     {
         vol.Required("type"): "dwains_dashboard/edit_entities_bool_value",
         vol.Required("entities"): str,
-        vol.Required("key"): str,
+        vol.Required("key"): vol.In(ENTITY_SWITCHES),
         vol.Required("value"): bool,
     }
 )
@@ -312,7 +316,7 @@ async def ws_handle_edit_entities_bool_value(
     {
         vol.Required("type"): "dwains_dashboard/sort_entity",
         vol.Required("sortData"): str,
-        vol.Required("sortType"): vol.All(str, vol.Length(min=1)),
+        vol.Required("sortType"): vol.In(ENTITY_SORT_ORDERS),
     }
 )
 @websocket_api.require_admin
