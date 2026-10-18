@@ -34,7 +34,6 @@
           "sidepanel_title": "Titel in de zijbalk",
           "sidepanel_icon": "Pictogram in de zijbalk",
           "disable_clock": "Klok uitschakelen",
-          "am_pm_clock": "12-uursklok (AM/PM)",
           "disable_welcome_message": "Welkomstbericht uitschakelen",
           "v2_mode": "v2-modus inschakelen (indeling)",
           "disable_sensor_graph": "Sensorgrafiek uitschakelen",

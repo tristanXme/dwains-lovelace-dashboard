@@ -10,6 +10,7 @@ const { ReloadableLoadOwner } = require('./reloadable-load-owner');
 const { hassConnectionIdentity, hasHassConnectionChanged } = require('./hass-connection');
 const { websocketReadStore } = require('./websocket-read-store');
 const { defineDwainsElement } = require('./custom-element-registration');
+const { loadViewBeforeOpening } = require('./more-page-views');
 const { DisconnectGrace } = require('./disconnect-grace');
 const { VisualViewportNavigationOwner } = require('./visual-viewport-navigation');
 const {
@@ -378,10 +379,12 @@ class DwainsNavigationCard extends LitElement {
         ev.stopPropagation();
       }
 
-      _menuClick(ev){
+      async _menuClick(ev){
         ev.preventDefault();
         ev.stopPropagation();
         const path = ev.currentTarget.path;
+        // A more page added in another browser.
+        await loadViewBeforeOpening(path);
         if (navigate(window, path)) {
           this.currentPath = navigationLocationPath(document.location, path);
         }

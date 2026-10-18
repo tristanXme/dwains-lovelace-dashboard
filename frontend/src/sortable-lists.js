@@ -8,7 +8,7 @@ const { savingSortableOptions } = require("./sortable-save");
 // it, as the lists are rendered with lit's keyed repeat. Sortable is loaded
 // on first use, so isActive() tells whether the edit mode is still on once
 // it has arrived; then replace(sortables) takes the new instances in place
-// of the old ones.
+// of the old ones. Items are dragged by their `handle`.
 async function attachSortableLists({
   isActive,
   lists,
@@ -17,6 +17,7 @@ async function attachSortableLists({
   onError,
   applyOrder,
   replace,
+  handle = ".sortable-move",
 }) {
   let Sortable;
   try {
@@ -31,7 +32,7 @@ async function attachSortableLists({
     forceFallback: true,
     animation: 150,
     dataIdAttr,
-    handle: ".sortable-move",
+    handle,
     ...savingSortableOptions(save, onError, { applyOrder }),
   })));
 }

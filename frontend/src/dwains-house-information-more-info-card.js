@@ -14,6 +14,9 @@ const { TimerOwner } = require('./timer-owner');
 const { dashboardRouteState } = require('./dashboard-route-state');
 const { defineDwainsElement } = require('./custom-element-registration');
 
+// The device types whose popup turns everything off (covers: closes them).
+const TURN_ALL_OFF_DOMAINS = ['light', 'switch', 'cover'];
+
 class DwainsHouseInformationMoreInfoCard extends LitElement {
     static get styles() {
         return css`
@@ -132,6 +135,7 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
             configuration: {},
             areas: { type: Object },
             _loaded: { state: true },
+            _canTurnAllOff: { state: true },
         }
     }
 
@@ -287,8 +291,11 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
             this.areas = areas;
             this._loaded = true;
         }
-        // "Turn all off" was used and everything is off now.
-        if (this._turnedAllOff && !shownEntities) {
+        // What "turn all off" switches off or closes. With inverted covers
+        // the popup shows the closed ones, and the open ones are closed.
+        this._canTurnAllOff = TURN_ALL_OFF_DOMAINS.includes(this.domain) && this._currentOn().length > 0;
+        // "Turn all off" was used and everything is off (closed) now.
+        if (this._turnedAllOff && !this._canTurnAllOff) {
             this._turnedAllOff = false;
             closePopup();
         }
@@ -506,8 +513,7 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
         }
 
         // With nothing on (any more) the popup still leads to the device type.
-        const turnAllOff = ['light', 'switch', 'cover'].includes(this.domain)
-            && Object.keys(this.areas).length > 0;
+        const turnAllOff = this._canTurnAllOff;
 
         return html`
             <div class="p-20px">
@@ -521,8 +527,8 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
                 `)}
                 <div class="${turnAllOff ? 'two-buttons' : 'single-button'}">
                     ${turnAllOff ? html`
-                    <div class="handle-button" @click=${this._handleTurnAllOffClicked}>
-                        ${translateEngine(this._hass, 'device.turn_all_off')}
+                    <div class="handle-button turn-all-off" @click=${this._handleTurnAllOffClicked}>
+                        ${translateEngine(this._hass, this.domain === 'cover' ? 'device.close_all' : 'device.turn_all_off')}
                     </div>
                     ` : ""}
                     <div class="handle-button" @click=${this._navigateToDevices} .domain=${this.domain}>

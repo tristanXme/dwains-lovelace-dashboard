@@ -1,7 +1,7 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { clockText, greetingKey, untilNextMinute } = require("../src/homepage-clock");
+const { clockText, greetingKey, untilNextMinute, usesAmPm } = require("../src/homepage-clock");
 
 const at = (hours, minutes) => new Date(2026, 9, 14, hours, minutes);
 
@@ -31,4 +31,19 @@ test("the greeting changes at 12 and 18 o'clock", () => {
 test("the clock renders again just after the next full minute", () => {
   assert.equal(untilNextMinute(Date.UTC(2026, 9, 14, 10, 0, 0)), 60050);
   assert.equal(untilNextMinute(Date.UTC(2026, 9, 14, 10, 0, 59, 900)), 150);
+});
+
+test("the clock follows the time format of the profile", () => {
+  assert.equal(usesAmPm({ language: "de", time_format: "12" }), true);
+  assert.equal(usesAmPm({ language: "en", time_format: "24" }), false);
+  // The format of the language, as Home Assistant decides it.
+  assert.equal(usesAmPm({ language: "en", time_format: "language" }), true);
+  assert.equal(usesAmPm({ language: "de", time_format: "language" }), false);
+  assert.equal(usesAmPm({ language: "en-GB", time_format: "language" }), false);
+  assert.equal(
+    usesAmPm({ language: "de", time_format: "system" }),
+    new Date("January 1, 2023 22:00:00").toLocaleString().includes("10"),
+    "the browser's format",
+  );
+  assert.equal(usesAmPm(undefined), false);
 });

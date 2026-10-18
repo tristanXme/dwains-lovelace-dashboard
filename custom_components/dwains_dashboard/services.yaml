@@ -11,6 +11,11 @@ notification_create:
       selector:
         text:
           multiline: true
+    title:
+      description: Title of the notification, shown above the message. [Templates accepted] [Optional]
+      example: Kitchen
+      selector:
+        text:
     notification_id:
       description: Target ID of the notification, will replace a notification with the same Id. [Optional]
       example: 1234

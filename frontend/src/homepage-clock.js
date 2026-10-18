@@ -2,6 +2,17 @@
 
 // The clock and the greeting at the top of the homepage.
 
+// Whether the time format of the user's profile is the AM/PM clock, decided
+// as Home Assistant decides it for its own times: "12" or "24", else the
+// format of the profile's language ("language") or of the browser
+// ("system").
+function usesAmPm(locale) {
+  const format = locale?.time_format;
+  if (format !== "language" && format !== "system") return format === "12";
+  const language = format === "language" ? locale.language : undefined;
+  return new Date("January 1, 2023 22:00:00").toLocaleString(language).includes("10");
+}
+
 // "14:05", or with the AM/PM clock "2:05 pm" (noon is 12 pm, midnight 12 am).
 function clockText(date, amPm = false) {
   const minutes = String(date.getMinutes()).padStart(2, "0");
@@ -23,4 +34,4 @@ function untilNextMinute(now) {
   return 60000 - (now % 60000) + 50;
 }
 
-module.exports = { clockText, greetingKey, untilNextMinute };
+module.exports = { clockText, greetingKey, untilNextMinute, usesAmPm };

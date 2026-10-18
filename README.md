@@ -37,6 +37,12 @@ Security, stability and performance release of DD3.
   secret resolved there was not secret anymore. A dashboard file that still
   uses `!secret` does not load; the error names the file and the secret. Put
   the value into the file itself or leave it out.
+- **Changed:** the homepage clock follows the time format of the Home
+  Assistant profile (12 or 24 hours, or that of the language); the
+  dashboard's own *AM/PM clock* option is gone.
+- **Changed:** the status bar popup of covers offers *Close all*, which closes
+  the open covers, also with *Invert cover state* (the popup then shows the
+  closed ones); once all are closed the popup closes.
 - **Stability:** removed or unavailable entities (favorites, alarm, weather) no
   longer break the homepage; blueprint input fields work again on Home
   Assistant 2026.9+; clear error messages instead of `unknown_error`. A more
@@ -64,6 +70,9 @@ Security, stability and performance release of DD3.
     browsers never keep an outdated copy.
 - **Live updates:** moving an entity to another area, adding an area or
   renaming something in Home Assistant shows up without reloading the page.
+  A more page added on another device opens from the navigation and the page
+  list right away; before, the link led to the homepage until the page was
+  reloaded.
 - **Removed:** the own update entity, which checked a server of the original
   author (HACS reports new versions); it is removed from the entity registry
   on the first start.
@@ -115,6 +124,13 @@ Security, stability and performance release of DD3.
   hourly long-term statistics (sensors without statistics fall back to their
   history). A click on the graph opens the sensor's history. The graph is a
   strip along the bottom edge and the tile keeps its height.
+- **New:** grouped by floor, the area tiles follow Home Assistant's order of
+  the floors (Settings → Areas, labels & zones) instead of the alphabet;
+  areas without a floor come last. In edit mode a floor is dragged by the
+  handle in front of its name, which saves the order in Home Assistant.
+- **New:** notifications show their title (`title` of
+  `dwains_dashboard.notification_create`), and their text as written with a
+  capital first letter instead of a capital at every word.
 - **Refresh:** values below the area name follow the Home Assistant language
   (`24,1 °C · 48 %` in German) and are separated by `·`; area badges are
   rounder.

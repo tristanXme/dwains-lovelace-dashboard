@@ -52,6 +52,12 @@ export const homepageCardStyles = (css) => css`
           cursor: grab;
           margin: auto 0;
         }
+        .floor-move {
+          cursor: grab;
+          --mdc-icon-size: 20px;
+          margin-right: 0.25rem;
+          vertical-align: text-bottom;
+        }
         .area-button .info ha-icon, .ha-icon ha-icon {
           display: inline-block;
           margin: auto;

@@ -416,6 +416,42 @@ for (const colorScheme of ["light", "dark"]) {
       }
     });
 
+    await step("with inverted covers the popup shows the closed ones, 'Alle schließen' closes the open ones and then the popup", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const call = (domain, service, data) => page.evaluate(([domain, service, data]) => document.querySelector("home-assistant").hass.callService(domain, service, data), [domain, service, data]);
+      const stateOf = (entityId) => page.evaluate((entityId) => document.querySelector("home-assistant").hass.states[entityId]?.state, entityId);
+      const covers = ["cover.rollladen_bad", "cover.rollladen_flur"];
+      const popup = () => deep(page, (all) => {
+        const card = all.find((el) => el.localName === "dwains-house-information-more-info-card");
+        return card?._loaded && {
+          cards: card.shadowRoot.querySelectorAll(".cards > *").length,
+          button: card.shadowRoot.querySelector(".turn-all-off")?.textContent.trim() || "",
+        };
+      });
+      for (const entityId of covers) await ws({ type: "config/entity_registry/update", entity_id: entityId, area_id: token.areaId });
+      await call("cover", "close_cover", { entity_id: "cover.rollladen_bad" });
+      await call("cover", "open_cover", { entity_id: "cover.rollladen_flur" });
+      await ws({ type: "dwains_dashboard/edit_homepage_header", invertCover: true });
+      try {
+        await page.goto(BASE + "/dwains-dashboard/home");
+        const entry = await poll(() => deep(page, (all) => {
+          const entry = all.find((el) => el.classList?.contains("domain-badge-card") && el.domain === "cover");
+          entry?.click();
+          return entry?.textContent.replace(/\s+/g, " ").trim();
+        }), "the cover entry in the status bar");
+        assert.match(entry, /1 geschlossen/);
+        // The closed cover is shown; the button closes the open one (it
+        // was called "turn all off" and the popup stayed open).
+        assert.deepEqual(await poll(popup, "the popup"), { cards: 1, button: "Alle schließen" });
+        await deep(page, (all) => all.find((el) => el.localName === "dwains-house-information-more-info-card").shadowRoot.querySelector(".turn-all-off").click());
+        await poll(async () => !(await popup()), "the popup closed");
+        assert.deepEqual([await stateOf(covers[0]), await stateOf(covers[1])], ["closed", "closed"]);
+      } finally {
+        await ws({ type: "dwains_dashboard/edit_homepage_header", invertCover: false });
+        for (const entityId of covers) await ws({ type: "config/entity_registry/update", entity_id: entityId, area_id: null });
+      }
+    });
+
     await step("the areas menu switches edit mode and drag sorting on", async () => {
       await page.goto(BASE + "/dwains-dashboard/home");
       await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("°C"))), "homepage");
@@ -1119,6 +1155,71 @@ for (const colorScheme of ["light", "dark"]) {
       await poll(() => deep(page, (all) => !all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("E2E Werkstatt"))), "removed area gone", 15000);
     });
 
+    await step("grouped by floor, the floors follow Home Assistant's order, and a drag in edit mode saves it there", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const areas = await ws({ type: "config/area_registry/list" });
+      const [second, third] = areas.filter((area) => area.area_id !== token.areaId);
+      assert.ok(third, "three areas");
+      const floorIds = async () => (await ws({ type: "config/floor_registry/list" })).map((floor) => floor.floor_id);
+      const groups = () => deep(page, (all) => [...(all.find((el) => el.localName === "homepage-card")?.shadowRoot?.querySelectorAll("#areas h3.floor-title") || [])]
+        .map((heading) => heading.textContent.trim()).join(" | "));
+      const card = (src) => deep(page, (all, src) => new Function("card", src)(all.find((el) => el.localName === "homepage-card")), src);
+      const created = [];
+      const moved = [["sensor.thermometer_sofa", second.area_id], ["switch.steckdose", third.area_id]];
+      try {
+        for (const [name, level] of [["E2E Erdgeschoss", 0], ["E2E Obergeschoss", 1], ["E2E Dachboden", 2]]) {
+          created.push((await ws({ type: "config/floor_registry/create", name, level })).floor_id);
+        }
+        const [ground, upper, attic] = created;
+        // Areas without entities are not shown; the third area has no floor.
+        for (const [entityId, areaId] of moved) await ws({ type: "config/entity_registry/update", entity_id: entityId, area_id: areaId });
+        await ws({ type: "config/area_registry/update", area_id: token.areaId, floor_id: upper });
+        await ws({ type: "config/area_registry/update", area_id: second.area_id, floor_id: ground });
+        // Home Assistant's order (Settings > Areas): upper floor, attic,
+        // ground floor. The attic has no areas and keeps its place.
+        const others = (await floorIds()).filter((id) => !created.includes(id));
+        await ws({ type: "config/floor_registry/reorder", floor_ids: [...others, upper, attic, ground] });
+
+        await page.goto(BASE + "/dwains-dashboard/home");
+        await poll(() => card("return card?.data?.length >= 3"), "the area tiles");
+        await clickMenuItem(page, "homepage-card", "Bereiche", "^\\s*Gruppierung nach Etage\\s*$");
+        // The floors were sorted by name.
+        assert.equal(await poll(async () => (await groups()).includes("|") && groups(), "floor groups", 15000), "E2E Obergeschoss | E2E Erdgeschoss | Keine Etagen");
+
+        await clickMenuItem(page, "homepage-card", "Bereiche", "Bearbeitungsmodus");
+        await poll(() => card("return card._sortable?.some((sortable) => sortable.el.classList.contains('floor-sortable'))"), "floor drag sorting");
+        // A drag as Sortable does it: the first floor goes behind the last.
+        await card(`return (async () => {
+          const sortable = card._sortable.find((candidate) => candidate.el.classList.contains("floor-sortable"));
+          const items = [...sortable.el.querySelectorAll(":scope > [data-floor-id]")];
+          sortable.options.onStart.call(sortable, { item: items[0] });
+          items.at(-1).after(items[0]);
+          await sortable.options.onEnd.call(sortable, { item: items[0] });
+          await card.updateComplete;
+        })()`);
+        assert.equal(await groups(), "E2E Erdgeschoss | E2E Obergeschoss | Keine Etagen", "the page shows the dragged order at once");
+        // Saved in Home Assistant; the attic stays where it was.
+        assert.deepEqual((await floorIds()).filter((id) => created.includes(id)), [ground, attic, upper]);
+        await page.reload();
+        await poll(() => card("return card?.data?.length >= 3"), "the area tiles after reload");
+        assert.equal(await poll(async () => (await groups()).includes("|") && groups(), "floor groups after reload", 15000), "E2E Erdgeschoss | E2E Obergeschoss | Keine Etagen");
+
+        // Without grouping in edit mode the tiles are dragged by their own
+        // order, and no floors.
+        await clickMenuItem(page, "homepage-card", "Bereiche", "Bearbeitungsmodus");
+        await poll(() => card("return card._sortable?.some((sortable) => sortable.el.classList.contains('floor-sortable'))"), "floor drag sorting again");
+        await clickMenuItem(page, "homepage-card", "Bereiche", "aufheben");
+        await poll(() => card(`return card._sortable?.length === 1 && card._sortable[0].el.classList.contains("area-sortable")
+          && !card.shadowRoot.querySelector(".floor-sortable")`), "only the area tiles drag");
+      } finally {
+        const grouped = await card("return card?.areaDisplayGrouped");
+        if (grouped) await clickMenuItem(page, "homepage-card", "Bereiche", "aufheben");
+        if (await card("return card?.areaEditMode")) await clickMenuItem(page, "homepage-card", "Bereiche", "Bearbeitungsmodus");
+        for (const [entityId] of moved) await ws({ type: "config/entity_registry/update", entity_id: entityId, area_id: entityId === "sensor.thermometer_sofa" ? token.areaId : null });
+        for (const floorId of created) await ws({ type: "config/floor_registry/delete", floor_id: floorId });
+      }
+    });
+
     await step("only changes to shown entities re-render the homepage", async () => {
       await page.goto(BASE + "/dwains-dashboard/home");
       await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button") && el.textContent.includes("°C"))), "homepage");
@@ -1296,7 +1397,67 @@ for (const colorScheme of ["light", "dark"]) {
       }
     });
 
-    await step("the homepage clock follows the time without state changes, and the AM/PM clock shows noon as 12", async () => {
+    await step("a notification shows its title, and its text as written with a capital first letter", async () => {
+      const call = (domain, service, data) => page.evaluate(([domain, service, data]) => document.querySelector("home-assistant").hass.callService(domain, service, data), [domain, service, data]);
+      await page.goto(BASE + "/dwains-dashboard/home");
+      await poll(() => deep(page, (all) => all.some((el) => el.classList?.contains("area-button"))), "homepage");
+      const shown = () => deep(page, (all) => {
+        const text = all.find((el) => el.localName === "dwains-notification-card")?.shadowRoot?.querySelector(".text");
+        const message = text?.querySelector(".message");
+        return message && {
+          title: text.querySelector(".title")?.textContent.trim(),
+          message: message.textContent.trim(),
+          words: getComputedStyle(message).textTransform,
+          firstLetter: getComputedStyle(message, "::first-letter").textTransform,
+        };
+      });
+      await call("dwains_dashboard", "notification_create", { title: "Küche", message: "die Spülmaschine ist fertig", notification_id: "e2e_notification" });
+      try {
+        // Every word started with a capital and the title was not shown.
+        assert.deepEqual(await poll(shown, "the notification", 15000), {
+          title: "Küche", message: "die Spülmaschine ist fertig", words: "none", firstLetter: "uppercase",
+        });
+      } finally {
+        await call("dwains_dashboard", "notification_dismiss", { notification_id: "e2e_notification" });
+      }
+      await poll(async () => !(await shown()), "the notification dismissed", 15000);
+    });
+
+    await step("a more page added on another device opens from the page list without reloading", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const otherContext = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: "de-DE" });
+      await otherContext.addInitScript((tokens) => {
+        localStorage.setItem("hassTokens", JSON.stringify({ ...tokens, expires: Date.now() + tokens.expires_in * 1000 }));
+        localStorage.setItem("selectedLanguage", '"de"');
+      }, token);
+      const other = await otherContext.newPage();
+      const otherErrors = [];
+      other.on("pageerror", (error) => otherErrors.push(error.message));
+      let foldername;
+      try {
+        await other.goto(BASE + "/dwains-dashboard/more_page");
+        await poll(() => deep(other, (all) => all.find((el) => el.localName === "more-pages-card")?.configuration), "the page list on the other device");
+        const saved = await ws({ type: "dwains_dashboard/edit_more_page", name: "E2E Fernseite", card_data: JSON.stringify({ type: "markdown", content: "Von woanders" }) });
+        foldername = saved.foldername;
+        // The list shows the new page; the other device still has the old
+        // views, and the page opened the homepage until it was reloaded.
+        await poll(() => deep(other, (all, foldername) => {
+          const button = [...(all.find((el) => el.localName === "more-pages-card")?.shadowRoot?.querySelectorAll(".more-page-button") || [])]
+            .find((candidate) => candidate.path === foldername);
+          button?.click();
+          return Boolean(button);
+        }, foldername), "the new page in the list on the other device", 20000);
+        await poll(() => deep(other, (all) => all.some((el) => el.localName === "ha-markdown" && el.offsetParent !== null
+          && (el.shadowRoot?.textContent || el.textContent).includes("Von woanders"))), "the new page on the other device", 20000);
+        assert.equal(new URL(other.url()).pathname, `/dwains-dashboard/${saved.view_path}`);
+        assert.deepEqual(otherErrors, []);
+      } finally {
+        if (foldername) await ws({ type: "dwains_dashboard/remove_more_page", foldername });
+        await otherContext.close();
+      }
+    });
+
+    await step("the homepage clock follows the time without state changes and the time format of the profile, and shows noon as 12 pm", async () => {
       const clockContext = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: "de-DE", timezoneId: "Europe/Berlin" });
       await clockContext.addInitScript((tokens) => {
         localStorage.setItem("hassTokens", JSON.stringify({ ...tokens, expires: Date.now() + tokens.expires_in * 1000 }));
@@ -1309,19 +1470,30 @@ for (const colorScheme of ["light", "dark"]) {
         const greeting = all.find((el) => el.localName === "h1" && el.closest?.(".dd-homepage-columns"))?.textContent.trim();
         return clock && greeting && `${clock} ${greeting}`;
       });
+      // The profile's language settings (Profile → time format), as Home
+      // Assistant's profile page saves them.
+      const profile = await ws({ type: "frontend/get_user_data", key: "language" });
+      const setTimeFormat = (timeFormat) => ws({
+        type: "frontend/set_user_data",
+        key: "language",
+        value: { language: "de", number_format: "language", date_format: "language", time_zone: "local", first_weekday: "language", ...profile.value, time_format: timeFormat },
+      });
       try {
         await clockPage.clock.install({ time: new Date("2026-10-14T11:58:00+02:00") });
         await clockPage.goto(BASE + "/dwains-dashboard/home");
+        // The format of the language: German has the 24-hour clock.
         assert.match(await poll(shown, "the clock"), /^11:58 Guten Morgen/);
         // Nothing the homepage shows changes meanwhile (the clock stood
         // still then).
         await clockPage.clock.fastForward("03:00");
         assert.match(await poll(async () => /^12:01/.test(await shown()) && shown(), "the clock three minutes later", 10000), /^12:01 Guten Tag/);
-        await ws({ type: "dwains_dashboard/edit_homepage_header", amPmClock: true });
-        // Noon showed as "0:01 pm".
+        // The profile switches to the 12-hour clock; noon showed as "0:01 pm".
+        await setTimeFormat("12");
         assert.match(await poll(async () => /pm/.test(await shown()) && shown(), "the AM/PM clock", 15000), /^12:01 pm Guten Tag/);
+        await setTimeFormat("24");
+        assert.match(await poll(async () => !/pm/.test(await shown()) && shown(), "the 24-hour clock", 15000), /^12:01 Guten Tag/);
       } finally {
-        await ws({ type: "dwains_dashboard/edit_homepage_header", amPmClock: false });
+        await ws({ type: "frontend/set_user_data", key: "language", value: profile.value ?? null });
         await clockContext.close();
       }
     });

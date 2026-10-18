@@ -58,6 +58,19 @@ template:
         unique_id: e2e_socket
         turn_on: []
         turn_off: []
+  # Covers without state template keep the state they were moved to;
+  # assigned to an area by the test that needs them.
+  - cover:
+      - name: "Rollladen Bad"
+        unique_id: e2e_shutter_bath
+        device_class: shutter
+        open_cover: []
+        close_cover: []
+      - name: "Rollladen Flur"
+        unique_id: e2e_shutter_hall
+        device_class: shutter
+        open_cover: []
+        close_cover: []
 input_boolean:
   e2e_lamp:
     name: Stehlampe

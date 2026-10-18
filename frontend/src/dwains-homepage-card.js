@@ -13,6 +13,7 @@ import { saveEntityBoolValue } from './entity-bool-save';
 import { entityMenuStyles, renderEntityAreaVisibilityAction } from './entity-menu';
 const { attachSortableLists } = require('./sortable-lists');
 const { applyLocalOrder } = require('./local-order');
+const { mergeFloorOrder, orderedFloors } = require('./floor-order');
 const { hideItemWhileSaving, hideWhileSaving, showSettledItems } = require('./optimistic-item');
 const { confirmBulkSwitch, entitiesToSwitch } = require('./bulk-switch');
 import { recoveryListStyles, renderRecoveryCard, renderRecoveryListHeader } from './recovery-list';
@@ -41,7 +42,7 @@ const { entitySettingsFromConfiguration } = require('./entity-settings-config');
 const { createHomepageCardElement, propagateHomepageHass } = require('./homepage-card-runtime');
 const { areaSensorDeviceClasses, groupingMode, readBooleanCookie, resolveGroupingPreference } = require('./homepage-preferences');
 const { formatValueWithUnit } = require('./value-format');
-const { clockText, greetingKey, untilNextMinute } = require('./homepage-clock');
+const { clockText, greetingKey, untilNextMinute, usesAmPm } = require('./homepage-clock');
 import { homepageCardStyles } from './styles/homepage-card-styles';
 import { AreaTilesMixin } from './homepage/area-tiles';
 import { AreaViewMixin } from './homepage/area-view';
@@ -683,8 +684,7 @@ function getDwainsHass() {
                 cards: areaCardsByDomain,
                 customCardsTop: areaCustomCardsTop,
                 customCardsBottom: areaCustomCardsBottom,
-	                floor: floor?.name || translateEngine(this._hass, 'area.no_floor'),
-	                floorLevel: floor?.level ?? 9999,
+	                floorId: floor?.floor_id ?? null,
                 sort_order: (this.configuration['areas'][area.area_id] && this.configuration['areas'][area.area_id]['sort_order'] ? this.configuration['areas'][area.area_id]['sort_order']: 99),
                 grouped_sort_order: (this.configuration['areas'][area.area_id] && this.configuration['areas'][area.area_id]['grouped_sort_order'] ? this.configuration['areas'][area.area_id]['grouped_sort_order']: 99),
               });
@@ -1097,6 +1097,11 @@ function getDwainsHass() {
       }
       this.areaDisplayGrouped = value;
       clientPreferences.set('dwains_dashboard_areaDisplayGrouped', value);
+      // The tiles are sorted by another order with grouping.
+      if(this.areaEditMode){
+        this._destroySortables();
+        this.updateComplete.then(() => this._attachAreaSortables());
+      }
     }
 
     _handleFavoriteEditModeClicked(ev){
@@ -1119,15 +1124,51 @@ function getDwainsHass() {
       ev.stopPropagation();
       const value = ev.currentTarget.ddValue;
 
+      this.areaEditMode = value;
       if(value){
-        const sortType = this.areaDisplayGrouped ? 'grouped_sort_order' : 'sort_order';
-        this._attachSortables('.area-sortable', 'data-area-id', 'dwains_dashboard/sort_area_button',
-          sortType, () => this.areaEditMode,
-          (order) => this._showAreaOrder(sortType, order));
+        this.updateComplete.then(() => this._attachAreaSortables());
       } else {
         this._destroySortables();
       }
-      this.areaEditMode = value;
+    }
+
+    // The area tiles, and with grouping the floors: Home Assistant keeps the
+    // order of the floors (Settings > Areas), so a drag of a floor saves it
+    // there.
+    async _attachAreaSortables(){
+      if(!this.areaEditMode) return;
+      // Only the newest call attaches, also when the edit mode or the
+      // grouping changed while Sortable was loading.
+      const run = this._areaSortablesRun = (this._areaSortablesRun || 0) + 1;
+      const grouped = this.areaDisplayGrouped;
+      const isActive = () => this.areaEditMode && this.areaDisplayGrouped === grouped && run === this._areaSortablesRun;
+      const sortType = grouped ? 'grouped_sort_order' : 'sort_order';
+      await this._attachSortables('.area-sortable', 'data-area-id', 'dwains_dashboard/sort_area_button',
+        sortType, isActive, (order) => this._showAreaOrder(sortType, order));
+      if(!grouped) return;
+      const cardHass = this._hass;
+      await attachSortableLists({
+        isActive: () => isActive() && this._sortable !== undefined,
+        lists: () => this.shadowRoot.querySelectorAll('.floor-sortable'),
+        dataIdAttr: 'data-floor-id',
+        handle: '.floor-move',
+        // Home Assistant takes the order of all its floors.
+        save: (order) => cardHass.callWS({
+          type: 'config/floor_registry/reorder',
+          floor_ids: mergeFloorOrder(Object.keys(this._hass.floors || {}), order),
+        }),
+        onError: (err) => showSaveError(cardHass, err),
+        applyOrder: (order) => this._showFloorOrder(order),
+        replace: (sortables) => {
+          this._sortable = [...(this._sortable || []), ...sortables];
+        },
+      });
+    }
+
+    // A dragged order of the floors, shown before Home Assistant has it.
+    _showFloorOrder(order){
+      this.floors = orderedFloors(this.floors || [], order);
+      this.requestUpdate();
     }
 
     // A dragged order of entity cards, shown before the save comes back.
@@ -1482,7 +1523,7 @@ function getDwainsHass() {
                   ${this.configuration['homepage_header']['disable_clock'] ? "" : html`
                     <div class="text-right">
                       <div id="clock" class="mb-2 hidden lg-block">
-                        <h2 class="font-semibold text-xl">${clockText(d, this.configuration['homepage_header']['am_pm_clock'])}</h2>
+                        <h2 class="font-semibold text-xl">${clockText(d, usesAmPm(this._hass.locale))}</h2>
                         <span class="text-gray capitalize">${dateNice}</span>
                       </div>
                     </div>`

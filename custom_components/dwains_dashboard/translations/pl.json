@@ -34,7 +34,6 @@
           "sidepanel_title": "Tytuł w panelu bocznym",
           "sidepanel_icon": "Ikona w panelu bocznym",
           "disable_clock": "Wyłącz zegar",
-          "am_pm_clock": "Zegar 12-godzinny (AM/PM)",
           "disable_welcome_message": "Wyłącz wiadomość powitalną",
           "v2_mode": "Włącz tryb v2 (układ)",
           "disable_sensor_graph": "Wyłącz wykres czujnika",

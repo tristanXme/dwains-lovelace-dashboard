@@ -22,7 +22,6 @@ SETTINGS_PATH = "dwains-dashboard/configs/settings.yaml"
 AREA_GRAPH_HOURS = (6, 12, 24, 48, 168)
 HOMEPAGE_HEADER_FIELDS = (
     ("disableClock", "disable_clock"),
-    ("amPmClock", "am_pm_clock"),
     ("disableWelcomeMessage", "disable_welcome_message"),
     ("v2Mode", "v2_mode"),
     ("disableSensorGraph", "disable_sensor_graph"),
@@ -168,7 +167,6 @@ def _normalize_area_sensor_device_classes(value):
     {
         vol.Required("type"): "dwains_dashboard/edit_homepage_header",
         vol.Optional("disableClock"): bool,
-        vol.Optional("amPmClock"): bool,
         vol.Optional("disableWelcomeMessage"): bool,
         vol.Optional("v2Mode"): bool,
         vol.Optional("disableSensorGraph"): bool,

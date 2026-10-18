@@ -34,7 +34,6 @@
           "sidepanel_title": "Título del panel lateral",
           "sidepanel_icon": "Icono del panel lateral",
           "disable_clock": "Desactivar reloj",
-          "am_pm_clock": "Reloj de 12 horas (AM/PM)",
           "disable_welcome_message": "Desactivar mensaje de bienvenida",
           "v2_mode": "Activar modo v2 (diseño)",
           "disable_sensor_graph": "Desactivar gráfico de sensor",

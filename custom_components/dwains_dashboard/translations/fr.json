@@ -34,7 +34,6 @@
           "sidepanel_title": "Titre du panneau latéral",
           "sidepanel_icon": "Icône du panneau latéral",
           "disable_clock": "Désactiver l'horloge",
-          "am_pm_clock": "Horloge 12 heures (AM/PM)",
           "disable_welcome_message": "Désactiver le message de bienvenue",
           "v2_mode": "Activer le mode v2 (mise en page)",
           "disable_sensor_graph": "Désactiver le graphique des capteurs",
