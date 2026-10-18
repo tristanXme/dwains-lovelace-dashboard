@@ -7,9 +7,15 @@ notification_create:
     message:
       description: Message body of the notification. [Templates accepted]
       example: Dishwasher is done! :D
+      required: true
+      selector:
+        text:
+          multiline: true
     notification_id:
       description: Target ID of the notification, will replace a notification with the same Id. [Optional]
       example: 1234
+      selector:
+        text:
 
 notification_dismiss:
   description: Remove a notification from the frontend.
@@ -17,6 +23,9 @@ notification_dismiss:
     notification_id:
       description: Target ID of the notification, which should be removed. [Required]
       example: 1234
+      required: true
+      selector:
+        text:
 
 notification_mark_read:
   description: Mark a notification read.
@@ -24,3 +33,6 @@ notification_mark_read:
     notification_id:
       description: Target ID of the notification, which should be mark read. [Required]
       example: 1234
+      required: true
+      selector:
+        text:

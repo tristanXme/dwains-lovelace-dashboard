@@ -63,8 +63,11 @@ def test_broken_files_are_left_out_and_reported(tmp_path: Path) -> None:
     _write(configs / "cards/areas/kitchen/broken.yaml", "type: [unclosed\n")
     _write(configs / "cards/entities/light.broken.yaml", "a: b: c\n")
     _write(configs / "devices.yaml", b"\xff\xfe not utf-8")
-    _write(configs / "more_pages/broken/config.yaml", "name: Broken\n")
-    _write(configs / "more_pages/broken/page.yaml", "cards: [\n")
+    _write(configs / "more_pages/broken/config.yaml", "name: [unclosed\n")
+    _write(configs / "more_pages/broken/page.yaml", "type: markdown\n")
+    # A page's card is read by the page itself (see test_more_pages.py).
+    _write(configs / "more_pages/broken_card/config.yaml", "name: Broken card\n")
+    _write(configs / "more_pages/broken_card/page.yaml", "cards: [\n")
 
     snapshot = load_configuration_files(str(configs))
     # Everything that can be read is still there.
@@ -73,12 +76,15 @@ def test_broken_files_are_left_out_and_reported(tmp_path: Path) -> None:
     assert "broken.yaml" not in snapshot["area_cards"]["kitchen"]
     assert snapshot["entity_cards"] == {"light.lamp": {"type": "tile"}}
     assert snapshot["devices"] == {}
-    assert list(snapshot["more_pages"]) == ["energy"]
+    assert snapshot["more_pages"] == {
+        "broken_card": {"name": "Broken card", "foldername": "broken_card"},
+        "energy": {"name": "Energy", "icon": "mdi:flash", "foldername": "energy"},
+    }
     assert sorted(error["file"] for error in snapshot["load_errors"]) == [
         "cards/areas/kitchen/broken.yaml",
         "cards/entities/light.broken.yaml",
         "devices.yaml",
-        "more_pages/broken/page.yaml",
+        "more_pages/broken/config.yaml",
     ]
 
 
@@ -159,3 +165,21 @@ def test_mapping_files_are_always_mappings(tmp_path: Path) -> None:
     assert snapshot["load_errors"] == [
         {"file": "devices.yaml", "error": "must contain a mapping (key: value)"}
     ]
+
+
+def test_entries_without_settings_are_empty_mappings(tmp_path: Path) -> None:
+    """An entry whose settings were all removed by hand is null in YAML.
+
+    The homepage read every entry as a mapping and showed nothing at all
+    because of one such entry.
+    """
+    configs = _configs(tmp_path)
+    _write(configs / "entities.yaml", "light.lamp:\n  favorite: true\nlight.bare:\nlight.odd: true\n")
+    _write(configs / "areas.yaml", "kitchen:\nbath:\n  icon: mdi:shower\n")
+    _write(configs / "devices.yaml", "light:\n")
+
+    snapshot = load_configuration_files(str(configs))
+    assert snapshot["entities"] == {"light.lamp": {"favorite": True}, "light.bare": {}, "light.odd": {}}
+    assert snapshot["areas"] == {"kitchen": {}, "bath": {"icon": "mdi:shower"}}
+    assert snapshot["devices"] == {"light": {}}
+    assert snapshot["load_errors"] == []

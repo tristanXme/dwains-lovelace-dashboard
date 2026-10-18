@@ -323,6 +323,7 @@
     "pages": "Pages",
     "create": "Créer une nouvelle page",
     "edit": "Éditer une page",
+    "edit_templated": "Cette page utilise !include ou un modèle. L'enregistrer dans l'éditeur les remplace par le contenu affiché ici. Modifier quand même ?",
     "name_required": "Vous devez indiquer le nom de la page",
     "icon_required": "Si vous voulez l'ajouter à la barre de navigation, vous devez choisir une icône!",
     "add_navbar": "Ajouter à la barre de navigation",

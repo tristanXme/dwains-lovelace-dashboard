@@ -323,6 +323,7 @@
     "pages": "Seiten",
     "create": "Erstelle neue Weitere Seite",
     "edit": "Bearbeite Weitere Seite",
+    "edit_templated": "Diese Seite nutzt !include oder eine Vorlage. Speichern im Editor ersetzt sie durch den hier angezeigten Inhalt. Trotzdem bearbeiten?",
     "name_required": "Wähle einen Namen für die Seite",
     "icon_required": "Es muss ein Icon gewählt werden, um dies der Navigationsleiste hinzuzufügen!",
     "add_navbar": "Füge die Weitere Seite zu Navigationsleiste hinzu",

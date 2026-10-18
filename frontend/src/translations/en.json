@@ -323,6 +323,7 @@
     "pages": "pages",
     "create": "Create new more page",
     "edit": "Edit more page",
+    "edit_templated": "This page uses !include or a template. Saving it in the editor replaces them with the content shown here. Edit anyway?",
     "name_required": "You must specify a name for the page",
     "icon_required": "If you want to add it to navbar you must select an icon!",
     "add_navbar": "Add this more page in main navbar",

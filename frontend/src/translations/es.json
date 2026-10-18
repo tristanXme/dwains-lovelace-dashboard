@@ -323,6 +323,7 @@
     "pages": "páginas",
     "create": "Crear nueva página extra",
     "edit": "Editar página extra",
+    "edit_templated": "Esta página usa !include o una plantilla. Guardarla en el editor los reemplaza por el contenido que se muestra aquí. ¿Editar de todos modos?",
     "name_required": "Debe especificar un nombre para la página.",
     "icon_required": "Si desea agregarla a la barra de navegación, debe seleccionar un icono.",
     "add_navbar": "Agregar esta página extra en la barra de navegación principal",

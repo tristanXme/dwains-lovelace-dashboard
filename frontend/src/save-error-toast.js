@@ -23,3 +23,11 @@ export function showReloadHint() {
 export function askDelete(hass, name) {
   return confirmDelete(name, { translate: (key) => translateEngine(hass, key) });
 }
+
+// The editor saves a more page with the content it shows, so a page that uses
+// !include or a template would lose them: ask first. true when there is
+// nothing to ask or the user agrees.
+export function confirmTemplatedEdit(hass, page) {
+  if (!page?.templated || typeof globalThis.confirm !== 'function') return true;
+  return Boolean(globalThis.confirm(translateEngine(hass, 'more.edit_templated')));
+}

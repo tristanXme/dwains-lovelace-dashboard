@@ -125,11 +125,13 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
         `;
     }
 
+    // hass is no reactive property: the cards get every new hass themselves,
+    // the popup renders when the entities it shows change (see loadCards).
     static get properties() {
         return {
-            _hass: {},
             configuration: {},
             areas: { type: Object },
+            _loaded: { state: true },
         }
     }
 
@@ -138,26 +140,28 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
         this.areas = {};
         this._timers = new TimerOwner();
         this._loadGeneration = 0;
-        this._lifecycleActive = false;
-
+        // Entity id -> its card (a promise), made once while the popup is open.
+        this._cards = new Map();
+        this._shownEntities = "";
     }
 
     connectedCallback() {
         super.connectedCallback();
-        this._lifecycleActive = true;
         this._timers.connect();
         this._debounceLoadCards();
     }
 
     disconnectedCallback() {
         super.disconnectedCallback();
-        this._lifecycleActive = false;
         this._loadGeneration += 1;
         this._timers.disconnect();
     }
 
     set hass(hass) {
+        const previous = this._hass;
         this._hass = hass;
+        // The texts of the buttons follow the language.
+        if (previous && previous.localize !== hass?.localize) this.requestUpdate();
         this._debounceLoadCards();
     }
 
@@ -170,12 +174,7 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
         // but do not add a visible delay when opening the popup.
         const debouncePeriod = 0;
 
-        this._timers.schedule('load-cards', async () => {
-            await this.loadCards();
-            if (this._lifecycleActive) {
-                this.requestUpdate();
-            }
-        }, debouncePeriod);
+        this._timers.schedule('load-cards', () => this.loadCards(), debouncePeriod);
     }
 
     async _loadCardHelpers() {
@@ -214,9 +213,6 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
         if (loadGeneration !== this._loadGeneration) {
             return;
         }
-
-        // Reset areas elke keer als kaarten geladen worden om enkel actieve gebieden te tonen
-        this.areas = {};
 
         const areaCards = await Promise.all(this.entities.map(async (entityConfig) => {
             const stateObj = this._hass.states[entityConfig.entity_id];
@@ -257,11 +253,11 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
                 const deviceClassMatches = !this.deviceClass || (stateObj.attributes.device_class === this.deviceClass);
 
                 if (isOn && deviceClassMatches) {
-                    const card = await this.createEntityCard(entityConfig.entity_id, entityConfig.friendlyName);
+                    const card = await this._entityCard(entityConfig.entity_id, entityConfig.friendlyName);
                     if (card) {
                         const areaId = entityConfig.area.area_id || 'default';
                         const areaName = entityConfig.area.name || 'Default';
-                        return { areaId, areaName, card };
+                        return { areaId, areaName, card, entityId: entityConfig.entity_id };
                     }
                 }
             }
@@ -272,16 +268,51 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
             return;
         }
 
+        const areas = {};
         for (const areaCard of areaCards) {
             if (!areaCard) {
                 continue;
             }
 
-            if (!this.areas[areaCard.areaId]) {
-                this.areas[areaCard.areaId] = { cards: [], name: areaCard.areaName }; // Voeg naam toe voor vriendelijke weergave
+            if (!areas[areaCard.areaId]) {
+                areas[areaCard.areaId] = { cards: [], name: areaCard.areaName }; // Voeg naam toe voor vriendelijke weergave
             }
-            this.areas[areaCard.areaId].cards.push(areaCard.card);
+            areas[areaCard.areaId].cards.push(areaCard.card);
         }
+        // Rendered only when other entities are shown now; a state change of
+        // a shown one reaches its card through hass.
+        const shownEntities = areaCards.filter(Boolean).map((areaCard) => `${areaCard.areaId}:${areaCard.entityId}`).join(",");
+        if (shownEntities !== this._shownEntities || !this._loaded) {
+            this._shownEntities = shownEntities;
+            this.areas = areas;
+            this._loaded = true;
+        }
+        // "Turn all off" was used and everything is off now.
+        if (this._turnedAllOff && !shownEntities) {
+            this._turnedAllOff = false;
+            closePopup();
+        }
+    }
+
+    // The card of an entity is made once while the popup is open: building
+    // the cards again for every state change in the house replaced them while
+    // they were used (a slider being moved was dropped).
+    async _entityCard(entityId, friendlyName) {
+        if (!this._cards.has(entityId)) {
+            this._cards.set(entityId, this.createEntityCard(entityId, friendlyName));
+        }
+        let card;
+        try {
+            card = await this._cards.get(entityId);
+        } catch (error) {
+            console.error(`Failed to create the card of ${entityId}`, error);
+        }
+        if (!card) {
+            this._cards.delete(entityId);
+            return null;
+        }
+        card.hass = this._hass;
+        return card;
     }
 
 
@@ -443,7 +474,10 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
         const currentOn = this._currentOn();
         if (currentOn.length == 0) {
             closePopup();
+            return;
         }
+        // The popup closes once everything is off (see loadCards).
+        this._turnedAllOff = true;
         currentOn.map((entity) => {
             const entityId = entity.stateObj.entity_id;
             const stateDomain = computeDomain(entityId);
@@ -460,19 +494,20 @@ class DwainsHouseInformationMoreInfoCard extends LitElement {
                     service = "turn_off";
             }
 
-            this._hass.callService(serviceDomain, service, { entity_id: entityId });
+            Promise.resolve(this._hass.callService(serviceDomain, service, { entity_id: entityId })).catch((error) => {
+                console.error(`Failed to turn off ${entityId}`, error);
+            });
         });
     }
 
     render() {
-        if (!this._hass || !this._config || Object.keys(this.areas).length === 0) {
+        if (!this._hass || !this._config || !this._loaded) {
             return html``; // Niets te renderen
         }
 
-        let turnAllOff = false;
-        if (this.domain == 'light' || this.domain == 'switch' || this.domain == 'cover') {
-            turnAllOff = true;
-        }
+        // With nothing on (any more) the popup still leads to the device type.
+        const turnAllOff = ['light', 'switch', 'cover'].includes(this.domain)
+            && Object.keys(this.areas).length > 0;
 
         return html`
             <div class="p-20px">

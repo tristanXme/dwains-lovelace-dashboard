@@ -13,8 +13,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import slugify
 
 from .configuration_runtime import serialize_configuration_mutation
+from .input_validation import DashboardInputError
 from .mutation_files import file_has_content, replace_files, unique_path
 from .more_page_files import (
+    READ_ERRORS,
+    MorePageError,
+    describe_error,
     load_more_page_content,
     load_more_pages_metadata,
     validate_more_page_foldername,
@@ -57,11 +61,10 @@ async def websocket_get_more_page(
 ) -> None:
     """Return one authoritative saved page and its metadata."""
     try:
-        page = await hass.async_add_executor_job(
-            load_more_page_content,
-            hass.config.path("dwains-dashboard/configs"),
-            msg["foldername"],
-        )
+        page = await _load_page(hass, msg["foldername"])
+    except MorePageError as error:
+        connection.send_error(msg["id"], "invalid_page", str(error))
+        return
     except ValueError as error:
         connection.send_error(msg["id"], "invalid_foldername", str(error))
         return
@@ -69,6 +72,16 @@ async def websocket_get_more_page(
         connection.send_error(msg["id"], "not_found", "More page not found")
         return
     connection.send_result(msg["id"], page)
+
+
+async def _load_page(hass, foldername):
+    """A page as the dashboard shows it: with its includes and templates."""
+    return await hass.async_add_executor_job(
+        load_more_page_content,
+        hass.config.path("dwains-dashboard/configs"),
+        foldername,
+        get_yaml_processor(hass).load_yaml,
+    )
 
 
 def _replace_page_files(folder: str, writes: dict) -> None:
@@ -88,12 +101,19 @@ def _more_page_path(hass, foldername, filename):
 
 
 async def _load_more_page_config(hass, foldername):
-    return await hass.async_add_executor_job(
-        load_yaml_file_or_default,
-        _more_page_path(hass, foldername, "config.yaml"),
-        OrderedDict(),
-        True,
-    )
+    """A page's settings to change; missing or without content: empty."""
+    try:
+        config = await hass.async_add_executor_job(
+            load_yaml_file_or_default,
+            _more_page_path(hass, foldername, "config.yaml"),
+            OrderedDict(),
+            True,
+        )
+    except READ_ERRORS as error:
+        raise DashboardInputError(
+            f"{foldername}/config.yaml cannot be read: {describe_error(error)}"
+        ) from None
+    return config if isinstance(config, dict) else OrderedDict()
 
 
 async def _save_more_page_config(hass, foldername, config):
@@ -241,17 +261,17 @@ async def ws_handle_edit_more_page(
     await reload_configuration(hass)
     hass.bus.async_fire("dwains_dashboard_navigation_card_reload")
     hass.bus.async_fire("dwains_dashboard_more_pages_reload")
+    try:
+        page = await _load_page(hass, foldername)
+    except MorePageError:
+        page = None  # saved; the page itself shows why it cannot be read
     connection.send_result(
         msg["id"],
         {
             "succesfull": "More page saved succesfully",
             "foldername": foldername,
             "view_path": f"more_page_{foldername}",
-            "page": await hass.async_add_executor_job(
-                load_more_page_content,
-                hass.config.path("dwains-dashboard/configs"),
-                foldername,
-            ),
+            "page": page,
         },
     )
 

@@ -5,8 +5,8 @@ import { clientPreferences } from '../client-preferences';
 import translateEngine from '../translate-engine';
 import { deviceTypeName } from '../device-type-name';
 const { closeParentDropdown } = require('../dropdown-controller');
-const { entityRecoveryActions } = require('../entity-settings-config');
-import { renderEntityMenuItems, renderEntityStateHint, switchDescription } from '../entity-menu';
+import { renderEntityMenuItems, renderEntityStateHint } from '../entity-menu';
+import { renderRecoveryCard, renderRecoveryListHeader } from '../recovery-list';
 
 // The page of one device type: its entities, grouped by area or not, and custom cards.
 export const DeviceViewMixin = (Base) => class extends Base {
@@ -91,46 +91,6 @@ export const DeviceViewMixin = (Base) => class extends Base {
       this.deviceViewDisplayGrouped = value;
       clientPreferences.set('dwains_dashboard_deviceViewDisplayGrouped', value);
     }
-    _renderAreaViewEntityCard(entity, type) {
-      const recoveryActions = entityRecoveryActions(
-        this.configuration,
-        entity,
-        type,
-      );
-      return html`
-        <div data-dd-item>
-          <ha-card class="p-2">
-            ${translateEngine(this._hass, 'entity.title')}:<br>
-            <span class="break-words">
-            ${entity}
-            </span>
-          </ha-card>
-          <ha-card>
-            <div class="card-actions">
-              ${recoveryActions.map((action) => html`
-                <ha-button
-                  .entity="${entity}"
-                  .key=${action.key}
-                  .ddValue=${false}
-                  title=${switchDescription(this._hass, action.key, true)}
-                  @click=${this._handleEntityEditBoolValueClick}
-                >
-                  ${translateEngine(this._hass, action.translationKey)}
-                </ha-button>
-              `)}
-              <ha-button
-                .entity="${entity}"
-                @click=${this._handleUnavailableEntityEditClick}
-              >
-                <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                ${translateEngine(this._hass, 'entity.settings')}
-              </ha-button>
-            </div>
-          </ha-card>
-        </div>
-      `;
-    }
-
     _renderDeviceView(data){
 
       if(this.selectedDevice != data.domain){
@@ -227,23 +187,23 @@ export const DeviceViewMixin = (Base) => class extends Base {
                 <div class="mb-5">
                   <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.unavailable')}</h3>
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                  ${repeat(data.entitiesNoState, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'noState'))}
+                  ${repeat(data.entitiesNoState, (entity) => entity, (entity) => renderRecoveryCard(this, entity, 'noState'))}
                   </div>
                 </div>` : ""
               }
               ${data.entitiesHidden.length ? html`
-                <div class="mb-5">
-                  <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.hidden')}</h3>
+                <div class="mb-5 dd-recovery-list">
+                  ${renderRecoveryListHeader(this, 'entity.hidden', 'entity.unhide_all', data.entitiesHidden, ['hidden'])}
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                  ${repeat(data.entitiesHidden, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'hidden'))}
+                  ${repeat(data.entitiesHidden, (entity) => entity, (entity) => renderRecoveryCard(this, entity, 'hidden'))}
                   </div>
                 </div>` : ""
               }
               ${data.entitiesDisabled.length ? html`
-                <div class="mb-5">
-                  <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.disabled')}</h3>
+                <div class="mb-5 dd-recovery-list">
+                  ${renderRecoveryListHeader(this, 'entity.disabled', 'entity.enable_all', data.entitiesDisabled, ['disabled'])}
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                  ${repeat(data.entitiesDisabled, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'disabled'))}
+                  ${repeat(data.entitiesDisabled, (entity) => entity, (entity) => renderRecoveryCard(this, entity, 'disabled'))}
                   </div>
                 </div>` : ""
               }

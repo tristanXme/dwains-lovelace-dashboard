@@ -51,6 +51,13 @@ template:
         state: "unlocked"
         lock: []
         unlock: []
+  # A switch without state template keeps the state it was switched to;
+  # assigned to an area by the test that needs it.
+  - switch:
+      - name: "Steckdose"
+        unique_id: e2e_socket
+        turn_on: []
+        turn_off: []
 input_boolean:
   e2e_lamp:
     name: Stehlampe

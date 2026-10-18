@@ -323,6 +323,7 @@
     "pages": "sidor",
     "create": "Skapa ny mersida",
     "edit": "Redigera mersida",
+    "edit_templated": "Den här sidan använder !include eller en mall. Om du sparar den i redigeraren ersätts de med innehållet som visas här. Redigera ändå?",
     "name_required": "Du måste ange ett namn för sidan",
     "icon_required": "Om du vill lägga till den till navigationslisten måste du välja en ikon!",
     "add_navbar": "Lägg till denna mersida till huvudnavigationslisten",

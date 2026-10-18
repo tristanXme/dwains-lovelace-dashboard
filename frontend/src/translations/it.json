@@ -323,6 +323,7 @@
     "pages": "pagine",
     "create": "Crea una nuova pagina",
     "edit": "Modifica più pagina",
+    "edit_templated": "Questa pagina usa !include o un modello. Salvarla nell'editor li sostituisce con il contenuto mostrato qui. Modificare comunque?",
     "name_required": "È necessario specificare un nome per la pagina",
     "icon_required": "Se vuoi aggiungerlo alla barra di navigazione devi selezionare una icona!",
     "add_navbar": "Aggiungi questa pagina in più nella barra di navigazione principale",

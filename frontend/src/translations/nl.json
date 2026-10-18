@@ -323,6 +323,7 @@
     "pages": "pagina's",
     "create": "Nieuwe meer pagina maken",
     "edit": "Meer pagina bewerken",
+    "edit_templated": "Deze pagina gebruikt !include of een sjabloon. Opslaan in de editor vervangt ze door de hier getoonde inhoud. Toch bewerken?",
     "name_required": "U moet een naam voor de pagina opgeven",
     "icon_required": "Als u het aan de navigatiebalk wilt toevoegen, moet u een icoon selecteren!",
     "add_navbar": "Voeg deze meer pagina toe in de hoofdnavigatiebalk",

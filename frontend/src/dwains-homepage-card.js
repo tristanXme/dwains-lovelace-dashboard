@@ -14,7 +14,8 @@ import { entityMenuStyles, renderEntityAreaVisibilityAction } from './entity-men
 const { attachSortableLists } = require('./sortable-lists');
 const { applyLocalOrder } = require('./local-order');
 const { hideItemWhileSaving, hideWhileSaving, showSettledItems } = require('./optimistic-item');
-const { confirmBulkSwitch, entitiesToSwitch, switchesToRestore } = require('./bulk-switch');
+const { confirmBulkSwitch, entitiesToSwitch } = require('./bulk-switch');
+import { recoveryListStyles, renderRecoveryCard, renderRecoveryListHeader } from './recovery-list';
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
@@ -40,6 +41,7 @@ const { entitySettingsFromConfiguration } = require('./entity-settings-config');
 const { createHomepageCardElement, propagateHomepageHass } = require('./homepage-card-runtime');
 const { areaSensorDeviceClasses, groupingMode, readBooleanCookie, resolveGroupingPreference } = require('./homepage-preferences');
 const { formatValueWithUnit } = require('./value-format');
+const { clockText, greetingKey, untilNextMinute } = require('./homepage-clock');
 import { homepageCardStyles } from './styles/homepage-card-styles';
 import { AreaTilesMixin } from './homepage/area-tiles';
 import { AreaViewMixin } from './homepage/area-view';
@@ -254,6 +256,7 @@ function getDwainsHass() {
         if (this.isConnected && hassConnectionIdentity(this._hass) === connection && this._startedHass === connection) {
           await this._subscribeReload();
           this._scheduleIconRepoke();
+          this._scheduleClockTick();
         }
       } catch (error) {
         if (this._startedHass === connection) this._startedHass = undefined;
@@ -287,6 +290,15 @@ function getDwainsHass() {
 	        cancelAnimationFrame(this.__masonryLayoutRaf);
 	        this.__masonryLayoutRaf = 0;
 	      }
+	    }
+
+	    // The clock, the date and the greeting follow the time also while
+	    // nothing shown changes: a state change renders only when it is shown.
+	    _scheduleClockTick(){
+	      this._timers.schedule('clock', () => {
+	        this.requestUpdate();
+	        this._scheduleClockTick();
+	      }, untilNextMinute(Date.now()));
 	    }
 
 	    _subscribeReload(){
@@ -783,21 +795,6 @@ function getDwainsHass() {
         key: key,
         value: value,
       })).catch((err) => showSaveError(this._hass, err));
-    }
-
-    // "Alle wieder anzeigen" / "Alle wieder aktivieren" of a list below an
-    // area view or in the favorites: every card of the list leaves it.
-    _handleRestoreAllClicked(ev){
-      const { entities, keys } = ev.currentTarget;
-      const switches = switchesToRestore(entities, this.configuration, keys);
-      if (!switches.length) return;
-      const cards = [...(ev.currentTarget.closest('.dd-recovery-list')?.querySelectorAll('[data-dd-item]') || [])];
-      hideWhileSaving(cards, () => Promise.all(switches.map(({ key, entities }) => this._hass.callWS({
-        type: 'dwains_dashboard/edit_entities_bool_value',
-        entities: JSON.stringify(entities),
-        key,
-        value: false,
-      })))).catch((err) => showSaveError(this._hass, err));
     }
 
     _handleAreaClick(event){
@@ -1385,9 +1382,9 @@ function getDwainsHass() {
           </div>
           ${this.favoriteEditMode && disabled.length ? html`
             <div class="mt-4 dd-recovery-list">
-              ${this._renderRecoveryListHeader('entity.disabled', 'entity.enable_all', disabled, ['disabled'])}
+              ${renderRecoveryListHeader(this, 'entity.disabled', 'entity.enable_all', disabled, ['disabled'])}
               <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                ${repeat(disabled, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'disabled'))}
+                ${repeat(disabled, (entity) => entity, (entity) => renderRecoveryCard(this, entity, 'disabled'))}
               </div>
             </div>` : ""}
         </div>
@@ -1399,24 +1396,10 @@ function getDwainsHass() {
       if(this.data == null){
         return html``;
       } else {
-        //Clock
+        //Clock (renders every minute, see _scheduleClockTick)
         const d = new Date();
-        const h = (d.getHours() < 10 ? "0" : "") + d.getHours();
-        const m = (d.getMinutes() < 10 ? "0" : "") + d.getMinutes();
         const dateNice = d.toLocaleDateString(this._hass.locale.language, { weekday: 'long', month: 'short', day: 'numeric' });
-        const currTimeAmPm = h >= 12 ? `${h - 12}:${m} pm` : `${h}:${m} am`;
-        let greeting;
-
-        if(d.getHours() < 12){
-          //Morning
-          greeting = translateEngine(this._hass,'global.greeting_morning');
-        } else if(d.getHours() < 18){
-          //Afternoon
-          greeting = translateEngine(this._hass,'global.greeting_afternoon');
-        } else {
-          //Evening
-          greeting = translateEngine(this._hass,'global.greeting_evening');
-        }
+        const greeting = translateEngine(this._hass, greetingKey(d));
 
         //Weather
         let weatherEntity, weatherState, weatherIcon, weatherStateTranslated, weatherTemperature, weatherRange;
@@ -1499,7 +1482,7 @@ function getDwainsHass() {
                   ${this.configuration['homepage_header']['disable_clock'] ? "" : html`
                     <div class="text-right">
                       <div id="clock" class="mb-2 hidden lg-block">
-                        <h2 class="font-semibold text-xl">${this.configuration['homepage_header']['am_pm_clock'] ? html`${currTimeAmPm}` : html`${h}:${m}`}</h2>
+                        <h2 class="font-semibold text-xl">${clockText(d, this.configuration['homepage_header']['am_pm_clock'])}</h2>
                         <span class="text-gray capitalize">${dateNice}</span>
                       </div>
                     </div>`
@@ -1615,7 +1598,7 @@ function getDwainsHass() {
     }
 
     static get styles() {
-      return [homepageCardStyles(css), subtleHomepageStyles(css), subtleDetailViewStyles(css), emptyStateStyles, entityMenuStyles]
+      return [homepageCardStyles(css), subtleHomepageStyles(css), subtleDetailViewStyles(css), emptyStateStyles, entityMenuStyles, recoveryListStyles]
     }
 
 

@@ -3,8 +3,8 @@
 // For a failed step a screenshot, the Playwright trace and the browser
 // console end up in <config dir>/artifacts (or $E2E_ARTIFACTS).
 import { chromium } from "playwright";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import assert from "node:assert/strict";
 
 const configDir = process.argv[2];
@@ -244,6 +244,44 @@ for (const colorScheme of ["light", "dark"]) {
         assert.equal(await deep(page, (all) => all.filter((el) => el.classList?.contains("domain-badge-card") && el.deviceClass === "lock").length), 0);
       } finally {
         await assign(null);
+      }
+    });
+
+    await step("the status bar popup keeps its cards while other entities change, and closes once 'turn all off' turned everything off", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const call = (domain, service, data) => page.evaluate(([domain, service, data]) => document.querySelector("home-assistant").hass.callService(domain, service, data), [domain, service, data]);
+      const popupCards = () => deep(page, (all) => {
+        const popup = all.find((el) => el.localName === "dwains-house-information-more-info-card");
+        return popup && [...popup.shadowRoot.querySelectorAll(".cards > *")].map((card) => card.__ddMark || "new");
+      });
+      await ws({ type: "config/entity_registry/update", entity_id: "switch.steckdose", area_id: token.areaId });
+      await call("switch", "turn_on", { entity_id: "switch.steckdose" });
+      try {
+        await page.goto(BASE + "/dwains-dashboard/home");
+        const entry = await poll(() => deep(page, (all) => {
+          const switches = all.find((el) => el.classList?.contains("domain-badge-card") && el.domain === "switch");
+          switches?.click();
+          return switches?.textContent.replace(/\s+/g, " ").trim();
+        }), "the switch entry in the status bar");
+        assert.match(entry, /1 an/);
+        await poll(async () => (await popupCards())?.length === 1, "the card in the popup");
+        await deep(page, (all) => all.find((el) => el.localName === "dwains-house-information-more-info-card")
+          .shadowRoot.querySelectorAll(".cards > *").forEach((card) => { card.__ddMark = "kept"; }));
+        // Entities the popup does not show change: its card stays the same
+        // element (it was built again for every state change in the house).
+        await call("input_boolean", "toggle", { entity_id: "input_boolean.e2e_lamp" });
+        await call("input_boolean", "toggle", { entity_id: "input_boolean.e2e_lamp" });
+        await page.waitForTimeout(1500);
+        assert.deepEqual(await popupCards(), ["kept"]);
+        // "Turn all off": the popup closes once everything is off (it was
+        // left open and empty).
+        await deep(page, (all) => [...all.find((el) => el.localName === "dwains-house-information-more-info-card").shadowRoot.querySelectorAll(".handle-button")]
+          .find((button) => /aus/.test(button.textContent)).click());
+        await poll(async () => !(await popupCards()), "the popup closed");
+        assert.equal(await page.evaluate(() => document.querySelector("home-assistant").hass.states["switch.steckdose"].state), "off");
+      } finally {
+        await call("switch", "turn_off", { entity_id: "switch.steckdose" });
+        await ws({ type: "config/entity_registry/update", entity_id: "switch.steckdose", area_id: null });
       }
     });
 
@@ -816,6 +854,72 @@ for (const colorScheme of ["light", "dark"]) {
       }), "sensor page");
     });
 
+    await step("grouped by area, the devices page lists the areas in the order of the area tiles", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const areas = await ws({ type: "config/area_registry/list" });
+      const other = areas.find((area) => area.area_id !== token.areaId);
+      assert.ok(other, "a second area");
+      const order = (ids) => ws({ type: "dwains_dashboard/sort_area_button", sortData: JSON.stringify(ids), sortType: "sort_order" });
+      const groups = () => deep(page, (all) => [...(all.find((el) => el.localName === "devices-card")?.shadowRoot?.querySelectorAll("#sensor h3") || [])]
+        .map((heading) => heading.textContent.trim()).join(" | "));
+      await ws({ type: "config/entity_registry/update", entity_id: "sensor.thermometer_sofa", area_id: other.area_id });
+      try {
+        await order([other.area_id, token.areaId]);
+        await page.goto(BASE + "/dwains-dashboard/devices#sensor");
+        await poll(() => deep(page, (all) => {
+          const card = all.find((el) => el.localName === "devices-card");
+          if (!card?.data?.length) return false;
+          card.deviceViewDisplayGrouped = true;
+          return true;
+        }), "devices page");
+        assert.equal(await poll(async () => (await groups()).includes("|") && groups(), "area groups"), `${other.name} | Wohnzimmer`);
+        // The groups follow a new order of the tiles (they were in no
+        // particular order).
+        await order([token.areaId, other.area_id]);
+        assert.equal(await poll(async () => (await groups()).startsWith("Wohnzimmer") && groups(), "area groups in the new order"), `Wohnzimmer | ${other.name}`);
+      } finally {
+        await ws({ type: "config/entity_registry/update", entity_id: "sensor.thermometer_sofa", area_id: token.areaId });
+        await order(areas.map((area) => area.area_id));
+        await deep(page, (all) => { const card = all.find((el) => el.localName === "devices-card"); if (card) card.deviceViewDisplayGrouped = false; });
+      }
+    });
+
+    await step("the devices page lists hidden cards by name and shows them all again with one button", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const hidden = ["sensor.thermometer_sofa", "sensor.luftfeuchte_wohnzimmer"];
+      const hide = (value) => ws({ type: "dwains_dashboard/edit_entities_bool_value", entities: JSON.stringify(hidden), key: "hidden", value });
+      const list = () => deep(page, (all) => {
+        const recovery = all.find((el) => el.localName === "devices-card")?.shadowRoot?.querySelector("#sensor .dd-recovery-list");
+        return recovery && {
+          title: recovery.querySelector("h3").textContent.trim(),
+          button: recovery.querySelector(".dd-recovery-header ha-button")?.textContent.trim(),
+          cards: [...recovery.querySelectorAll("[data-dd-item] ha-card.p-2")].map((card) => card.textContent.replace(/\s+/g, " ").trim()).sort(),
+        };
+      });
+      await hide(true);
+      try {
+        await page.goto(BASE + "/dwains-dashboard/devices#sensor");
+        await poll(() => deep(page, (all) => {
+          const card = all.find((el) => el.localName === "devices-card");
+          if (!card?.data?.length) return false;
+          card.deviceViewEditMode = true;
+          return true;
+        }), "devices page");
+        const shown = await poll(async () => (await list())?.cards.length === 2 && list(), "the list of hidden cards");
+        assert.equal(shown.button, "Alle wieder anzeigen");
+        // The name and the entity id (it showed the id only).
+        assert.match(shown.cards[0], /^Luftfeuchte Wohnzimmer sensor\.luftfeuchte_wohnzimmer$/);
+        assert.match(shown.cards[1], /^Thermometer Sofa sensor\.thermometer_sofa$/);
+        await deep(page, (all) => all.find((el) => el.localName === "devices-card").shadowRoot.querySelector("#sensor .dd-recovery-header ha-button").click());
+        await poll(async () => !(await list()), "every card back");
+        const configuration = await ws({ type: "dwains_dashboard/configuration/get" });
+        assert.deepEqual(hidden.map((entityId) => configuration.entities[entityId].hidden), [false, false]);
+      } finally {
+        await hide(false);
+        await deep(page, (all) => { const card = all.find((el) => el.localName === "devices-card"); if (card) card.deviceViewEditMode = false; });
+      }
+    });
+
     await step("the devices menu switches edit mode on", async () => {
       await page.goto(BASE + "/dwains-dashboard/devices");
       await poll(() => deep(page, (all) => all.find((el) => el.localName === "devices-card")?.shadowRoot?.querySelector(".device-button")), "devices page");
@@ -1121,6 +1225,105 @@ for (const colorScheme of ["light", "dark"]) {
       assert.equal(messages.length, 2);
       assert.match(messages[0], /„Zum Löschen“ löschen\?/);
       await deep(page, (all) => { all.find((el) => el.localName === "more-pages-card").editMode = false; });
+    });
+
+    await step("more pages with !include or a template show their cards, one that cannot be read only shows its error", async () => {
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const morePages = join(configDir, "dwains-dashboard/configs/more_pages");
+      const write = (path, text) => {
+        mkdirSync(dirname(join(morePages, path)), { recursive: true });
+        writeFileSync(join(morePages, path), text);
+      };
+      const folders = ["e2e-include", "e2e-template", "e2e-empty", "e2e-broken"];
+      const reload = () => page.evaluate(() => document.querySelector("home-assistant").hass.callService("dwains_dashboard", "reload"));
+      const markdown = () => deep(page, (all) => all.filter((el) => el.localName === "ha-markdown" && el.offsetParent !== null)
+        .map((el) => (el.shadowRoot?.textContent || el.textContent).trim()).join(" | "));
+      write("e2e-snippet.yaml", "- type: markdown\n  content: Aus einer eingebundenen Datei\n");
+      write("e2e-include/config.yaml", "name: Eingebunden\nicon: mdi:file-link\n");
+      write("e2e-include/page.yaml", "type: vertical-stack\ncards: !include ../e2e-snippet.yaml\n");
+      write("e2e-template/config.yaml", "name: Vorlage\nicon: mdi:code-braces\n");
+      write("e2e-template/page.yaml", "# dwains_dashboard\ntype: vertical-stack\ncards:\n{% for n in range(2) %}\n  - type: markdown\n    content: \"Vorlage {{ n }}\"\n{% endfor %}\n");
+      // Settings without content: the defaults (an empty config.yaml took
+      // the navigation of every page down).
+      write("e2e-empty/config.yaml", "");
+      write("e2e-empty/page.yaml", "type: markdown\ncontent: Ohne Einstellungen\n");
+      // A page that cannot be read showed an error instead of the whole
+      // dashboard.
+      write("e2e-broken/config.yaml", "name: Kaputt\nicon: mdi:alert\n");
+      write("e2e-broken/page.yaml", "type: markdown\ncontent: [nicht geschlossen\n");
+      try {
+        await reload();
+        const pages = (await ws({ type: "dwains_dashboard/navigation/get" })).more_pages;
+        assert.ok(folders.every((folder) => folder in pages), Object.keys(pages).join(","));
+        assert.equal(pages["e2e-empty"].name, "e2e-empty");
+
+        await page.goto(BASE + "/dwains-dashboard/more_page_e2e-include");
+        assert.match(await poll(markdown, "the included card"), /Aus einer eingebundenen Datei/);
+        await page.goto(BASE + "/dwains-dashboard/more_page_e2e-template");
+        assert.equal(await poll(async () => /Vorlage 1/.test(await markdown()) && markdown(), "the cards of the template"), "Vorlage 0 | Vorlage 1");
+        await page.goto(BASE + "/dwains-dashboard/more_page_e2e-empty");
+        assert.match(await poll(markdown, "the page without settings"), /Ohne Einstellungen/);
+
+        await page.goto(BASE + "/dwains-dashboard/more_page_e2e-broken");
+        const error = await poll(() => deep(page, (all) => all.find((el) => el.localName === "more-page-card")?.shadowRoot?.querySelector(".page-error")?.textContent.trim()), "the error of the page");
+        assert.match(error, /^page\.yaml: .+ \(line \d+\)$/);
+        assert.ok(await deep(page, (all) => all.find((el) => el.localName === "dwainsboard-navigation-card")?.shadowRoot?.querySelectorAll(".nav-item").length > 2), "the navigation");
+        // The broken page reports its error in the console as well.
+        for (let index = errors.length - 1; index >= 0; index--) {
+          if (/invalid_page/.test(errors[index])) errors.splice(index, 1);
+        }
+        // Pages with an include or a template are no broken files.
+        await ws({ type: "dwains_dashboard/configuration/get" });
+        const issues = (await ws({ type: "repairs/list_issues" })).issues.filter((issue) => issue.domain === "dwains_dashboard");
+        assert.deepEqual(issues.map((issue) => issue.issue_id), []);
+
+        // The editor saves the page with what it shows: it asks first.
+        await page.goto(BASE + "/dwains-dashboard/more_page_e2e-include");
+        await poll(markdown, "the included card");
+        await page.evaluate(() => {
+          window.__ddConfirms = [];
+          window.confirm = (text) => { window.__ddConfirms.push(text); return false; };
+        });
+        await clickMenuItem(page, "more-page-card", "Eingebunden", "Bearbeiten");
+        await page.waitForTimeout(1000);
+        const asked = await page.evaluate(() => window.__ddConfirms);
+        assert.equal(asked.length, 1);
+        assert.match(asked[0], /!include oder eine Vorlage/);
+        assert.equal(await deep(page, (all) => all.some((el) => el.localName === "dwains-edit-more-page-card")), false);
+      } finally {
+        for (const path of [...folders, "e2e-snippet.yaml"]) rmSync(join(morePages, path), { recursive: true, force: true });
+        await reload();
+      }
+    });
+
+    await step("the homepage clock follows the time without state changes, and the AM/PM clock shows noon as 12", async () => {
+      const clockContext = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: "de-DE", timezoneId: "Europe/Berlin" });
+      await clockContext.addInitScript((tokens) => {
+        localStorage.setItem("hassTokens", JSON.stringify({ ...tokens, expires: Date.now() + tokens.expires_in * 1000 }));
+        localStorage.setItem("selectedLanguage", '"de"');
+      }, token);
+      const clockPage = await clockContext.newPage();
+      const ws = (message) => page.evaluate((message) => document.querySelector("home-assistant").hass.callWS(message), message);
+      const shown = () => deep(clockPage, (all) => {
+        const clock = all.find((el) => el.id === "clock")?.querySelector("h2")?.textContent.trim();
+        const greeting = all.find((el) => el.localName === "h1" && el.closest?.(".dd-homepage-columns"))?.textContent.trim();
+        return clock && greeting && `${clock} ${greeting}`;
+      });
+      try {
+        await clockPage.clock.install({ time: new Date("2026-10-14T11:58:00+02:00") });
+        await clockPage.goto(BASE + "/dwains-dashboard/home");
+        assert.match(await poll(shown, "the clock"), /^11:58 Guten Morgen/);
+        // Nothing the homepage shows changes meanwhile (the clock stood
+        // still then).
+        await clockPage.clock.fastForward("03:00");
+        assert.match(await poll(async () => /^12:01/.test(await shown()) && shown(), "the clock three minutes later", 10000), /^12:01 Guten Tag/);
+        await ws({ type: "dwains_dashboard/edit_homepage_header", amPmClock: true });
+        // Noon showed as "0:01 pm".
+        assert.match(await poll(async () => /pm/.test(await shown()) && shown(), "the AM/PM clock", 15000), /^12:01 pm Guten Tag/);
+      } finally {
+        await ws({ type: "dwains_dashboard/edit_homepage_header", amPmClock: false });
+        await clockContext.close();
+      }
     });
 
     // The integration's options (Settings → Devices & services → Dwains

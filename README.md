@@ -39,7 +39,9 @@ Security, stability and performance release of DD3.
   the value into the file itself or leave it out.
 - **Stability:** removed or unavailable entities (favorites, alarm, weather) no
   longer break the homepage; blueprint input fields work again on Home
-  Assistant 2026.9+; clear error messages instead of `unknown_error`.
+  Assistant 2026.9+; clear error messages instead of `unknown_error`. A more
+  page whose files cannot be read shows what is wrong on its own page; the
+  dashboard and the other pages keep working.
 - **Performance:**
   - The main bundle shrank from 584 KB in 3.10.1 to about 360 KB (82 KB
     gzip-compressed).
