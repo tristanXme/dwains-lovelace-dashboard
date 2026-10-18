@@ -35,7 +35,6 @@ SIDEPANEL_ICON = "sidepanel_icon"
 # exposed through Home Assistant's native integration options flow.
 SETTINGS_BOOLS = (
     "disable_clock",
-    "am_pm_clock",
     "disable_welcome_message",
     "v2_mode",
     "disable_sensor_graph",
@@ -471,7 +470,6 @@ class DwainsDashboardEditFlow(config_entries.OptionsFlow):
             vol.Optional(SIDEPANEL_TITLE, default=opts.get("sidepanel_title", "Dwains Dashboard")): str,
             vol.Optional(SIDEPANEL_ICON, default=opts.get("sidepanel_icon", "mdi:alpha-d-box")): str,
             vol.Optional("disable_clock", default=bool(cur.get("disable_clock", False))): selector.BooleanSelector(),
-            vol.Optional("am_pm_clock", default=bool(cur.get("am_pm_clock", False))): selector.BooleanSelector(),
             vol.Optional("disable_welcome_message", default=bool(cur.get("disable_welcome_message", False))): selector.BooleanSelector(),
             vol.Optional("v2_mode", default=bool(cur.get("v2_mode", False))): selector.BooleanSelector(),
             vol.Optional("disable_sensor_graph", default=bool(cur.get("disable_sensor_graph", False))): selector.BooleanSelector(),

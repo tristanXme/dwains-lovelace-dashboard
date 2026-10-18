@@ -165,11 +165,10 @@ _renderDeviceButton(data){
 
          //console.log(1, group);
 
-         let sortedGroup = Object.keys(group).sort((x,y) => {
-          let a = (this.configuration['areas'][x] && this.configuration['areas'][x]['sort_order'] ? this.configuration['areas'][x] : 1),
-              b = (this.configuration['areas'][y] && this.configuration['areas'][y]['sort_order'] ? this.configuration['areas'][y] : 1);
-          return a == b ? 0 : a > b ? 1 : -1;
-         });
+         // In the order of the area tiles on the homepage; areas never
+         // sorted there come last, as there.
+         const areaOrder = (areaId) => Number(this.configuration['areas'][areaId]?.['sort_order']) || 99;
+         let sortedGroup = Object.keys(group).sort((x, y) => areaOrder(x) - areaOrder(y));
 
          //sortedGroup.map(input => );
 

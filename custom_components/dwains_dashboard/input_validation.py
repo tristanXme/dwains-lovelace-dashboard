@@ -11,6 +11,21 @@ class DashboardInputError(ValueError):
     """A WebSocket request contained an invalid value."""
 
 
+# The switches the dashboard sets with its *_bool_value commands and the
+# orders it saves when cards are dragged. Any other key would only end up as
+# a stray (or, for a key the dashboard reads, a wrong) value in the files.
+ENTITY_SWITCHES = ("hidden", "hidden_in_area", "excluded", "disabled")
+DEVICE_SWITCHES = ("hidden",)
+AREA_SWITCHES = ("disabled",)
+AREA_SORT_ORDERS = ("sort_order", "grouped_sort_order")
+ENTITY_SORT_ORDERS = (
+    *AREA_SORT_ORDERS,
+    "favorite_sort_order",
+    "devices_sort_order",
+    "devices_grouped_sort_order",
+)
+
+
 def safe_path_segment(value: Any, what: str) -> str:
     """Return a value usable as one file or directory name below a fixed root.
 

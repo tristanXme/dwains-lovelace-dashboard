@@ -32,6 +32,13 @@ async def test_invalid_input_returns_invalid_format(
         ("dwains_dashboard/install_blueprint", {"yamlCode": "a: [unclosed"}),
         ("dwains_dashboard/install_blueprint", {"yamlCode": "blueprint:\n  name: 5\ncard: {type: x}"}),
         ("dwains_dashboard/edit_entities_bool_value", {"entities": "[1, 2]", "key": "hidden", "value": True}),
+        # Only the switches and orders the dashboard uses.
+        ("dwains_dashboard/edit_entity_bool_value", {"entityId": "light.x", "key": "friendly_name", "value": True}),
+        ("dwains_dashboard/edit_entities_bool_value", {"entities": '["light.x"]', "key": "sort_order", "value": True}),
+        ("dwains_dashboard/edit_device_bool_value", {"device": "light", "key": "icon", "value": True}),
+        ("dwains_dashboard/edit_area_bool_value", {"areaId": "kitchen", "key": "icon", "value": True}),
+        ("dwains_dashboard/sort_entity", {"sortData": '["light.x"]', "sortType": "friendly_name"}),
+        ("dwains_dashboard/sort_area_button", {"sortData": '["kitchen"]', "sortType": "favorite_sort_order"}),
     ]
     for msg_type, payload in cases:
         response = await _call(client, msg_type, **payload)
@@ -561,6 +568,18 @@ async def test_changes_reload_every_page_that_shows_them(
     assert await fired(
         "dwains_dashboard/remove_device_card", domain="light"
     ) == {"homepage_card", "devicespage_card"}
+    # The devices page offers favorites in its menu too.
+    assert await fired(
+        "dwains_dashboard/edit_entity_favorite", entityId="light.x", favorite=True
+    ) == {"homepage_card", "devicespage_card"}
+    # A hidden device type leaves the navigation bar.
+    assert await fired(
+        "dwains_dashboard/edit_device_bool_value", device="light", key="hidden", value=True
+    ) == {"devicespage_card", "navigation_card"}
+    # The status bar on the homepage shows a device type's icon.
+    assert await fired(
+        "dwains_dashboard/edit_device_button", device="light", icon="mdi:lamp"
+    ) == {"homepage_card", "devicespage_card", "navigation_card"}
 
 
 async def test_edit_entity_saves_hidden_in_area_only_when_sent(

@@ -82,6 +82,8 @@ def _load_flat_cards(snapshot: _Snapshot, directory: str) -> dict[str, Any]:
 
 
 def _load_more_pages(snapshot: _Snapshot, directory: str) -> dict[str, Any]:
+    # The settings of each page. Its card is read by the page itself, with
+    # its includes and templates (see more_page_files.py).
     pages: dict[str, Any] = {}
     for subdirectory in _entries(directory, folders=True):
         subdirectory_path = os.path.join(directory, subdirectory)
@@ -90,14 +92,12 @@ def _load_more_pages(snapshot: _Snapshot, directory: str) -> dict[str, Any]:
         if not (os.path.isfile(page_path) and os.path.isfile(config_path)):
             continue
         config = snapshot.load(config_path)
-        card = snapshot.load(page_path)
-        if config is _BROKEN or card is _BROKEN:
-            continue  # a broken page is left out as a whole
-        pages[subdirectory] = (
-            {**config, "foldername": subdirectory, "card": card}
-            if isinstance(config, dict)
-            else config
-        )
+        if config is _BROKEN:
+            continue  # left out, like in the navigation
+        pages[subdirectory] = {
+            **(config if isinstance(config, dict) else {}),
+            "foldername": subdirectory,
+        }
     return pages
 
 
@@ -106,7 +106,7 @@ def load_configuration_files(configs_path: str) -> dict[str, Any]:
     snapshot = _Snapshot(configs_path)
     cards_path = os.path.join(configs_path, "cards")
 
-    def mapping(filename: str) -> Any:
+    def mapping(filename: str, entries: bool = False) -> Any:
         # The pages read these files as mappings: an empty file (or one with
         # comments only) is an empty mapping, other content is reported.
         path = os.path.join(configs_path, filename)
@@ -118,18 +118,26 @@ def load_configuration_files(configs_path: str) -> dict[str, Any]:
                 {"file": filename, "error": "must contain a mapping (key: value)"}
             )
             return OrderedDict()
+        if entries:
+            # Settings per area, entity or device type. An entry without
+            # settings ("light.lamp:" with nothing below it) is null in YAML;
+            # the pages read every entry as a mapping.
+            return OrderedDict(
+                (key, entry if isinstance(entry, dict) else OrderedDict())
+                for key, entry in value.items()
+            )
         return value
 
     configuration = {
-        "areas": mapping("areas.yaml"),
+        "areas": mapping("areas.yaml", entries=True),
         "area_cards": _load_grouped_cards(snapshot, os.path.join(cards_path, "areas")),
         "device_cards": _load_grouped_cards(snapshot, os.path.join(cards_path, "devices")),
         "entity_cards": _load_flat_cards(snapshot, os.path.join(cards_path, "entities")),
         "entities_popup": _load_flat_cards(
             snapshot, os.path.join(cards_path, "entities_popup")
         ),
-        "entities": mapping("entities.yaml"),
-        "devices": mapping("devices.yaml"),
+        "entities": mapping("entities.yaml", entries=True),
+        "devices": mapping("devices.yaml", entries=True),
         "homepage_header": mapping("settings.yaml"),
         "more_pages": _load_more_pages(snapshot, os.path.join(configs_path, "more_pages")),
         "devices_card": _load_flat_cards(snapshot, os.path.join(cards_path, "devices_card")),

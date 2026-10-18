@@ -34,7 +34,6 @@
           "sidepanel_title": "Seitenleisten-Titel",
           "sidepanel_icon": "Seitenleisten-Icon",
           "disable_clock": "Uhr ausblenden",
-          "am_pm_clock": "12-Stunden-Uhr (AM/PM)",
           "disable_welcome_message": "Begrüßung ausblenden",
           "v2_mode": "V2-Modus aktivieren (Layout)",
           "disable_sensor_graph": "Sensor-Graph deaktivieren",

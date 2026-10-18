@@ -34,7 +34,6 @@
           "sidepanel_title": "Titel i sidopanelen",
           "sidepanel_icon": "Ikon i sidopanelen",
           "disable_clock": "Inaktivera klockan",
-          "am_pm_clock": "12-timmarsklocka (AM/PM)",
           "disable_welcome_message": "Inaktivera välkomstmeddelandet",
           "v2_mode": "Aktivera v2-läge (layout)",
           "disable_sensor_graph": "Inaktivera sensordiagram",

@@ -8,8 +8,9 @@ import { css, html, LitElement } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import translateEngine from './translate-engine';
 import { emptyStateStyles, renderEmptyState } from './empty-state-view';
-import { askDelete, showSaveError } from './save-error-toast';
+import { askDelete, confirmTemplatedEdit, showSaveError } from './save-error-toast';
 const { attachSortableLists } = require('./sortable-lists');
+const { loadViewBeforeOpening } = require('./more-page-views');
 import { subtleMorePagesStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
 const { TimerOwner } = require('./timer-owner');
@@ -193,9 +194,11 @@ class MorePagesCard extends LitElement {
 
         }
 
-        _handleMorePageClick(ev){
-          const path = ev.currentTarget.path;
-          navigate(window, "/dwains-dashboard/more_page_"+path);
+        async _handleMorePageClick(ev){
+          const path = "/dwains-dashboard/more_page_"+ev.currentTarget.path;
+          // A more page added in another browser.
+          await loadViewBeforeOpening(path);
+          navigate(window, path);
           this.requestUpdate();
         }
 
@@ -311,6 +314,7 @@ class MorePagesCard extends LitElement {
             if (!page?.card) {
               throw new Error(`More page "${morePage}" has no card configuration`);
             }
+            if (!confirmTemplatedEdit(this._hass, page)) return;
             const confirmedVisibility = this._confirmedVisibility.get(morePage);
             this._popupOpens.schedule(() => {
               fireEvent("hass-more-info", {entityId: ""}, this);

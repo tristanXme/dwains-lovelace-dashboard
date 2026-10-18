@@ -13,7 +13,10 @@ import { saveEntityBoolValue } from './entity-bool-save';
 import { entityMenuStyles, renderEntityAreaVisibilityAction } from './entity-menu';
 const { attachSortableLists } = require('./sortable-lists');
 const { applyLocalOrder } = require('./local-order');
+const { mergeFloorOrder, orderedFloors } = require('./floor-order');
 const { hideItemWhileSaving, hideWhileSaving, showSettledItems } = require('./optimistic-item');
+const { confirmBulkSwitch, entitiesToSwitch } = require('./bulk-switch');
+import { recoveryListStyles, renderRecoveryCard, renderRecoveryListHeader } from './recovery-list';
 import { createCardElementSafe, resolveEntityName } from './helpers';
 import { subtleDetailViewStyles, subtleHomepageStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
@@ -39,6 +42,7 @@ const { entitySettingsFromConfiguration } = require('./entity-settings-config');
 const { createHomepageCardElement, propagateHomepageHass } = require('./homepage-card-runtime');
 const { areaSensorDeviceClasses, groupingMode, readBooleanCookie, resolveGroupingPreference } = require('./homepage-preferences');
 const { formatValueWithUnit } = require('./value-format');
+const { clockText, greetingKey, untilNextMinute, usesAmPm } = require('./homepage-clock');
 import { homepageCardStyles } from './styles/homepage-card-styles';
 import { AreaTilesMixin } from './homepage/area-tiles';
 import { AreaViewMixin } from './homepage/area-view';
@@ -253,6 +257,7 @@ function getDwainsHass() {
         if (this.isConnected && hassConnectionIdentity(this._hass) === connection && this._startedHass === connection) {
           await this._subscribeReload();
           this._scheduleIconRepoke();
+          this._scheduleClockTick();
         }
       } catch (error) {
         if (this._startedHass === connection) this._startedHass = undefined;
@@ -286,6 +291,15 @@ function getDwainsHass() {
 	        cancelAnimationFrame(this.__masonryLayoutRaf);
 	        this.__masonryLayoutRaf = 0;
 	      }
+	    }
+
+	    // The clock, the date and the greeting follow the time also while
+	    // nothing shown changes: a state change renders only when it is shown.
+	    _scheduleClockTick(){
+	      this._timers.schedule('clock', () => {
+	        this.requestUpdate();
+	        this._scheduleClockTick();
+	      }, untilNextMinute(Date.now()));
 	    }
 
 	    _subscribeReload(){
@@ -670,8 +684,7 @@ function getDwainsHass() {
                 cards: areaCardsByDomain,
                 customCardsTop: areaCustomCardsTop,
                 customCardsBottom: areaCustomCardsBottom,
-	                floor: floor?.name || translateEngine(this._hass, 'area.no_floor'),
-	                floorLevel: floor?.level ?? 9999,
+	                floorId: floor?.floor_id ?? null,
                 sort_order: (this.configuration['areas'][area.area_id] && this.configuration['areas'][area.area_id]['sort_order'] ? this.configuration['areas'][area.area_id]['sort_order']: 99),
                 grouped_sort_order: (this.configuration['areas'][area.area_id] && this.configuration['areas'][area.area_id]['grouped_sort_order'] ? this.configuration['areas'][area.area_id]['grouped_sort_order']: 99),
               });
@@ -765,12 +778,20 @@ function getDwainsHass() {
       const data = this.data.find((data) => data.area.area_id == areaId);
       const key = ev.currentTarget.key;
       const value = ev.currentTarget.ddValue;
+      const entities = entitiesToSwitch([...data.entities], this.configuration, key);
+      if (!entities.length) return;
+      if (!confirmBulkSwitch({
+        key,
+        count: entities.length,
+        area: data.area.name,
+        translate: (label) => translateEngine(this._hass, label),
+      })) return;
       // Every card of the area view leaves its list.
       const cards = [...(ev.currentTarget.closest('.dd-area-view')?.querySelectorAll('.area-view-entity-sortable > [data-dd-item]') || [])];
 
       hideWhileSaving(cards, () => this._hass.callWS({
         type: 'dwains_dashboard/edit_entities_bool_value',
-        entities: JSON.stringify([...data.entities]),
+        entities: JSON.stringify(entities),
         key: key,
         value: value,
       })).catch((err) => showSaveError(this._hass, err));
@@ -1076,6 +1097,11 @@ function getDwainsHass() {
       }
       this.areaDisplayGrouped = value;
       clientPreferences.set('dwains_dashboard_areaDisplayGrouped', value);
+      // The tiles are sorted by another order with grouping.
+      if(this.areaEditMode){
+        this._destroySortables();
+        this.updateComplete.then(() => this._attachAreaSortables());
+      }
     }
 
     _handleFavoriteEditModeClicked(ev){
@@ -1098,15 +1124,51 @@ function getDwainsHass() {
       ev.stopPropagation();
       const value = ev.currentTarget.ddValue;
 
+      this.areaEditMode = value;
       if(value){
-        const sortType = this.areaDisplayGrouped ? 'grouped_sort_order' : 'sort_order';
-        this._attachSortables('.area-sortable', 'data-area-id', 'dwains_dashboard/sort_area_button',
-          sortType, () => this.areaEditMode,
-          (order) => this._showAreaOrder(sortType, order));
+        this.updateComplete.then(() => this._attachAreaSortables());
       } else {
         this._destroySortables();
       }
-      this.areaEditMode = value;
+    }
+
+    // The area tiles, and with grouping the floors: Home Assistant keeps the
+    // order of the floors (Settings > Areas), so a drag of a floor saves it
+    // there.
+    async _attachAreaSortables(){
+      if(!this.areaEditMode) return;
+      // Only the newest call attaches, also when the edit mode or the
+      // grouping changed while Sortable was loading.
+      const run = this._areaSortablesRun = (this._areaSortablesRun || 0) + 1;
+      const grouped = this.areaDisplayGrouped;
+      const isActive = () => this.areaEditMode && this.areaDisplayGrouped === grouped && run === this._areaSortablesRun;
+      const sortType = grouped ? 'grouped_sort_order' : 'sort_order';
+      await this._attachSortables('.area-sortable', 'data-area-id', 'dwains_dashboard/sort_area_button',
+        sortType, isActive, (order) => this._showAreaOrder(sortType, order));
+      if(!grouped) return;
+      const cardHass = this._hass;
+      await attachSortableLists({
+        isActive: () => isActive() && this._sortable !== undefined,
+        lists: () => this.shadowRoot.querySelectorAll('.floor-sortable'),
+        dataIdAttr: 'data-floor-id',
+        handle: '.floor-move',
+        // Home Assistant takes the order of all its floors.
+        save: (order) => cardHass.callWS({
+          type: 'config/floor_registry/reorder',
+          floor_ids: mergeFloorOrder(Object.keys(this._hass.floors || {}), order),
+        }),
+        onError: (err) => showSaveError(cardHass, err),
+        applyOrder: (order) => this._showFloorOrder(order),
+        replace: (sortables) => {
+          this._sortable = [...(this._sortable || []), ...sortables];
+        },
+      });
+    }
+
+    // A dragged order of the floors, shown before Home Assistant has it.
+    _showFloorOrder(order){
+      this.floors = orderedFloors(this.floors || [], order);
+      this.requestUpdate();
     }
 
     // A dragged order of entity cards, shown before the save comes back.
@@ -1360,10 +1422,10 @@ function getDwainsHass() {
             ${repeat(this.favorites, (i) => i.entity, (i) => this._renderFavoriteViewCard(i))}
           </div>
           ${this.favoriteEditMode && disabled.length ? html`
-            <div class="mt-4">
-              <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.disabled')}</h3>
+            <div class="mt-4 dd-recovery-list">
+              ${renderRecoveryListHeader(this, 'entity.disabled', 'entity.enable_all', disabled, ['disabled'])}
               <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                ${repeat(disabled, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'disabled'))}
+                ${repeat(disabled, (entity) => entity, (entity) => renderRecoveryCard(this, entity, 'disabled'))}
               </div>
             </div>` : ""}
         </div>
@@ -1375,24 +1437,10 @@ function getDwainsHass() {
       if(this.data == null){
         return html``;
       } else {
-        //Clock
+        //Clock (renders every minute, see _scheduleClockTick)
         const d = new Date();
-        const h = (d.getHours() < 10 ? "0" : "") + d.getHours();
-        const m = (d.getMinutes() < 10 ? "0" : "") + d.getMinutes();
         const dateNice = d.toLocaleDateString(this._hass.locale.language, { weekday: 'long', month: 'short', day: 'numeric' });
-        const currTimeAmPm = h >= 12 ? `${h - 12}:${m} pm` : `${h}:${m} am`;
-        let greeting;
-
-        if(d.getHours() < 12){
-          //Morning
-          greeting = translateEngine(this._hass,'global.greeting_morning');
-        } else if(d.getHours() < 18){
-          //Afternoon
-          greeting = translateEngine(this._hass,'global.greeting_afternoon');
-        } else {
-          //Evening
-          greeting = translateEngine(this._hass,'global.greeting_evening');
-        }
+        const greeting = translateEngine(this._hass, greetingKey(d));
 
         //Weather
         let weatherEntity, weatherState, weatherIcon, weatherStateTranslated, weatherTemperature, weatherRange;
@@ -1475,7 +1523,7 @@ function getDwainsHass() {
                   ${this.configuration['homepage_header']['disable_clock'] ? "" : html`
                     <div class="text-right">
                       <div id="clock" class="mb-2 hidden lg-block">
-                        <h2 class="font-semibold text-xl">${this.configuration['homepage_header']['am_pm_clock'] ? html`${currTimeAmPm}` : html`${h}:${m}`}</h2>
+                        <h2 class="font-semibold text-xl">${clockText(d, usesAmPm(this._hass.locale))}</h2>
                         <span class="text-gray capitalize">${dateNice}</span>
                       </div>
                     </div>`
@@ -1591,7 +1639,7 @@ function getDwainsHass() {
     }
 
     static get styles() {
-      return [homepageCardStyles(css), subtleHomepageStyles(css), subtleDetailViewStyles(css), emptyStateStyles, entityMenuStyles]
+      return [homepageCardStyles(css), subtleHomepageStyles(css), subtleDetailViewStyles(css), emptyStateStyles, entityMenuStyles, recoveryListStyles]
     }
 
 

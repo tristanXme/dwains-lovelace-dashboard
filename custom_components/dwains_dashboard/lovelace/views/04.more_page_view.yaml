@@ -4,6 +4,8 @@
 # Every user supplied value is emitted with `tojson`: a JSON string is a valid
 # YAML scalar, so names such as "Strom: Haus", "Raum #1" or "!secret x" stay
 # plain text instead of breaking the dashboard or being evaluated as YAML tags.
+# The more-page card loads its page.yaml itself (with includes and templates),
+# so a page.yaml that cannot be read only affects its own page.
 {% if _dd_more_pages %}
 {% for addon in _dd_more_pages %}
 {% set page = _dd_more_pages[addon] %}
@@ -18,6 +20,5 @@
       icon: {{ page["icon"] | string | tojson }}
       show_in_navbar: {{ page["show_in_navbar"] | tojson }}
       foldername: {{ addon | string | tojson }}
-      card: !include {{ ("../../../../" ~ page["path"]) | tojson }}
 {% endfor %}
 {% endif %}

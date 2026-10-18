@@ -5,6 +5,7 @@ import { navigate } from "./frontend-helpers";
 import { css, html, LitElement } from 'lit';
 import { createCardElementSafe } from './helpers';
 import translateEngine from './translate-engine';
+import { confirmTemplatedEdit } from './save-error-toast';
 import { subtleBackButtonStyles, subtleDetailViewStyles } from './styles/dwains-subtle-style';
 const { EventSubscriptionOwner } = require('./event-subscription-owner');
 const { EventListenerOwner } = require('./event-listener-owner');
@@ -250,6 +251,7 @@ class MorePageCard extends LitElement {
         this.icon = page.icon;
         this.showInNavbar = page.show_in_navbar;
         this.cardConfig = page.card;
+        this._templated = Boolean(page.templated);
         this.configuration = { more_pages: { [page.foldername]: page } };
         this.card = card;
         this._cardError = undefined;
@@ -267,6 +269,9 @@ class MorePageCard extends LitElement {
 
     _handleEditMorePageClicked(ev) {
         closeParentDropdown(ev);
+        // The editor saves what it was given: only a page that loaded.
+        if (this._cardLoading || this._cardError || !this.cardConfig) return;
+        if (!confirmTemplatedEdit(this._hass, { templated: this._templated })) return;
         const more_page = this.foldername;
         const pageConfiguration = this.configuration?.more_pages?.[more_page] || {};
         const name = pageConfiguration.name || this.name || "";
@@ -315,6 +320,7 @@ class MorePageCard extends LitElement {
                     slot="trigger"
                   ></ha-icon-button>
                   <ha-dropdown-item
+                    ?disabled=${this._cardLoading || Boolean(this._cardError)}
                     @click=${this._handleEditMorePageClicked}
                   >
                     <ha-svg-icon slot="icon" .path=${mdiPencil}></ha-svg-icon>

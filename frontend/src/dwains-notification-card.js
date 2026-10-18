@@ -53,7 +53,13 @@ class DwainsNotificationCard extends LitElement {
       flex: 1 1 0%;
       width: 0px;
       font-weight: 500;
-      text-transform: capitalize;
+    }
+    /* A sentence: only its first letter is capitalized. */
+    .text > div::first-letter {
+      text-transform: uppercase;
+    }
+    .title {
+      font-weight: 700;
     }
     .close {
       flex-shrink: 0;
@@ -164,7 +170,10 @@ class DwainsNotificationCard extends LitElement {
     return html`
       <div class="notification-button">
         <div class="sub">
-          <div class="text">${notification.message}</div>
+          <div class="text">
+            ${notification.title ? html`<div class="title">${notification.title}</div>` : ""}
+            <div class="message">${notification.message}</div>
+          </div>
           <ha-icon
             class="h-6 w-6 close"
             icon="mdi:close"

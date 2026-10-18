@@ -6,6 +6,7 @@ const { areaBinarySensorDeviceClasses, areaBinarySensorEntities, areaSensorDevic
 const { collectAreaBinarySensorValues, entityBelongsToArea, summaryTranslationKey } = require('../area-binary-sensors');
 const { collectAreaSensorValues } = require('../area-sensors');
 const { activeLocks, isEntityCounted, isLockSensorOfLock, lockDeviceIds } = require('../entity-aggregation');
+const { floorGroups } = require('../floor-order');
 require('../dwains-area-graph');
 
 
@@ -26,40 +27,36 @@ export const AreaTilesMixin = (Base) => class extends Base {
             ${repeat(data, (i) => i.area.area_id, (i) => this._renderAreaButton(i))}
           </div>`;
       } else {
-        //Sort by floor
-        data.sort(function (x, y) {
-          let a = x.floor,
-              b = y.floor;
-          return a == b ? 0 : a > b ? 1 : -1;
-        });
-
-        data.sort(function (x, y) {
+        // A sorted copy: this.data stays in the order of the tiles without
+        // grouping.
+        const sorted = [...data].sort(function (x, y) {
           let a = x.grouped_sort_order,
               b = y.grouped_sort_order;
           return a == b ? 0 : a > b ? 1 : -1;
         });
+        const groups = floorGroups(sorted, this.floors, (item) => item.floorId, translateEngine(this._hass, 'area.no_floor'));
+        const renderGroup = (group) => html`
+          <div class="mb-5" data-floor-id=${group.floorId ?? ""}>
+            <h3 class="font-semibold capitalize text-gray floor-title">
+              ${this.areaEditMode && group.floorId ? html`
+                <ha-icon class="floor-move" .icon=${"mdi:cursor-move"}></ha-icon>
+              ` : ""}
+              ${group.name.replace(/_/g, " ")}
+            </h3>
+            <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable area-sortable">
+            ${repeat(group.items, (v) => v.area.area_id, (v) => this._renderAreaButton(v))}
+            </div>
+          </div>
+        `;
 
-        let group = data.reduce((r, a) => {
-          //console.log("a", a);
-          //console.log('r', r);
-          r[a.floor] = [...r[a.floor] || [], a];
-          return r;
-         }, {});
-        //console.log("group", group);
-
-
+        // The floors are dragged in edit mode (see _attachAreaSortables);
+        // areas without a floor stay below them.
         return html`
         <div>
-        ${repeat(Object.keys(group), (key) => key, (key) =>
-          html`
-            <div class="mb-5">
-              <h3 class="font-semibold capitalize text-gray">${key.replace(/_/g, " ")}</h3>
-              <div class="grid grid-cols-2 dd-overview-grid md-grid-cols-3 ${this.configuration['homepage_header']['v2_mode'] ? "lg-grid-cols-4 xl-grid-cols-5" : ""} gap-4 sortable area-sortable">
-              ${repeat(group[key], (v) => v.area.area_id, (v) => this._renderAreaButton(v))}
-              </div>
-            </div>
-          `
-        )}
+          <div class="floor-sortable">
+            ${repeat(groups.filter((group) => group.floorId), (group) => group.floorId, renderGroup)}
+          </div>
+          ${groups.filter((group) => !group.floorId).map(renderGroup)}
         </div>
         `;
       }

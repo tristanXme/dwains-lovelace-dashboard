@@ -34,7 +34,6 @@
           "sidepanel_title": "Side panel title",
           "sidepanel_icon": "Side panel icon",
           "disable_clock": "Disable clock",
-          "am_pm_clock": "12-hour (AM/PM) clock",
           "disable_welcome_message": "Disable welcome message",
           "v2_mode": "Enable v2 mode (layout)",
           "disable_sensor_graph": "Disable sensor graph",

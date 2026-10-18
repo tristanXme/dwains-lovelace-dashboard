@@ -3,8 +3,8 @@ import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import translateEngine from '../translate-engine';
 import { deviceTypeName } from '../device-type-name';
-const { entityRecoveryActions } = require('../entity-settings-config');
 import { renderEntityMenuItems, renderEntityStateHint, switchDescription } from '../entity-menu';
+import { renderRecoveryCard, renderRecoveryListHeader } from '../recovery-list';
 
 // Area detail view: entity cards, custom cards and grouping by domain.
 export const AreaViewMixin = (Base) => class extends Base {
@@ -155,46 +155,6 @@ export const AreaViewMixin = (Base) => class extends Base {
       </div>
       `;
     }
-    _renderAreaViewEntityCard(entity, type) {
-      const recoveryActions = entityRecoveryActions(
-        this.configuration,
-        entity,
-        type,
-      );
-      return html`
-        <div data-dd-item>
-          <ha-card class="p-2">
-            ${translateEngine(this._hass, 'entity.title')}:<br>
-            <span class="break-words">
-            ${entity}
-            </span>
-          </ha-card>
-          <ha-card>
-            <div class="card-actions">
-              ${recoveryActions.map((action) => html`
-                <ha-button
-                  .entity="${entity}"
-                  .key=${action.key}
-                  .ddValue=${false}
-                  title=${switchDescription(this._hass, action.key, true)}
-                  @click=${this._handleEntityEditBoolValueClick}
-                >
-                  ${translateEngine(this._hass, action.translationKey)}
-                </ha-button>
-              `)}
-              <ha-button
-                .entity="${entity}"
-                @click=${this._handleUnavailableEntityEditClick}
-              >
-                <ha-svg-icon .path=${mdiCog}></ha-svg-icon>
-                ${translateEngine(this._hass, 'entity.settings')}
-              </ha-button>
-            </div>
-          </ha-card>
-        </div>
-      `;
-    }
-
     // An area view stays in the page once opened, so its cards need not be
     // created again. While it is not shown its cards keep the hass they had:
     // a state change does not render them. Shown again, they get the current.
@@ -315,6 +275,7 @@ export const AreaViewMixin = (Base) => class extends Base {
                 .area=${data.area.area_id}
                 .key=${"disabled"}
                 .ddValue=${true}
+                title=${switchDescription(this._hass, "disabled", false)}
                 @click=${this._handleAreaDisableAllEntitiesClicked}
               >
                 ${translateEngine(this._hass, 'entity.disable_all')}
@@ -323,6 +284,7 @@ export const AreaViewMixin = (Base) => class extends Base {
                 .area=${data.area.area_id}
                 .key=${"hidden"}
                 .ddValue=${true}
+                title=${switchDescription(this._hass, "hidden", false)}
                 @click=${this._handleAreaDisableAllEntitiesClicked}
               >
                 ${translateEngine(this._hass, 'entity.hide_all')}
@@ -354,23 +316,23 @@ export const AreaViewMixin = (Base) => class extends Base {
                 <div class="mb-5">
                   <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.unavailable')}</h3>
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                  ${repeat(data.entitiesNoState, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'noState'))}
+                  ${repeat(data.entitiesNoState, (entity) => entity, (entity) => renderRecoveryCard(this, entity, 'noState'))}
                   </div>
                 </div>` : ""
               }
               ${data.entitiesHidden.length ? html`
-                <div class="mb-5">
-                  <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass, 'entity.hidden')}</h3>
+                <div class="mb-5 dd-recovery-list">
+                  ${renderRecoveryListHeader(this, 'entity.hidden', 'entity.unhide_all', data.entitiesHidden, ['hidden', 'hidden_in_area'])}
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                  ${repeat(data.entitiesHidden, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'hidden'))}
+                  ${repeat(data.entitiesHidden, (entity) => entity, (entity) => renderRecoveryCard(this, entity, 'hidden'))}
                   </div>
                 </div>` : ""
               }
               ${data.entitiesDisabled.length ? html`
-                <div class="mb-5">
-                  <h3 class="font-semibold capitalize text-gray">${translateEngine(this._hass,'entity.disabled')}</h3>
+                <div class="mb-5 dd-recovery-list">
+                  ${renderRecoveryListHeader(this, 'entity.disabled', 'entity.enable_all', data.entitiesDisabled, ['disabled'])}
                   <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4">
-                  ${repeat(data.entitiesDisabled, (entity) => entity, (entity) => this._renderAreaViewEntityCard(entity, 'disabled'))}
+                  ${repeat(data.entitiesDisabled, (entity) => entity, (entity) => renderRecoveryCard(this, entity, 'disabled'))}
                   </div>
                 </div>` : ""
               }

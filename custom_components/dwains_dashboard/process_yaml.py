@@ -18,7 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.service import async_register_admin_service
 
 from .const import DOMAIN
-from .more_page_files import load_more_page_navigation
+from .more_page_files import describe_error, load_more_page_navigation
 from .runtime_data import find_domain_data, get_domain_data
 
 _LOGGER = logging.getLogger(__name__)
@@ -380,42 +380,46 @@ async def process_yaml(hass: HomeAssistant, config_entry):
     )
     processor.global_config = hki_configuration
 
-    configs_exist, pages, warnings, failures = await hass.async_add_executor_job(
-        load_more_page_navigation,
-        hass.config.path("dwains-dashboard/configs"),
-        False,
-    )
-    # Replace instead of clear()+update(): a dashboard render running in the
-    # executor meanwhile must never observe an empty page list.
-    processor.more_pages = pages
-    for subdirectory in warnings:
-        _LOGGER.warning(
-            "Invalid config.yaml in %s: Missing 'name' or 'icon'",
-            subdirectory,
-        )
-    for subdirectory, error in failures:
-        _LOGGER.error("Failed to read config.yaml in %s: %s", subdirectory, error)
+    configs_exist = await _load_more_pages(hass, processor)
 
     from .load_dashboard import invalidate_dashboard_cache
     invalidate_dashboard_cache(hass)
     if configs_exist:
         hass.bus.async_fire("dwains_dashboard_reload")
 
+
+async def _load_more_pages(hass: HomeAssistant, processor) -> bool:
+    """Read the more pages for the dashboard views.
+
+    A page whose config.yaml cannot be read is left out (the other pages and
+    the dashboard keep working). Returns whether the configuration exists.
+    """
+    configs_exist, pages, failures = await hass.async_add_executor_job(
+        load_more_page_navigation,
+        hass.config.path("dwains-dashboard/configs"),
+    )
+    # Replace instead of clear()+update(): a dashboard render running in the
+    # executor meanwhile must never observe an empty page list.
+    processor.more_pages = pages
+    for subdirectory, error in failures:
+        _LOGGER.warning(
+            "More page %s left out: its config.yaml cannot be read: %s",
+            subdirectory,
+            describe_error(error),
+        )
+    return configs_exist
+
+
 async def reload_configuration(hass):
     _LOGGER.info("Reloading Dwains Dashboard YAML configuration")
 
     processor = get_yaml_processor(hass)
 
-    _, pages, _, _ = await hass.async_add_executor_job(
-        load_more_page_navigation,
-        hass.config.path("dwains-dashboard/configs"),
-        True,
-    )
-    processor.more_pages = pages
+    await _load_more_pages(hass, processor)
 
     # The root ui-lovelace.yaml does not change when one of its !include files
     # changes. Explicitly invalidate the owned Lovelace cache before notifying
-    # clients, otherwise a hard browser reload receives the previous page card.
+    # clients, otherwise a hard browser reload receives the previous views.
     from .load_dashboard import invalidate_dashboard_cache
     invalidate_dashboard_cache(hass)
     hass.bus.async_fire("dwains_dashboard_reload")

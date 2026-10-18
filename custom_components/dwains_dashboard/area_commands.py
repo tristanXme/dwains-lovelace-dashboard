@@ -9,7 +9,11 @@ from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant
 
 from .configuration_runtime import serialize_configuration_mutation
-from .input_validation import parse_json_string_list
+from .input_validation import (
+    AREA_SORT_ORDERS,
+    AREA_SWITCHES,
+    parse_json_string_list,
+)
 from .yaml_files import dump_yaml_file, load_yaml_file_or_default
 
 
@@ -18,7 +22,6 @@ SETTINGS_PATH = "dwains-dashboard/configs/settings.yaml"
 AREA_GRAPH_HOURS = (6, 12, 24, 48, 168)
 HOMEPAGE_HEADER_FIELDS = (
     ("disableClock", "disable_clock"),
-    ("amPmClock", "am_pm_clock"),
     ("disableWelcomeMessage", "disable_welcome_message"),
     ("v2Mode", "v2_mode"),
     ("disableSensorGraph", "disable_sensor_graph"),
@@ -118,7 +121,7 @@ async def ws_handle_edit_area_button(
     {
         vol.Required("type"): "dwains_dashboard/edit_area_bool_value",
         vol.Required("areaId"): str,
-        vol.Required("key"): str,
+        vol.Required("key"): vol.In(AREA_SWITCHES),
         vol.Required("value"): bool,
     }
 )
@@ -164,7 +167,6 @@ def _normalize_area_sensor_device_classes(value):
     {
         vol.Required("type"): "dwains_dashboard/edit_homepage_header",
         vol.Optional("disableClock"): bool,
-        vol.Optional("amPmClock"): bool,
         vol.Optional("disableWelcomeMessage"): bool,
         vol.Optional("v2Mode"): bool,
         vol.Optional("disableSensorGraph"): bool,
@@ -224,7 +226,7 @@ async def ws_handle_edit_homepage_header(
     {
         vol.Required("type"): "dwains_dashboard/sort_area_button",
         vol.Required("sortData"): str,
-        vol.Required("sortType"): vol.All(str, vol.Length(min=1)),
+        vol.Required("sortType"): vol.In(AREA_SORT_ORDERS),
     }
 )
 @websocket_api.require_admin

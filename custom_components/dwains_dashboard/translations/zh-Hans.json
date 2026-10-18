@@ -34,7 +34,6 @@
           "sidepanel_title": "侧边栏标题",
           "sidepanel_icon": "侧边栏图标",
           "disable_clock": "禁用时钟",
-          "am_pm_clock": "12 小时制时钟（AM/PM）",
           "disable_welcome_message": "禁用欢迎消息",
           "v2_mode": "启用 v2 模式（布局）",
           "disable_sensor_graph": "禁用传感器图表",
