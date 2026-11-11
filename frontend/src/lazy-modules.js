@@ -29,8 +29,14 @@ function once(load) {
 
 const loadEditors = once(() => import(/* webpackChunkName: "editors" */ "./editors.js"));
 
+// Core Sortable plus AutoScroll (scrolls the page while an item is dragged
+// near an edge); the MultiDrag, Swap, Remove and Revert plugins of the
+// complete build are not used. once() mounts AutoScroll a single time.
 const loadSortable = once(() => import(
-  /* webpackChunkName: "sortable" */ "sortablejs/modular/sortable.complete.esm.js"
-).then((module) => module.default));
+  /* webpackChunkName: "sortable" */ "sortablejs/modular/sortable.core.esm.js"
+).then(({ default: Sortable, AutoScroll }) => {
+  Sortable.mount(new AutoScroll());
+  return Sortable;
+}));
 
 module.exports = { isEditorTag, loadEditors, loadSortable };

@@ -13,6 +13,7 @@ import { saveEntityBoolValue } from './entity-bool-save';
 import { entityMenuStyles, renderEntityAreaVisibilityAction } from './entity-menu';
 const { attachSortableLists } = require('./sortable-lists');
 const { applyLocalOrder } = require('./local-order');
+const { sortedByKey } = require('./card-order');
 const { mergeFloorOrder, orderedFloors } = require('./floor-order');
 const { hideItemWhileSaving, hideWhileSaving, showSettledItems } = require('./optimistic-item');
 const { confirmBulkSwitch, entitiesToSwitch } = require('./bulk-switch');
@@ -1370,11 +1371,7 @@ function getDwainsHass() {
       if(this.favorites.length == 0 && disabled.length == 0){
         return html``;
       }
-      this.favorites.sort(function (x, y) {
-        let a = x.favorite_sort_order,
-            b = y.favorite_sort_order;
-        return a == b ? 0 : a > b ? 1 : -1;
-      });
+      const favorites = sortedByKey(this.favorites, 'favorite_sort_order');
       return html`
         <div id="favorites" class="mt-4">
           <div class="flex justify-between mb-2">
@@ -1419,7 +1416,7 @@ function getDwainsHass() {
             </div>
           </div>
           <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 gap-4 sortable favorites-sortable ${this.favoriteEditMode || !this._masonryEnabled() ? "" : "dd-fav-masonry"}">
-            ${repeat(this.favorites, (i) => i.entity, (i) => this._renderFavoriteViewCard(i))}
+            ${repeat(favorites, (i) => i.entity, (i) => this._renderFavoriteViewCard(i))}
           </div>
           ${this.favoriteEditMode && disabled.length ? html`
             <div class="mt-4 dd-recovery-list">
