@@ -1,0 +1,75 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-version:
+    name: Tag matches the integration version
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Compare tag, manifest.json and const.py
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          manifest=$(python3 -c "import json; print(json.load(open('custom_components/dwains_dashboard/manifest.json'))['version'])")
+          const=$(sed -n 's/^VERSION *= *"\(.*\)".*/\1/p' custom_components/dwains_dashboard/const.py | head -n 1)
+          status=0
+          if [ "$manifest" != "$version" ]; then
+            echo "::error::Tag $TAG does not match manifest.json version \"$manifest\"."
+            status=1
+          fi
+          if [ "$const" != "$version" ]; then
+            echo "::error::Tag $TAG does not match const.py VERSION \"$const\"."
+            status=1
+          fi
+          exit $status
+
+  frontend:
+    name: Frontend build is reproducible
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Committed bundle matches the sources
+        run: |
+          changes=$(git status --porcelain -- custom_components/dwains_dashboard/js custom_components/dwains_dashboard/const.py)
+          if [ -n "$changes" ]; then
+            echo "$changes"
+            echo "::error::Run 'npm run build' and commit the result."
+            exit 1
+          fi
+
+  release:
+    name: Create GitHub release
+    needs: [verify-version, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Create release with generated notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" --verify-tag --generate-notes --title "$TAG"
