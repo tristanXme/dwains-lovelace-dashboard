@@ -10,7 +10,7 @@ from http import HTTPStatus
 from aiohttp import web
 
 from homeassistant.components.file_upload import process_uploaded_file
-from homeassistant.components.http import KEY_HASS_USER, HomeAssistantView
+from homeassistant.components.http import KEY_HASS, KEY_HASS_USER, HomeAssistantView
 from homeassistant.components.http.auth import async_sign_path
 from homeassistant.core import HomeAssistant
 
@@ -52,7 +52,7 @@ class DwainsDashboardExportView(HomeAssistantView):
     requires_auth = True
 
     async def get(self, request: web.Request, filename: str) -> web.StreamResponse:
-        hass: HomeAssistant = request.app["hass"]
+        hass: HomeAssistant = request.app[KEY_HASS]
         if not request[KEY_HASS_USER].is_admin:
             return web.Response(status=HTTPStatus.UNAUTHORIZED)
         path = await hass.async_add_executor_job(

@@ -2,6 +2,7 @@ import { mdiArrowLeft, mdiDotsVertical, mdiCog } from '@mdi/js';
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 import translateEngine from '../translate-engine';
+const { sortedByKey, groupedByDomain } = require('../card-order');
 import { deviceTypeName } from '../device-type-name';
 import { renderEntityMenuItems, renderEntityStateHint, switchDescription } from '../entity-menu';
 import { renderRecoveryCard, renderRecoveryListHeader } from '../recovery-list';
@@ -65,13 +66,10 @@ export const AreaViewMixin = (Base) => class extends Base {
 	    }
 
 	    _renderAreaViewCards(data, hass){
-	      const cards = this._filterUnavailableCards(data.cards);
+	      // Sorted copies are remembered (see card-order.js); data.cards itself
+	      // is never reordered here. Filtering keeps the sorted order.
 	      if(!this.areaViewDisplayGrouped){
-	        cards.sort(function (x, y) {
-	          let a = x.sort_order,
-	              b = y.sort_order;
-	          return a == b ? 0 : a > b ? 1 : -1;
-	        });
+	        const cards = this._filterUnavailableCards(sortedByKey(data.cards, 'sort_order', 'domain'));
 
 	        return html`
 	        <div class="grid grid-flow-row-dense grid-cols-2 lg-grid-cols-3 xl-grid-cols-4 gap-4 sortable area-view-entity-sortable ${this._areaViewGridLayout()}">
@@ -79,25 +77,8 @@ export const AreaViewMixin = (Base) => class extends Base {
 	        </div>
 	        `;
 	      } else {
-	        cards.sort(function (x, y) {
-          let a = x.grouped_sort_order,
-              b = y.grouped_sort_order;
-          return a == b ? 0 : a > b ? 1 : -1;
-        });
-
-	        let group = cards.reduce((r, a) => {
-          //console.log("a", a);
-          //console.log('r', r);
-          r[a.domain] = [...r[a.domain] || [], a];
-          return r;
-         }, {});
-        //console.log("group", group);
-
-        let sortedGroup = Object.keys(group).sort((x,y) => {
-          let a = this.configuration['devices'][x] && this.configuration['devices'][x]['sort_order'] ? this.configuration['devices'][x]['sort_order'] : 99,
-              b = this.configuration['devices'][y] && this.configuration['devices'][y]['sort_order'] ? this.configuration['devices'][y]['sort_order'] : 99;
-          return a == b ? 0 : a > b ? 1 : -1;
-         });
+	        const cards = this._filterUnavailableCards(sortedByKey(data.cards, 'grouped_sort_order', 'domain'));
+	        const { group, keys: sortedGroup } = groupedByDomain(cards, this.configuration['devices']);
 
         //console.log("sortedgroup", sortedGroup);
 
@@ -193,12 +174,6 @@ export const AreaViewMixin = (Base) => class extends Base {
 
         const visible = this.selectedArea == data.area.area_id ? "block" : "hidden";
         const hass = this._areaViewHass(data.area.area_id, visible == "block");
-
-        data.cards.sort(function (x, y) {
-          let a = x.domain,
-              b = y.domain;
-          return a == b ? 0 : a > b ? 1 : -1;
-        });
 
         return html`
           <div class="dd-area-view w-full mb-12 ${visible}" id="${data.area.area_id}">

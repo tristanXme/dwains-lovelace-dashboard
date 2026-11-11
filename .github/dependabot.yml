@@ -9,3 +9,28 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm:
+        patterns: ["*"]
+
+  # CONSTRAINT: requirements_test_min.txt is deliberately pinned to the oldest
+  # Home Assistant release the integration supports (hacs.json "homeassistant").
+  # It must NEVER be bumped. Dependabot's pip ecosystem scans every
+  # requirements*.txt in the directory and has no reliable per-file exclusion,
+  # and an `ignore` rule on the two packages would also block the wanted
+  # updates of requirements_test.txt (same packages, stable pins). So updates
+  # are allowed, and the CI job "Minimum pins untouched (Dependabot)" fails any
+  # Dependabot PR that touches requirements_test_min.txt; only
+  # requirements_test.txt may be updated.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      pip:
+        patterns: ["*"]

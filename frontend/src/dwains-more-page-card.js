@@ -170,6 +170,7 @@ class MorePageCard extends LitElement {
                 await this._subscribeReload();
             }
         } catch (error) {
+            if (this._startedHass === connection) this._startedHass = undefined;
             this._configurationError = error;
             this._cardError = error;
             this._cardLoading = false;

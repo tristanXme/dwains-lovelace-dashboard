@@ -64,5 +64,11 @@ module.exports = (_env, argv) => ({
   },
   plugins: [
     new webpack.DefinePlugin({ __DD_VERSION__: JSON.stringify(version) }),
+    // The license banner of Sortable's core build does not survive the
+    // bundling (the complete build's did); MIT requires shipping the notice.
+    new webpack.BannerPlugin({
+      test: /sortable/,
+      banner: "@license Sortable 1.15.7 | (c) RubaXa <trash@rubaxa.org>, owenm <owen23355@gmail.com> | MIT License | https://github.com/SortableJS/Sortable",
+    }),
   ],
 });

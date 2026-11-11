@@ -190,7 +190,9 @@ def export_archive(
 def export_path(base: str, filename: str) -> str | None:
     """Path of an existing export archive, None for anything else."""
     if (
-        posixpath.basename(filename) != filename
+        "\\" in filename
+        or "\x00" in filename
+        or posixpath.basename(filename) != filename
         or not filename.startswith(EXPORT_PREFIX)
         or not filename.endswith(".zip")
     ):

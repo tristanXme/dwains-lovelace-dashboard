@@ -262,10 +262,31 @@ async def test_a_failed_more_page_save_changes_nothing(
     assert not [p for p in configs.rglob(".*")]
 
 
+async def test_notification_templates_are_stored_verbatim(
+    hass: HomeAssistant, setup_dashboard, hass_ws_client
+) -> None:
+    """Templates are never rendered (that would bypass entity permissions)."""
+    hass.states.async_set("lock.front_door", "locked")
+    await hass.services.async_call(
+        "dwains_dashboard",
+        "notification_create",
+        {
+            "message": "{{ states('lock.front_door') }}",
+            "title": "{{ 1 + 1 }}",
+            "notification_id": "tpl",
+        },
+        blocking=True,
+    )
+    client = await hass_ws_client(hass)
+    response = await _call(client, "dwains_dashboard_notification/get")
+    assert response["result"][0]["message"] == "{{ states('lock.front_door') }}"
+    assert response["result"][0]["title"] == "{{ 1 + 1 }}"
+
+
 async def test_notification_with_broken_template(
     hass: HomeAssistant, setup_dashboard, hass_ws_client
 ) -> None:
-    """A template error is logged and the raw template is shown instead."""
+    """A broken template is just text."""
     await hass.services.async_call(
         "dwains_dashboard",
         "notification_create",

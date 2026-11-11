@@ -7,6 +7,7 @@ import { subtlePopupStyles } from './styles/dwains-subtle-style';
 const { loadCardHelpers } = require('./card-helpers-loader');
 const { CardBuildOwner } = require('./card-build-owner');
 const { popupHistoryController } = require('./popup-history-controller');
+const { applyCardModStyles } = require('./card-mod-apply');
 const { handlePopupCardRebuild } = require('./popup-rebuild-policy');
 const { defineOwnedElement } = require('./custom-element-registration');
 const { releaseSlidersWhenGone } = require('./slider-release');
@@ -94,17 +95,7 @@ export async function popUp(title, card, large=false, style={}, fullscreen=false
 
         async _applyStyles() {
           let el = await selectTree(this, "$ ha-dialog");
-          customElements.whenDefined("card-mod").then(async () => {
-          if(!el) return;
-            const cm = window.cardMod || customElements.get("card-mod");
-            if(!cm || typeof cm.applyToElement !== "function") return;
-            if(cm.applyToElement.length <= 3){
-              cm.applyToElement(el, this._style, {config: this._card, tag: "more-info"});
-            } else {
-              cm.applyToElement(el, "more-info", this._style, {config: this._card}, [], false);
-            }
-          });
-
+          applyCardModStyles(el, this._style, this._card);
         }
 
         async showDialog(title, card, large=false, style={}, fullscreen=false) {

@@ -4,7 +4,7 @@
   "description": "Frontend bundle of the Dwains Dashboard Home Assistant integration",
   "license": "SEE LICENSE IN LICENSE.md",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "build": "webpack --mode production && node scripts/postbuild.mjs",

@@ -130,7 +130,7 @@ def test_yaml_files_use_libyaml_and_keep_the_file_format(tmp_path: Path) -> None
     from custom_components.dwains_dashboard import yaml_files
 
     if yaml.__with_libyaml__:
-        assert issubclass(yaml_files._DashboardDumper, yaml.CDumper)
+        assert issubclass(yaml_files._DashboardDumper, yaml.CSafeDumper)
         assert yaml_files._SafeLoader is yaml.CSafeLoader
     value = OrderedDict(
         [
