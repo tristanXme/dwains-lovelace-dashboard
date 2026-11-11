@@ -97,7 +97,10 @@ jobs:
   e2e:
     timeout-minutes: 60
     name: Browser tests (HA ${{ matrix.ha }})
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is 26.04, where the pinned Playwright cannot
+    # install Chromium ("does not support chromium on ubuntu26.04-x64").
+    # Unpin when Playwright is updated to a version that supports it.
+    runs-on: ubuntu-24.04
     # The beta run warns early about frontend changes in the next release
     # (HA's internal page structure); it does not block a merge.
     continue-on-error: ${{ matrix.ha == 'beta' }}
