@@ -227,40 +227,35 @@ def load_yamll(processor, fname, secrets=None, args=None):
     processor.checked_path(fname)
     try:
         template_args = {} if args is None else args
-        process_yaml = False
+        # One open per file: the first line decides how the file is processed
+        # and, for plain YAML, the rest is read from the same handle.
         with open(fname, encoding="utf-8") as f:
-            if f.readline().lower().startswith(("# dwains_dashboard", "# dwains_theme", "# lovelace_gen", "#dwains_dashboard")):
-                process_yaml = True
+            first_line = f.readline()
+            process_yaml = first_line.lower().startswith(("# dwains_dashboard", "# dwains_theme", "# lovelace_gen", "#dwains_dashboard"))
+            text = None if process_yaml else first_line + f.read()
 
         #_LOGGER.debug(f"load_yamll() Loading YAML: {fname}, process_yaml={process_yaml}")
 
         if process_yaml:
-            stream = io.StringIO(processor.jinja.get_template(fname).render({
+            # Templates go through the Jinja loader (its compiled-template
+            # cache and file names in template errors), which reads the file.
+            text = processor.jinja.get_template(fname).render({
                 **template_args,
                 "_dd_more_pages": processor.more_pages,
                 "_global": processor.global_config,
-                }))
-            stream.name = fname
-            return yaml.load(
-                stream,
-                Loader=lambda _stream: _DwainsDashboardLoader(
-                    _stream,
-                    secrets,
-                    processor,
-                ),
-            ) or OrderedDict()
-        else:
-            with open(fname, encoding="utf-8") as config_file:
-                data = yaml.load(
-                    config_file,
-                    Loader=lambda stream: _DwainsDashboardLoader(
-                        stream,
-                        secrets,
-                        processor,
-                    ),
-                ) or OrderedDict()
-                #_LOGGER.warning(f"load_yamll() DATA: {data}")
-                return data
+                })
+        # The loader takes the file name for relative includes and error
+        # locations from the stream's name.
+        stream = io.StringIO(text)
+        stream.name = fname
+        return yaml.load(
+            stream,
+            Loader=lambda _stream: _DwainsDashboardLoader(
+                _stream,
+                secrets,
+                processor,
+            ),
+        ) or OrderedDict()
 
     except yaml.YAMLError as exc:
         _LOGGER.error("YAMLError: %s", exc)
