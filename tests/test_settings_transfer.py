@@ -22,6 +22,7 @@ from custom_components.dwains_dashboard.settings_transfer import (
     ExportError,
     InvalidArchive,
     export_archive,
+    export_path,
     import_archive,
     read_archive,
     remove_path,
@@ -498,3 +499,16 @@ def test_old_import_backups_are_pruned(tmp_path: Path) -> None:
     assert len(imports) == 10
     assert result.backup in imports
     assert (tmp_path / "backups/cleanup-1").is_dir()
+
+
+def test_export_path_rejects_separators_and_nul(tmp_path: Path) -> None:
+    exports = tmp_path / "backups/exports"
+    exports.mkdir(parents=True)
+    (exports / "dwains-dashboard-1.zip").write_bytes(b"x")
+    assert export_path(str(tmp_path), "dwains-dashboard-1.zip") is not None
+    for name in (
+        "dwains-dashboard-\\..\\..\\x.zip",
+        "dwains-dashboard-\x001.zip",
+        "dwains-dashboard-/../x.zip",
+    ):
+        assert export_path(str(tmp_path), name) is None

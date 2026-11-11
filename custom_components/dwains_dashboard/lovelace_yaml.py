@@ -30,10 +30,12 @@ class DwainsDashboardLovelaceYAML(LovelaceConfig):
         self.path = hass.config.path(config["filename"])
         self._processor = processor
         self._cache: tuple[dict[str, Any], float, json_fragment] | None = None
+        self._cache_revision = 0
 
     def invalidate_cache(self, *_args) -> None:
         """Invalidate includes which cannot be tracked through the root mtime."""
         self._cache = None
+        self._cache_revision += 1
 
     @property
     @override
@@ -76,6 +78,7 @@ class DwainsDashboardLovelaceYAML(LovelaceConfig):
                 return False, config, json
 
         is_updated = cache is not None
+        revision = self._cache_revision
         try:
             config = self._processor.load_yaml(
                 self.path,
@@ -87,5 +90,6 @@ class DwainsDashboardLovelaceYAML(LovelaceConfig):
             raise YamlTypeError(f"YAML file {self.path} does not contain a dict")
 
         json = json_fragment(json_bytes(config))
-        self._cache = (config, time.time(), json)
+        if revision == self._cache_revision:
+            self._cache = (config, time.time(), json)
         return is_updated, config, json

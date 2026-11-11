@@ -23,6 +23,7 @@ from typing import Any
 
 import yaml
 
+from .input_validation import DashboardInputError, safe_path_segment
 from .yaml_files import dump_yaml_file, load_yaml_file
 
 READ_ERRORS = (OSError, UnicodeDecodeError, yaml.YAMLError)
@@ -54,7 +55,11 @@ def _more_pages_path(configs_path: str) -> str:
 
 
 def _valid_foldername(foldername: str) -> bool:
-    return bool(foldername) and os.path.basename(foldername) == foldername and foldername not in {".", ".."}
+    try:
+        safe_path_segment(foldername, "more-page folder name")
+    except DashboardInputError:
+        return False
+    return True
 
 
 def validate_more_page_foldername(foldername: str) -> str:

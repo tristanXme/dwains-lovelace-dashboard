@@ -8,7 +8,6 @@ from collections.abc import Mapping, MutableMapping
 
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import TemplateError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity import async_generate_entity_id
 from homeassistant.util import slugify
@@ -37,8 +36,8 @@ _WEBSOCKET_REGISTERED_KEY = "notification_websocket_registered"
 
 SCHEMA_SERVICE_CREATE = vol.Schema(
     {
-        vol.Required(ATTR_MESSAGE): cv.template,
-        vol.Optional(ATTR_TITLE): cv.template,
+        vol.Required(ATTR_MESSAGE): cv.string,
+        vol.Optional(ATTR_TITLE): cv.string,
         vol.Optional(ATTR_NOTIFICATION_ID): cv.string,
     }
 )
@@ -54,14 +53,6 @@ STATUS_UNREAD = "unread"
 STATUS_READ = "read"
 
 #Notifications part
-def create(hass, message, title=None, notification_id=None):
-    """Generate a notification."""
-    hass.add_job(async_create, hass, message, title, notification_id)
-
-def dismiss(hass, notification_id):
-    """Remove a notification."""
-    hass.add_job(async_dismiss, hass, notification_id)
-
 @callback
 def async_create(
     hass: HomeAssistant,
@@ -152,25 +143,11 @@ def notifications(hass, name):
             )
             notification_id = entity_id.split(".")[1]
 
-        attr = {}
+        # Stored verbatim: rendering templates here would let any user read
+        # states they have no permission for through the notification reader.
+        attr = {ATTR_MESSAGE: message}
         if title is not None:
-            try:
-                title.hass = hass
-                title = title.async_render()
-            except TemplateError as ex:
-                _LOGGER.error("Error rendering title %s: %s", title, ex)
-                title = title.template
-
             attr[ATTR_TITLE] = title
-
-        try:
-            message.hass = hass
-            message = message.async_render()
-        except TemplateError as ex:
-            _LOGGER.error("Error rendering message %s: %s", message, ex)
-            message = message.template
-
-        attr[ATTR_MESSAGE] = message
 
         hass.states.async_set(entity_id, STATE, attr)
 

@@ -19,7 +19,7 @@ from yaml.representer import Representer
 # dashboard change reads and writes entities.yaml and then reads all files
 # again, so on large installations this is most of the time a change takes.
 _SafeLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
-_Dumper = getattr(yaml, "CDumper", yaml.Dumper)
+_Dumper = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
 
 
 class _DashboardDumper(_Dumper):

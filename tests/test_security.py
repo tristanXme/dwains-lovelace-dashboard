@@ -106,6 +106,12 @@ TRAVERSAL_CASES = [
     ("remove_card", {"area_id": "../../../..", "filename": "canary"}),
     ("remove_card", {"area_id": "kitchen", "filename": "../../../../../canary"}),
     ("remove_more_page", {"foldername": ".."}),
+    ("remove_more_page", {"foldername": "..\\..\\x"}),
+    ("remove_more_page", {"foldername": ".hidden"}),
+    ("remove_more_page", {"foldername": "x\x00y"}),
+    ("edit_more_page_button", {"more_page": "..\\..\\x", "name": "x"}),
+    ("edit_more_page_button", {"more_page": ".hidden", "name": "x"}),
+    ("edit_more_page_button", {"more_page": "x\x00y", "name": "x"}),
     ("edit_more_page_button", {"more_page": "../../..", "name": "x"}),
 ]
 

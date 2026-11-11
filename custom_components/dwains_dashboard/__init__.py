@@ -28,7 +28,7 @@ from .maintenance import async_migrate_area_sensor_entities, async_setup_mainten
 from .settings_export import async_register_export_view
 
 from homeassistant.core import HomeAssistant
-from homeassistant.config import ConfigType
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import issue_registry as ir
